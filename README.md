@@ -127,11 +127,11 @@ Representa os usuários cadastrados na aplicação.
 | Reserva            | Possui          | Campo Privado              |       N : 1            |
 | Partida            | Utiliza          | Campo               |         N : 1            |
 | Partida           | Possui                | Chat_Live           |         1 : 1            |
-| Arrendador         | Possui             | Campo Privado       |       1 : N            |
 | Campo             | is A           | Campo Privado |                             |
 | Campo             | is A           | Campo Público |                             |
 | Campo             | Possui           | Imagem |               1:N                    |
 | Campo             | Possui                | Rating              |         1 : N            |
+| Arrendador         | Possui             | Campo Privado       |       1 : N            |
 | Campo Privado             | Possui                | Agenda              |         1 : 1            |
 | Mapa              | Exibe              | Campo               |        1 : N            |
 
