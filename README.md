@@ -46,7 +46,7 @@ Representa os usuários cadastrados na aplicação.
 ### ⚽ **Campo**  
 - 🆔 **ID do Campo** (Primary Key)  
 - 🏷️ **Nome do Campo**  
-- 📏 **Tamanho**  
+- 📏 **Dimensões**  
 - 📍 **Coordenadas (Latitude, Longitude)**  
 - ✅ **Estado de Ocupação** (Ocupado/Livre)  
 - 🏅 **Tipo de Desporto Permitido**  
@@ -77,14 +77,15 @@ Representa os usuários cadastrados na aplicação.
 - 👥 **Número de Jogadores** 
 - ⏳ **Duração da Partida**  
 - 📊 **Resultado**  
-- ⏰ **Hora** (Foreign Key)  
-- 📅 **Data** (Foreign Key)  
+- ⏰ **Hora**  
+- 📅 **Data**  
 
 ---
 
 ### ⭐ **Rating (Avaliação)**  
 - 👤 **ID do Utilizador (Avaliador)** (Foreign Key & Primary Key)  
-- 🏟️ **ID do Campo ou Jogador Avaliado** (Foreign Key)  
+- 🏟️ **ID do Avaliado** (Foreign Key)
+- 🏟️ **ID do Avaliador** (Foreign Key)
 - 📝 **Comentário**  
 - ⭐ **Avaliação**
 
