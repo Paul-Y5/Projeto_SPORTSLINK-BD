@@ -36,18 +36,18 @@ Representa os usuários cadastrados na aplicação.
 ---
 
 ### 🗺️ **Mapa**  
-- 🆔 **ID** (Primary Key)   
-- 🌍 **Coordenadas dos Campos** (Foreign Key)  
+- 🆔 **ID** (Primary Key)     
 - 🗺️ **Modo Exibição** (ex: vista de satélite, mapa simplificado)  
 - ⏳ **Última Atualização** (Timestamp)  
+- 🆔 **ID do Ponto** (Foreign Key)  
 
 ---
 
 ### ⚽ **Campo**  
 - 🆔 **ID do Campo** (Primary Key)  
+- 🆔 **ID do Ponto** (Foreign Key)  
 - 🏷️ **Nome do Campo**  
-- 📏 **Dimensões**  
-- 📍 **Coordenadas (Latitude, Longitude)**  
+- 📏 **Dimensões**   
 - ✅ **Estado de Ocupação** (Ocupado/Livre)  
 - 🏅 **Tipo de Desporto Permitido**  
 - 📝 **Descrição**  
@@ -83,9 +83,8 @@ Representa os usuários cadastrados na aplicação.
 ---
 
 ### ⭐ **Rating (Avaliação)**  
-- 👤 **ID do Utilizador (Avaliador)** (Foreign Key & Primary Key)  
+- 👤 **ID do Utilizador (Avaliador)** (Foreign Key)  
 - 🏟️ **ID do Avaliado** (Foreign Key)
-- 🏟️ **ID do Avaliador** (Foreign Key)
 - 📝 **Comentário**  
 - ⭐ **Avaliação**
 
@@ -108,7 +107,13 @@ Representa os usuários cadastrados na aplicação.
 ### 📆 **Agenda**  
 - 🏟️ **ID do Campo** (Foreign Key)  
 - 📅 **Data**  
-- ⏰ **Hora**  
+- ⏰ **Hora** 
+
+---
+
+### 📌 **Ponto**
+- 🆔 **ID do Ponto** (Primary Key)  
+- 📍 **Coordenadas (Latitude, Longitude)** 
 
 ---
 ---
@@ -132,9 +137,11 @@ Representa os usuários cadastrados na aplicação.
 | Campo             | is A           | Campo Público |                             |
 | Campo             | Possui           | Imagem |               1:N                    |
 | Campo             | Possui                | Rating              |         1 : N            |
+| Campo              | Possui              | Ponto               |        1 : 1            |
 | Arrendador         | Possui             | Campo Privado       |       1 : N            |
 | Campo Privado             | Possui                | Agenda              |         1 : 1            |
-| Mapa              | Exibe              | Campo               |        1 : N            |
+| Mapa              | Possui              | Ponto               |        1 : N            |
+| Mapa              | exibe              | Campo               |        1 : N            |
 
 ---
 ---
