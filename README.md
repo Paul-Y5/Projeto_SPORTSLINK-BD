@@ -2,12 +2,28 @@
 # 🏅 Aplicação de Agendamento de Partidas e Arrendamento de Campos Esportivos  
 
 ## 📌 Introdução  
-Este projeto tem como objetivo desenvolver uma **base de dados** para suporte a uma aplicação de **agendamento de partidas esportivas** e **arrendamento de espaços** para a prática de diversos desportos.  
+Este projeto tem como objetivo desenvolver uma **base de dados** para suporte a uma aplicação de **agendamento de partidas desportivas** e **arrendamento de espaços** para a prática de diversos desportos.  
 
-A aplicação busca **aproximar a comunidade** de pessoas que gostam de praticar desporto e incentivar mais pessoas a aderirem à prática esportiva, facilitando a organização de jogos e a reserva de espaços adequados.  
+A aplicação procura **aproximar a comunidade** de pessoas que gostam de praticar desporto e incentivar mais pessoas a aderirem à prática desportiva, facilitando a organização de jogos e a reserva de espaços adequados.  
 
 ---
+## Requisitos-Funcionais
+O objetivo é conseguir que as seguintes funcionalidades sejam possiveis:
 
+- Aceder a campos por localização, por desporto, por nome, entre outros filtros;
+- Criar os campos e guardá-los na bd; 
+- O utilizador poder aceder à lista de amigos que disponibiliza a visualização do perfil dos mesmos;
+- Poder visualizar o campo e os participantes de uma partida;
+- Pode editar perfil;
+- Pode realizar uma reserva, vendo os horários disponiveis e preços (campo privado);
+- Pode iniciar uma partida, selecionando campo e características da partida e convidar amigos (disponibilizar publicamente também);
+- Colocar o resultado no final da partida e avaliar jogadores;
+- Poder visualizar e dar reviews a um campo; 
+- Poder ver os campos disponibilizados para arrendamento (por parte do dono), para além disso pode ajustar a tabela de preços e horários e verificar as reservas efetuadas em cada campo;
+- Ver partidas ao vivo ou agendadas em campos;
+- etc.  
+
+---
 ## 🏛️ Modelagem do Banco de Dados  
 
 A base de dados é composta pelas seguintes **entidades**:  
