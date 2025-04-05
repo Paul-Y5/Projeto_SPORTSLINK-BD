@@ -11,10 +11,10 @@ A aplicação procura **aproximar a comunidade** de pessoas que gostam de pratic
 O objetivo é conseguir que as seguintes funcionalidades sejam possiveis:
 
 - Aceder a campos por localização, por desporto, por nome, entre outros filtros;
-- Criar os campos e guardá-los na bd; 
+- Criar campos;
 - O utilizador poder aceder à lista de amigos que disponibiliza a visualização do perfil dos mesmos;
-- Poder visualizar o campo e os participantes de uma partida;
-- Pode editar perfil;
+- Utilizador pode visualizar o campo e os participantes de uma partida;
+- Utilizador edita perfil;
 - Pode realizar uma reserva, vendo os horários disponiveis e preços (campo privado);
 - Pode iniciar uma partida, selecionando campo e características da partida e convidar amigos (disponibilizar publicamente também);
 - Colocar o resultado no final da partida e avaliar jogadores;
@@ -81,8 +81,8 @@ Representa os usuários cadastrados na aplicação.
 - 🆔 **ID da Reserva** (Primary Key)  
 - 👥 **Jogadores da Reserva** (Foreign Key)  
 - 🏟️ **ID do Campo Reservado** (Foreign Key)  
-- 📅 **Data da Reserva** (Foreign Key)  
-- ⏰ **Hora da Reserva** (Foreign Key)  
+- 📅 **Data** 
+- ⏰ **Hora** 
 - 📝 **Descrição**  
 
 ---
@@ -120,10 +120,9 @@ Representa os usuários cadastrados na aplicação.
 
 ---
 
-### 📆 **Agenda**  
+### 📆 **Preçário**  
 - 🏟️ **ID do Campo** (Foreign Key)  
-- 📅 **Data**  
-- ⏰ **Hora** 
+- 💰 **Preço**
 
 ---
 
@@ -155,7 +154,7 @@ Representa os usuários cadastrados na aplicação.
 | Campo             | Possui                | Rating              |         1 : N            |
 | Campo              | Possui              | Ponto               |        1 : 1            |
 | Arrendador         | Possui             | Campo Privado       |       1 : N            |
-| Campo Privado             | Possui                | Agenda              |         1 : 1            |
+| Campo Privado             | Possui                | Preçário              |         1 : N            |
 | Mapa              | Possui              | Ponto               |        1 : N            |
 | Mapa              | exibe              | Campo               |        1 : N            |
 
