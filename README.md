@@ -54,8 +54,7 @@ Representa os usuários cadastrados na aplicação.
 ### 🗺️ **Mapa**  
 - 🆔 **ID** (Primary Key)     
 - 🗺️ **Modo Exibição** (ex: vista de satélite, mapa simplificado)  
-- ⏳ **Última Atualização** (Timestamp)  
-- 🆔 **ID do Ponto** (Foreign Key)  
+- ⏳ **Última Atualização** (Timestamp)   
 
 ---
 
@@ -72,8 +71,7 @@ Representa os usuários cadastrados na aplicação.
 - 🏢 **Nome da Entidade Pública Responsável**  
 
 #### 🏠 **Campo Privado**  
-- 👤 **ID do Dono** (Foreign Key)  
-- 💰 **Preço de Aluguer**  
+- 👤 **ID do Dono** (Foreign Key)   
 
 ---
 
@@ -103,6 +101,7 @@ Representa os usuários cadastrados na aplicação.
 - 🏟️ **ID do Avaliado** (Foreign Key)
 - 📝 **Comentário**  
 - ⭐ **Avaliação**
+- 📅 **Data** 
 
 ---
 
@@ -115,7 +114,6 @@ Representa os usuários cadastrados na aplicação.
 
 ### 🖼️ **Imagem**  
 - 🌐 **URL da Imagem** (Primary Key)  
-- 📂 **Formato**  
 - 🔗 **ID Associado** (Foreign Key)  
 
 ---
@@ -129,6 +127,7 @@ Representa os usuários cadastrados na aplicação.
 ### 📌 **Ponto**
 - 🆔 **ID do Ponto** (Primary Key)  
 - 📍 **Coordenadas (Latitude, Longitude)** 
+- 🗺️ **ID_Mapa** (Foreign Key)
 
 ---
 ---
@@ -139,12 +138,12 @@ Representa os usuários cadastrados na aplicação.
 |----------------------|-------------------|----------------------|------------------|
 | Utilizador          | is A               | Jogador             |                 |
 | Utilizador          | is A               | Arrendador          |                 |
-| Utilizador          | Possui               | Imagem          |         1:1             |
+| Utilizador          | Possui               | Imagem          |         N:M             |
 | Jogador            | Faz                | Reserva             |       1 : N            |
-| Jogador            | Joga                | Partida             |      N : N            |
+| Jogador            | Joga                | Partida             |      N : M            |
 | Jogador            | Possui                | Rating             |         1 : N            |
-| Jogador           | Participa  | Chat_Live           |        N : N            |
-| Jogador           | Adiciona como amigo (Amizade) | Jogador             |         N : N            |
+| Jogador            | atribui                | Rating             |         1 : N            |
+| Jogador           | Adiciona como amigo (Amizade) | Jogador             |         N : M            |
 | Reserva            | Possui          | Campo Privado              |       N : 1            |
 | Partida            | Utiliza          | Campo               |         N : 1            |
 | Partida           | Possui                | Chat_Live           |         1 : 1            |
@@ -155,8 +154,13 @@ Representa os usuários cadastrados na aplicação.
 | Campo              | Possui              | Ponto               |        1 : 1            |
 | Arrendador         | Possui             | Campo Privado       |       1 : N            |
 | Campo Privado             | Possui                | Preçário              |         1 : N            |
-| Mapa              | Possui              | Ponto               |        1 : N            |
-| Mapa              | exibe              | Campo               |        1 : N            |
+| Mapa              | exibe              | Ponto               |        1 : N            |
+| Jogador             | Gosta de           | Desporto             |        N : M            |
+| Campo               | disponibiliza      | Desporto             |         N : M            |
+| Campo               | possui      |   Metdodo_pagamento          |         N : M            |
+| Mapa                | Tem modo de exibição | Modo_Exib           |        N : M            |
+| Imagem                |         possui       |   Formato           |        N : M            |
+
 
 ---
 ---
