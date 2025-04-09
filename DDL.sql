@@ -213,10 +213,10 @@ CREATE TABLE Chat_Live (
 
 
 CREATE TABLE Desporto (
-  ID_Desporto INT,
+  ID          INT,
   Nome        VARCHAR(50) UNIQUE NOT NULL,
 
-  PRIMARY KEY (ID_Desporto)
+  PRIMARY KEY (ID)
 );
 
 
@@ -226,7 +226,7 @@ CREATE TABLE Desporto_Jogador (
 
   PRIMARY KEY (ID_Jogador, ID_Desporto),
   FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID),
-  FOREIGN KEY (ID_Desporto) REFERENCES Desporto(ID_Desporto)
+  FOREIGN KEY (ID_Desporto) REFERENCES Desporto(ID)
 );
 
 
@@ -252,7 +252,7 @@ CREATE TABLE Jogador_Amizade (
 
 CREATE TABLE Met_Paga_Arrendador (
   ID_Arrendador       INT,
-  Met_pagamento       VARCHAR(50),
+  Met_pagamento       VARCHAR(50) CHECK (Met_pagamento IN ('MBWay', 'Transferência Bancária', 'ACobrança', 'PayPal')),
 
   PRIMARY KEY (ID_Arrendador, Met_pagamento),
   FOREIGN KEY (ID_Arrendador) REFERENCES Arrendador(ID_Arrendador)
