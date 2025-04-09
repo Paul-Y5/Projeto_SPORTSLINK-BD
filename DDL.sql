@@ -1,3 +1,5 @@
+DELETE SPORTSLINK
+
 CREATE DATABASE SPORTSLINK
 
 GO
@@ -12,7 +14,7 @@ CREATE TABLE Utilizador (
   [Password]          VARCHAR(512),
   Nacionalidade     VARCHAR(128),
 
-  PRIMARY KEY ID
+  PRIMARY KEY (ID)
 );
 
 
@@ -21,8 +23,8 @@ CREATE TABLE Jogador (
   Idade             INT,
   Descricao         VARCHAR(MAX),
 
-  PRIMARY KEY ID,
-  FOREIGN KEY ID REFERENCES Utilizador(ID)
+  PRIMARY KEY (ID),
+  FOREIGN KEY (ID) REFERENCES Utilizador(ID)
 );
 
 
@@ -32,8 +34,8 @@ CREATE TABLE Arrendador (
   No_Campos         INT,
   Descricao         VARCHAR(MAX),
 
-  PRIMARY KEY ID_Arrendador,
-  FOREIGN KEY ID_Arrendador REFERENCES Utilizador(ID)
+  PRIMARY KEY (ID_Arrendador),
+  FOREIGN KEY (ID_Arrendador) REFERENCES Utilizador(ID)
 
 );
 
@@ -42,7 +44,7 @@ CREATE TABLE Mapa (
   ID            INT,
   Ultimo_update TIMESTAMP,
 
-  PRIMARY KEY ID
+  PRIMARY KEY (ID)
 );
 
 
@@ -51,7 +53,7 @@ CREATE TABLE ModExib_Mapa (
   Modo_exib         VARCHAR(50)
 
   PRIMARY KEY (ID_Mapa, Modo_exib),
-  FOREIGN KEY ID_Mapa REFERENCES Mapa(ID)
+  FOREIGN KEY (ID_Mapa) REFERENCES Mapa(ID)
 );
 
 
@@ -62,7 +64,7 @@ CREATE TABLE Ponto (
   Longitude     DECIMAL(9,6),
 
   PRIMARY KEY (ID, ID_Mapa),
-  FOREIGN KEY ID_Mapa REFERENCES Mapa(ID)
+  FOREIGN KEY (ID_Mapa) REFERENCES Mapa(ID)
 );
 
 
@@ -75,8 +77,8 @@ CREATE TABLE Campo (
   ocupado       BIT,
   Descricao     VARCHAR(MAX)
 
-  PRIMARY KEY ID
-  FOREIGN KEY ID_Ponto REFERENCES Ponto(ID)
+  PRIMARY KEY (ID)
+  FOREIGN KEY (ID_Ponto) REFERENCES Ponto(ID)
 );
 
 
@@ -84,9 +86,9 @@ CREATE TABLE Campo_Priv (
   ID_Campo            INT,
   ID_Arrendador       INT,
 
-  PRIMARY KEY ID_Campo,
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID),
-  FOREIGN KEY ID_Arrendador REFERENCES Arrendador(ID_Arrendador)
+  PRIMARY KEY (ID_Campo),
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID),
+  FOREIGN KEY (ID_Arrendador) REFERENCES Arrendador(ID_Arrendador)
 
 );
 
@@ -95,15 +97,15 @@ CREATE TABLE Campo_Pub (
   ID_Campo              INT,
   Entidade_publica_resp VARCHAR(256),
 
-  PRIMARY KEY ID_Campo,
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID)
+  PRIMARY KEY (ID_Campo),
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID)
 );
 
 
 CREATE TABLE Imagem (
   [URL]              VARCHAR(512)
 
-  PRIMARY KEY [URL]
+  PRIMARY KEY ([URL])
 );
 
 
@@ -112,8 +114,8 @@ CREATE TABLE IMG_Campo (
   [URL]              VARCHAR(512),
 
   PRIMARY KEY (ID_Campo, [URL]),
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID),
-  FOREIGN KEY [URL] REFERENCES Imagem([URL])
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID),
+  FOREIGN KEY ([URL]) REFERENCES Imagem([URL])
 );
 
 
@@ -122,8 +124,8 @@ CREATE TABLE IMG_Perfil (
   [URL]              VARCHAR(512),
 
   PRIMARY KEY (ID_Utilizador, [URL]),
-  FOREIGN KEY ID_Utilizador REFERENCES Utilizador(ID),
-  FOREIGN KEY [URL] REFERENCES Imagem([URL])
+  FOREIGN KEY (ID_Utilizador) REFERENCES Utilizador(ID),
+  FOREIGN KEY ([URL]) REFERENCES Imagem([URL])
 );
 
 
@@ -135,8 +137,8 @@ CREATE TABLE Partida (
   Duracao            INT,
   Resultado          VARCHAR(50),
 
-  PRIMARY KEY ID,
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID)
+  PRIMARY KEY (ID),
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID)
 );
 
 
@@ -145,8 +147,8 @@ CREATE TABLE Jogador_joga (
   ID_Jogador         INT,
 
   PRIMARY KEY (ID_Partida, ID_Jogador),
-  FOREIGN KEY ID_Partida REFERENCES Partida(ID),
-  FOREIGN KEY ID_Jogador REFERENCES Jogador(ID)
+  FOREIGN KEY (ID_Partida) REFERENCES Partida(ID),
+  FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID)
 );
 
 
@@ -157,9 +159,9 @@ CREATE TABLE Reserva (
   Data_Hora          DATETIME,
   Descricao         VARCHAR(MAX)
 
-  PRIMARY KEY ID,
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID),
-  FOREIGN KEY ID_Jogador REFERENCES Jogador(ID)
+  PRIMARY KEY (ID),
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID),
+  FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID)
 );
 
 
@@ -169,8 +171,8 @@ CREATE TABLE Rating (
   Comentario        VARCHAR(MAX),
   Avaliacao         INT,
 
-  PRIMARY KEY ID_Avaliador,
-  FOREIGN KEY ID_Avaliador REFERENCES Jogador(ID)
+  PRIMARY KEY (ID_Avaliador),
+  FOREIGN KEY (ID_Avaliador) REFERENCES Jogador(ID)
 );
 
 
@@ -179,8 +181,8 @@ CREATE TABLE Rating_Campo (
   ID_Campo           INT,
 
   PRIMARY KEY (ID_Campo, ID_Avaliador),
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID),
-  FOREIGN KEY ID_Avaliador REFERENCES Rating(ID_Avaliador)
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID),
+  FOREIGN KEY (ID_Avaliador) REFERENCES Rating(ID_Avaliador)
 );
 
 
@@ -189,8 +191,8 @@ CREATE TABLE Rating_Jogador (
   ID_Avaliador       INT,
 
   PRIMARY KEY (ID_Jogador, ID_Avaliador),
-  FOREIGN KEY ID_Jogador REFERENCES Jogador(ID),
-  FOREIGN KEY ID_Avaliador REFERENCES Rating(ID_Avaliador)
+  FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID),
+  FOREIGN KEY (ID_Avaliador) REFERENCES Rating(ID_Avaliador)
 );
 
 
@@ -198,8 +200,8 @@ CREATE TABLE Precario (
   ID_Campo           INT,
   preco              DECIMAL(10,2),
 
-  PRIMARY KEY ID_Campo,
-  FOREIGN KEY ID_Campo REFERENCES Campo_Priv(ID_Campo)
+  PRIMARY KEY (ID_Campo),
+  FOREIGN KEY (ID_Campo) REFERENCES Campo_Priv(ID_Campo)
 );
 
 
@@ -207,14 +209,16 @@ CREATE TABLE Chat_Live (
   ID_Partida         INT,
   Titulo             VARCHAR(256)
 
-  PRIMARY KEY ID_Partida,
-  FOREIGN KEY ID_Partida REFERENCES Partida(ID)
+  PRIMARY KEY (ID_Partida),
+  FOREIGN KEY (ID_Partida) REFERENCES Partida(ID)
 );
 
 
 CREATE TABLE Desporto (
-  ID_Desporto INT PRIMARY KEY,
-  Nome VARCHAR(50) UNIQUE NOT NULL
+  ID_Desporto INT,
+  Nome        VARCHAR(50) UNIQUE NOT NULL
+
+  PRIMARY KEY (ID_Desporto)
 );
 
 
@@ -233,8 +237,8 @@ CREATE TABLE Desporto_Campo (
   ID_Campo           INT,
 
   PRIMARY KEY (ID_Desporto, ID_Campo),
-  FOREIGN KEY ID_Desporto REFERENCES Desporto(ID),
-  FOREIGN KEY ID_Campo REFERENCES Campo(ID)
+  FOREIGN KEY (ID_Desporto) REFERENCES Desporto(ID),
+  FOREIGN KEY (ID_Campo) REFERENCES Campo(ID)
 );
 
 
@@ -253,5 +257,5 @@ CREATE TABLE Met_Paga_Arrendador (
   Met_pagamento       VARCHAR(50),
 
   PRIMARY KEY (ID_Arrendador, Met_pagamento),
-  FOREIGN KEY ID_Arrendador REFERENCES Arrendador(ID_Arrendador)
+  FOREIGN KEY (ID_Arrendador) REFERENCES Arrendador(ID_Arrendador)
 );
