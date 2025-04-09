@@ -19,7 +19,7 @@ CREATE TABLE Utilizador (
 CREATE TABLE Jogador (
   ID                INT,
   Idade             INT,
-  Descricao         VARCHAR(MAX),
+  Descricao         VARCHAR(2500),
 
   PRIMARY KEY (ID),
   FOREIGN KEY (ID) REFERENCES Utilizador(ID)
@@ -30,7 +30,7 @@ CREATE TABLE Arrendador (
   ID_Arrendador     INT,
   IBAN              INT,
   No_Campos         INT,
-  Descricao         VARCHAR(MAX),
+  Descricao         VARCHAR(2500),
 
   PRIMARY KEY (ID_Arrendador),
   FOREIGN KEY (ID_Arrendador) REFERENCES Utilizador(ID)
@@ -48,8 +48,7 @@ CREATE TABLE Mapa (
 
 CREATE TABLE ModExib_Mapa (
   ID_Mapa           INT,
-  Modo_exib         VARCHAR(50)
-
+  Modo_exib         VARCHAR(50),
   PRIMARY KEY (ID_Mapa, Modo_exib),
   FOREIGN KEY (ID_Mapa) REFERENCES Mapa(ID)
 );
@@ -73,10 +72,10 @@ CREATE TABLE Campo (
   Comprimento   DECIMAL(10,2),
   Largura       DECIMAL(10,2),
   ocupado       BIT,
-  Descricao     VARCHAR(MAX)
+  Descricao     VARCHAR(2500),
 
-  PRIMARY KEY (ID)
-  FOREIGN KEY (ID_Ponto) REFERENCES Ponto(ID)
+  PRIMARY KEY (ID),
+  FOREIGN KEY (ID_Ponto) REFERENCES Ponto(ID, ID_Mapa)
 );
 
 
@@ -101,7 +100,7 @@ CREATE TABLE Campo_Pub (
 
 
 CREATE TABLE Imagem (
-  [URL]              VARCHAR(512)
+  [URL]              VARCHAR(512),
 
   PRIMARY KEY ([URL])
 );
@@ -154,8 +153,8 @@ CREATE TABLE Reserva (
   ID                 INT,
   ID_Campo           INT,
   ID_Jogador         INT,
-  Data_Hora          DATETIME,
-  Descricao         VARCHAR(MAX)
+  Data_Hora          DATETIME NOT NULL,
+  Descricao          VARCHAR(2500),
 
   PRIMARY KEY (ID),
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID),
@@ -166,7 +165,7 @@ CREATE TABLE Reserva (
 CREATE TABLE Rating (
   ID_Avaliador      INT,
   Data_Hora         DATETIME,
-  Comentario        VARCHAR(MAX),
+  Comentario        VARCHAR(2500),
   Avaliacao         INT,
 
   PRIMARY KEY (ID_Avaliador),
@@ -205,7 +204,7 @@ CREATE TABLE Precario (
 
 CREATE TABLE Chat_Live (
   ID_Partida         INT,
-  Titulo             VARCHAR(256)
+  Titulo             VARCHAR(256),
 
   PRIMARY KEY (ID_Partida),
   FOREIGN KEY (ID_Partida) REFERENCES Partida(ID)
@@ -214,7 +213,7 @@ CREATE TABLE Chat_Live (
 
 CREATE TABLE Desporto (
   ID_Desporto INT,
-  Nome        VARCHAR(50) UNIQUE NOT NULL
+  Nome        VARCHAR(50) UNIQUE NOT NULL,
 
   PRIMARY KEY (ID_Desporto)
 );
