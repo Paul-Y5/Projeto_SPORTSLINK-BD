@@ -68,6 +68,7 @@ CREATE TABLE Ponto (
 CREATE TABLE Campo (
   ID            INT,
   ID_Ponto      INT,
+  ID_Mapa		    INT,
   Nome          VARCHAR(256),
   Comprimento   DECIMAL(10,2),
   Largura       DECIMAL(10,2),
@@ -75,7 +76,7 @@ CREATE TABLE Campo (
   Descricao     VARCHAR(2500),
 
   PRIMARY KEY (ID),
-  FOREIGN KEY (ID_Ponto) REFERENCES Ponto(ID, ID_Mapa)
+  FOREIGN KEY (ID_Ponto, ID_Mapa) REFERENCES Ponto(ID, ID_Mapa)
 );
 
 
