@@ -10,21 +10,61 @@ A aplicação procura **aproximar a comunidade** de pessoas que gostam de pratic
 ## Requisitos-Funcionais
 O objetivo é conseguir que as seguintes funcionalidades sejam possiveis:
 
-- Aceder a campos por localização, por desporto, por nome, entre outros filtros;
-- Criar campos;
-- O utilizador poder aceder à lista de amigos que disponibiliza a visualização do perfil dos mesmos;
-- Utilizador pode visualizar o campo e os participantes de uma partida;
-- Utilizador edita perfil;
-- Pode realizar uma reserva, vendo os horários disponiveis e preços (campo privado);
-- Pode iniciar uma partida, selecionando campo e características da partida e convidar amigos (disponibilizar publicamente também);
-- Colocar o resultado no final da partida e avaliar jogadores;
-- Poder visualizar e dar reviews a um campo; 
-- Poder ver os campos disponibilizados para arrendamento (por parte do dono), para além disso pode ajustar a tabela de preços e horários e verificar as reservas efetuadas em cada campo;
-- Ver partidas ao vivo ou agendadas em campos;
-- etc.  
+🔹 **Gestão de Utilizadores**
+
+- O sistema deve permitir o registo de utilizadores com dados como nome, email, telefone, nacionalidade e foto de perfil.
+    
+- O sistema deve permitir o utilizador editar o seu perfil.
+
+- O sistema deve permitir classificar utilizadores após uma partida, com nota e comentário.
+
+- O sistema deve suportar dois tipos principais de utilizadores: Jogadores e Arrendadores.
+
+🔹 **Funcionalidades Sociais**
+- O sistema deve permitir aos jogadores adicionarem outros jogadores como amigos.
+
+- O sistema deve permitir visualizar o perfil e histórico dos amigos adicionados.
+
+🔹 **Gestão de Campos**
+- O sistema deve permitir criar e editar campos (públicos e privados).
+
+- O sistema deve permitir associar campos a desportos específicos.
+
+- O sistema deve permitir ver a disponibilidade de campos por localização, tipo de desporto ou nome.
+
+- O sistema deve permitir associar imagens aos campos.
+
+- O sistema deve permitir associar preços e horários aos campos privados.
+
+- O sistema deve permitir avaliações e reviews dos campos.
+
+🔹 **Agendamento de Reservas e Partidas**
+- O sistema deve permitir ao jogador realizar reservas em campos privados.
+
+- O sistema deve permitir visualizar horários disponíveis e preços antes da reserva.
+
+- O sistema deve permitir criar partidas em campos públicos ou privados.
+
+- O sistema deve permitir convidar amigos ou disponibilizar a partida publicamente.
+
+- O sistema deve permitir visualizar partidas ao vivo ou agendadas.
+
+- O sistema deve permitir registrar o resultado da partida ao final da mesma.
+
+🔹 **Financeiro e Métodos de Pagamento**
+- O sistema deve permitir que o arrendador configure métodos de pagamento e IBAN.
+
+- O sistema deve permitir ao arrendador visualizar reservas realizadas nos seus campos.
+
+🔹 **Outros Requisitos Funcionais**
+- O sistema deve permitir anexar imagens a perfis de utilizadores, partidas ou campos.
+
+- O sistema deve permitir a criação de chats ao vivo entre participantes de uma partida.
+
+- O sistema deve apresentar a localização dos campos via mapa interativo.
 
 ---
-## 🏛️ Modelagem do Banco de Dados  
+## 🏛️ Modelagem da Base de Dados  
 
 A base de dados é composta pelas seguintes **entidades**:  
 
