@@ -17,11 +17,8 @@ def create_connection():
 def index():
     return render_template("index.html")
 
-@app.route("/admin")
-def admin_dashboard():
-    return render_template("admin.html")
 
-# Rota para forms registro e login
+# Caminho para forms registro e login
 @app.route("/register", methods=["POST"])
 def register():
     id_utilizador = gerar_id()
@@ -65,7 +62,6 @@ def login():
         session["user_nome"] = "Administrador"
         return redirect(url_for("admin_dashboard"))
 
-
     with create_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM Utilizador WHERE Email=? AND Password=?", email, password) # Comando SQL para verificar se o utilizador existe
@@ -78,23 +74,70 @@ def login():
         # Verifica se é arrendador
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador = ?", user[0])  # Verifica se o utilizador é arrendador
+            cursor.execute("SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?", user[0])  # Verifica se o utilizador é arrendador
             is_arrendador = cursor.fetchone()[0] == 1
 
         tipo_utilizador = "Arrendador" if is_arrendador else "Jogador"
 
-        return f'''
+        flash(f'''
         <div class="alert alert-success" role="alert">
             Bem-vindo, {user[1]}! Perfil: {tipo_utilizador}.
         </div>
-        '''
+        ''')
+        
+        return redirect(url_for("user_dashboard"))
     else:
-        return '''
-        <div class="alert alert-danger" role="alert">
-            Credenciais inválidas.
-        </div>
-        '''
+        flash('<div class="alert alert-danger" role="alert">Credenciais inválidas.</div>')
+        return redirect(url_for('index'))
     
+# Caminho para interface de utilizador
+@app.route("/user", methods=["GET"])
+def user_dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+
+    user_id = session["user_id"]
+
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Utilizador WHERE ID=?", user_id)
+        user = cursor.fetchone()
+
+    # Retorna a página do dashboard
+    return render_template("user_dashboard.html", user=user)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("index"))
+    
+
+# Caminho para o painel de administração
+@app.route("/admin")
+def admin_dashboard():
+    return render_template("admin.html")
+
+@app.route("/admin/gestao_utilizadores", methods=["GET", "POST"])
+def view_utilizadores():
+    tipo_utilizador = request.args.get("tipo_utilizador", "todos")  # "todos" é o valor padrão
+    
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Construir a consulta SQL com base no tipo de utilizador selecionado
+        if tipo_utilizador == "todos":
+            cursor.execute("Select * from Utilizador as u Join Jogador as j on u.ID = j.ID Left Join Arrendador as a on u.ID = a.ID_Arrendador")
+        elif tipo_utilizador == "jogador":
+            cursor.execute("Select * from Utilizador as u Join Jogador as j on u.ID = j.ID Left Join Arrendador as a on u.ID = a.ID_Arrendador Where a.ID_Arrendador is null")
+        elif tipo_utilizador == "arrendador":
+            cursor.execute("Select * from Utilizador as u Join Jogador as j on u.ID = j.ID Left Join Arrendador as a on u.ID = a.ID_Arrendador where a.ID_Arrendador is not null")
+        
+        utilizadores = cursor.fetchall()
+    
+    return render_template("gestao_utilizadores.html", utilizadores=utilizadores)
+
+
+
 # Contador para gerar IDs únicos simples
 contador = 0
 
