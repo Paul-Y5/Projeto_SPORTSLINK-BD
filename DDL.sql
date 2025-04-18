@@ -8,8 +8,8 @@ CREATE TABLE Utilizador (
   ID                INT,
   Nome              VARCHAR(256),
   Email             VARCHAR(512),
-  Num_Tele          INT,
-  [Password]          VARCHAR(512),
+  Num_Tele          VARCHAR(64),
+  [Password]        VARCHAR(512),
   Nacionalidade     VARCHAR(128),
 
   PRIMARY KEY (ID)
