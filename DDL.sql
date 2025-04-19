@@ -197,12 +197,13 @@ CREATE TABLE Dias_semana (
   ID               INT CHECK (ID BETWEEN 1 AND 7), -- 1 = Domingo, 2 = Segunda, ..., 7 = Sábado
   Nome             VARCHAR(50) UNIQUE NOT NULL CHECK (Nome IN ('Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado')),
   ativo            BIT,
+
   PRIMARY KEY (ID)
 );
 
 CREATE TABLE Disponibilidade (
   ID_Campo           INT,
-  ID_dia             INT CHECK (id_dia BETWEEN 1 AND 7), -- 1 = Domingo, 2 = Segunda, ..., 7 = Sábado
+  ID_dia             INT CHECK (Id_dia BETWEEN 1 AND 7),
   preco              DECIMAL(10,2),
   Hora_Inicio        TIME,
   Hora_Fim           TIME,
