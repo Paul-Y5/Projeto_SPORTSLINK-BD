@@ -158,9 +158,12 @@ Representa os usuários cadastrados na aplicação.
 
 ---
 
-### 📆 **Preçário**  
-- 🏟️ **ID do Campo** (Foreign Key)  
+### 📆 **Disponibilidadoe**  
+- 🏟️ **ID do Campo** (Foreign Key)
 - 💰 **Preço**
+-  **Hora de Inicio** 
+-  **Hora de Fim** 
+-  **Dias da semana**
 
 ---
 
@@ -193,14 +196,13 @@ Representa os usuários cadastrados na aplicação.
 | Campo             | Possui                | Rating              |         1 : N            |
 | Campo              | Possui              | Ponto               |        1 : 1            |
 | Arrendador         | Possui             | Campo Privado       |       1 : N            |
-| Campo Privado             | Possui                | Preçário              |         1 : N            |
+| Campo Privado             | Possui                | Disponibilidade              |         1 : N            |
 | Mapa              | exibe              | Ponto               |        1 : N            |
 | Jogador             | Gosta de           | Desporto             |        N : M            |
 | Campo               | disponibiliza      | Desporto             |         N : M            |
 | Campo               | possui      |   Metdodo_pagamento          |         N : M            |
 | Mapa                | Tem modo de exibição | Modo_Exib           |        N : M            |
 | Imagem                |         possui       |   Formato           |        N : M            |
-
 
 ---
 ---
