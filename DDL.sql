@@ -193,13 +193,23 @@ CREATE TABLE Rating_Jogador (
   FOREIGN KEY (ID_Avaliador) REFERENCES Rating(ID_Avaliador)
 );
 
+CREATE TABLE Dias_semana (
+  ID               INT CHECK (ID BETWEEN 1 AND 7), -- 1 = Domingo, 2 = Segunda, ..., 7 = Sábado
+  Nome             VARCHAR(50) UNIQUE NOT NULL CHECK (Nome IN ('Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado')),
+  ativo            BIT,
+  PRIMARY KEY (ID)
+);
 
-CREATE TABLE Precario (
+CREATE TABLE Disponibilidade (
   ID_Campo           INT,
+  ID_dia             INT CHECK (id_dia BETWEEN 1 AND 7), -- 1 = Domingo, 2 = Segunda, ..., 7 = Sábado
   preco              DECIMAL(10,2),
+  Hora_Inicio        TIME,
+  Hora_Fim           TIME,
 
   PRIMARY KEY (ID_Campo),
-  FOREIGN KEY (ID_Campo) REFERENCES Campo_Priv(ID_Campo)
+  FOREIGN KEY (ID_Campo) REFERENCES Campo_Priv(ID_Campo),
+  FOREIGN KEY (ID_dia) REFERENCES Dias_semana(ID)
 );
 
 
