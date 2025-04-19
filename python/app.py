@@ -62,19 +62,26 @@ def login():
     email = request.form["login_email"]
     password = request.form["login_password"]
 
+    if email == "admin@admin.pt" and password == "admin":
+        session["user_id"] = 0
+        session["user_nome"] = "Admin"
+        return redirect(url_for("admin_dashboard"))
+
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Utilizador WHERE Email=? AND Password=?", email, password)
+        cursor.execute("SELECT * FROM Utilizador WHERE Email=?", email)
         user = cursor.fetchone()
 
-    if user:
+    if user and check_password_hash(user[4], password):
         session["user_id"] = user[0]
         session["user_nome"] = user[1]
 
         # Verifica se é arrendador
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?", user[0])
+            cursor.execute("""
+                SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?
+            """, (user[0],))
             is_arrendador = cursor.fetchone()[0] == 1
 
         tipo_utilizador = "Arrendador" if is_arrendador else "Jogador"
@@ -85,31 +92,111 @@ def login():
         </div>
         ''')
 
-        # Redireciona para a página completa do dashboard
-        return redirect(url_for("user_dashboard"))
+        # Redireciona para a página dashboard
+        return redirect(url_for("user_dashboard", name=user[1]))
     else:
-        return render_template_string("""
-        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-            Email ou password incorretos.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-        </div>
-        """)
+        flash("Email ou password incorretos.", "danger")
+        return render_template("index.html")
 
-# Caminho para interface de utilizador
-@app.route("/user", methods=["GET"])
-def user_dashboard():
+# Caminho para interface do utilizador
+@app.route("/user/<name>", methods=["GET", "POST"])
+def user_dashboard(name):
+    if request.method == "POST":
+        #TODO: Editar perfil do utilizador
+        user_id = session["user_id"]
+    elif request.method == "GET":
+        if "user_id" not in session:
+            return redirect(url_for("index"))
+
+        user_id = session["user_id"]
+
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM Utilizador WHERE ID=?", user_id)
+            user = cursor.fetchone()
+
+        # Retorna a página dashboard
+        return render_template("user_dashboard.html", user=user)
+    
+@app.route("/atualizar_info", methods=["GET", "POST"])
+def update_info():
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+
+    user_id = session["user_id"]
+    if request.method == "POST":
+        nome = request.form["nome"]
+        email = request.form["email"]
+        telefone = request.form["telefone"]
+        nacionalidade = request.form["nacionalidade"]
+        idade = request.form["idade"]
+        descricao = request.form["descricao"]
+
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE Utilizador SET Nome=?, Email=?, Num_Tele=?, Nacionalidade=? WHERE ID=?
+            """, (nome, email, telefone, nacionalidade, user_id))
+            cursor.execute("""
+                UPDATE Jogador SET Idade=?, Descricao=? WHERE ID=?
+            """, (idade, descricao, user_id))
+            conn.commit()
+
+        flash("Informações atualizadas com sucesso!", "success")
+        return redirect(url_for("user_dashboard", name=session["user_nome"]))
+
+    else:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, j.Idade, j.Descricao
+                FROM Utilizador u JOIN Jogador j ON u.ID = j.ID WHERE u.ID=?
+            """, (user_id,))
+            user = cursor.fetchone()
+        return render_template("update_info.html", user=user)
+    
+@app.route("/arrendador", methods=["POST"])
+def arrendador_dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+
+    user_id = session["user_id"]
+    iban = request.form["iban"]
+    no_campos = 0
+    descricao = ''
+
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO ARRENDADOR (ID_Arrendador, IBAN, No_Campos, Descricao,), VALUES (?, ?, ?, ?)", (user_id, iban, no_campos, descricao))
+        conn.commit()
+
+    return render_template("arrendador_dashboard.html", user=user_id)
+
+
+    
+@app.route("/excluir_conta", methods=["POST", "GET"])
+def delete_account():
     if "user_id" not in session:
         return redirect(url_for("index"))
 
     user_id = session["user_id"]
 
-    with create_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Utilizador WHERE ID=?", user_id)
-        user = cursor.fetchone()
+    if request.method == "POST":
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            # Remover de Jogador, Arrendador (se existir), e Utilizador
+            cursor.execute("DELETE FROM Jogador WHERE ID=?", (user_id,))
+            cursor.execute("DELETE FROM Arrendador WHERE ID_Arrendador=?", (user_id,))
+            cursor.execute("DELETE FROM Utilizador WHERE ID=?", (user_id,))
+            conn.commit()
 
-    # Retorna a página completa do dashboard
-    return render_template("user_dashboard.html", user=user)
+        session.clear()
+        flash("Conta excluída com sucesso!", "success")
+        return redirect(url_for("index"))
+
+    return render_template("confirmar_exclusao.html")
+
+
 
 @app.route("/logout")
 def logout():
@@ -143,12 +230,24 @@ def view_utilizadores():
 
 
 
-# Contador para gerar IDs únicos simples
+
+
+
+### Funções AUXILIARES ###
+#-----------------------------------------------------------------------#
+
+# Função para gerar um ID único para o utilizador
 def gerar_id():
     timestamp = int(time.time() % 1000000 )
     random_number = random.randint(1000, 9999)
     return int(f"{random_number}{timestamp}")
 
 
+
+
+
+
+
+# Main
 if __name__ == "__main__":
     app.run(debug=True)

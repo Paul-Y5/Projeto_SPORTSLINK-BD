@@ -14,7 +14,6 @@ body {
 
 .card {
     background-color: #ffffff;
-    width: 100%;
     border: none;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -45,6 +44,7 @@ body {
 }
 
 .btn-primary {
+    border: #000000;
     background-color: #ff8400;
     color: black;
     transition: all 0.3s ease;
