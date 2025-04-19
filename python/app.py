@@ -1,6 +1,6 @@
 from flask import Flask, flash, render_template, render_template_string, request, redirect, url_for, session
-import pyodbc
-import os
+import pyodbc, os, time, random
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, template_folder='templates') # Define o diretório de templates
 app.secret_key = os.urandom(24) # Chave secreta para sessões e cookies mais seguros
@@ -28,28 +28,33 @@ def register():
     phone_number = request.form["numero_telemovel"]
     password = request.form["reg_password"]
 
+    # Gera o hash da senha
+    h_password = generate_password_hash(password)
+
     with create_connection() as conn:
         cursor = conn.cursor()
         try:
             cursor.execute("INSERT INTO Utilizador (ID, Nome, Email, Num_Tele, Password, Nacionalidade) VALUES (?, ?, ?, ?, ?, ?)", 
-                (id_utilizador, username, email, phone_number, password, nationality)) # Comando SQL para inserir o utilizador na tabela Utilizador
+                (id_utilizador, username, email, phone_number, h_password, nationality)) # Comando SQL para inserir o utilizador na tabela Utilizador
             
             cursor.execute("INSERT INTO Jogador (ID, Idade, Descricao) VALUES (?, ?, ?)",
                 (id_utilizador, 0, '')) # Comando SQL para inserir o jogador na tabela Jogador
 
             conn.commit()
 
-            return '''
-            <div class="alert alert-success" role="alert">
-                Utilizador registado com sucesso!
+            return render_template_string("""
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                Registo realizado com sucesso! Agora pode iniciar sessão.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
             </div>
-            '''
+            """)
         except pyodbc.IntegrityError:
-            return '''
-            <div class="alert alert-danger" role="alert">
-                O email já está em uso. Por favor, escolha outro.
+            return render_template_string("""
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                O email já está registado.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
             </div>
-            '''
+            """)
 
 
 @app.route("/login", methods=["POST"])
@@ -57,14 +62,9 @@ def login():
     email = request.form["login_email"]
     password = request.form["login_password"]
 
-    if email == "admin@admin.pt" and password == "admin":
-        session["user_id"] = "admin"
-        session["user_nome"] = "Administrador"
-        return redirect(url_for("admin_dashboard"))
-
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Utilizador WHERE Email=? AND Password=?", email, password) # Comando SQL para verificar se o utilizador existe
+        cursor.execute("SELECT * FROM Utilizador WHERE Email=? AND Password=?", email, password)
         user = cursor.fetchone()
 
     if user:
@@ -74,7 +74,7 @@ def login():
         # Verifica se é arrendador
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?", user[0])  # Verifica se o utilizador é arrendador
+            cursor.execute("SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?", user[0])
             is_arrendador = cursor.fetchone()[0] == 1
 
         tipo_utilizador = "Arrendador" if is_arrendador else "Jogador"
@@ -84,12 +84,17 @@ def login():
             Bem-vindo, {user[1]}! Perfil: {tipo_utilizador}.
         </div>
         ''')
-        
+
+        # Redireciona para a página completa do dashboard
         return redirect(url_for("user_dashboard"))
     else:
-        flash('<div class="alert alert-danger" role="alert">Credenciais inválidas.</div>')
-        return redirect(url_for('index'))
-    
+        return render_template_string("""
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            Email ou password incorretos.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+        """)
+
 # Caminho para interface de utilizador
 @app.route("/user", methods=["GET"])
 def user_dashboard():
@@ -103,7 +108,7 @@ def user_dashboard():
         cursor.execute("SELECT * FROM Utilizador WHERE ID=?", user_id)
         user = cursor.fetchone()
 
-    # Retorna a página do dashboard
+    # Retorna a página completa do dashboard
     return render_template("user_dashboard.html", user=user)
 
 @app.route("/logout")
@@ -139,12 +144,10 @@ def view_utilizadores():
 
 
 # Contador para gerar IDs únicos simples
-contador = 0
-
 def gerar_id():
-    global contador
-    contador += 1
-    return contador
+    timestamp = int(time.time() % 1000000 )
+    random_number = random.randint(1000, 9999)
+    return int(f"{random_number}{timestamp}")
 
 
 if __name__ == "__main__":

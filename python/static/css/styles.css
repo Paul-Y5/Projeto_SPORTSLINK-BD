@@ -1,118 +1,83 @@
 body {
-    background: linear-gradient(to top, #000000, #474747);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-color: #ffffff;
     font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    color: white;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #000000; /* Bootstrap primary blue */
+    color: rgb(255, 123, 0) !important;
+}
+
+.nav-tabs .nav-link {
+    color: #495057; /* Texto padrão */
 }
 
 .card {
-    border-radius: 1rem;
-    padding: 2rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    background-color: #fff;
-    color: #333;
-}
-
-h1 {
-    color: #f09d17;
-    font-weight: bold;
-    text-align: center;
-}
-
-.btn-custom {
-    background-color: #f09d17;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 1rem;
-    transition: background-color 0.3s ease;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.btn-custom:hover {
-    background-color: #d67a00;
-}
-
-.alert {
-    font-size: 0.9rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    margin-top: 1rem;
-}
-
-#register_loading,
-#login_loading {
-    display: none;
-    text-align: center;
-}
-
-#register_loading .alert,
-#login_loading .alert {
-    background-color: #f0ad4e;
-    color: white;
-    font-weight: bold;
-    border: none;
-}
-
-header {
-    background-color: #000000;
-    color: #f09d17;
-    padding: 15px;
-    text-align: center;
-}
-
-h1 {
-    font-size: 2em;
-    margin-bottom: 10px;
-}
-
-h2 {
-    color: #444;
-}
-
-.container {
-    width: 80%;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.user-info {
     background-color: #ffffff;
-    border-radius: 8px;
-    padding: 20px;
+    width: 100%;
+    border: none;
+    border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    color: #333;
+    transition: all 0.5s ease-in-out;
 }
 
-.user-info ul {
-    list-style-type: none;
-    padding: 0;
+.form-switch {
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-.user-info li {
-    padding: 8px 0;
-    border-bottom: 1px solid #ddd;
+.form-wrapper {
+    display: none;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
-.user-info li:last-child {
-    border-bottom: none;
+.form-wrapper.active {
+    display: block;
 }
 
-.logout-button {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #f09d17;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    margin-top: 20px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.logout-button:hover {
-    background-color: #d67a00;
+.form-control:focus {
+    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
+}
+
+.btn-primary {
+    background-color: #ff8400;
+    color: black;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: black;
+    color: orange;
+    transform: scale(1.02);
+}
+
+.btn-primary:active {
+    background-color: black;
+    color: orange;
+    transform: scale(0.95);
+}
+.btn-primary:focus {
+    outline: none;
+    border: none;
+    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
+}
+
+.btn-primary:active:focus {
+    outline: none;
+    border: none;
+    background-color: black;
+    color: orange;
+    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
+}
+.btn-primary:focus-visible {
+    outline: none;
+    border: none;
+    background-color: black;
+    color: orange;
+    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
 }
