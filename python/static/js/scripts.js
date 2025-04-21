@@ -1,14 +1,3 @@
-// Função para alternar entre os formulários de login e registro
-function switchForm(form) {
-    document.getElementById('loginForm').classList.remove('active');
-    document.getElementById('registerForm').classList.remove('active');
-    if (form === 'login') {
-        document.getElementById('loginForm').classList.add('active');
-    } else {
-        document.getElementById('registerForm').classList.add('active');
-    }
-}
-
 // Exibe o indicador de carregamento para login
 function showLoginLoading() {
     document.getElementById("login_loading").style.display = "block";
@@ -83,3 +72,14 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+// Função para dar tempo e fechar flash messages
+function closeFlashMessages() {
+    const flashMessages = document.querySelectorAll(".flash-message");
+    flashMessages.forEach((message) => {
+        setTimeout(() => {
+            message.style.display = "none";
+        }, 5000); // Adjusted to use class selector for multiple flash messages
+    });
+}
+
+document.addEventListener("DOMContentLoaded", closeFlashMessages);

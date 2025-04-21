@@ -12,167 +12,116 @@ def create_connection():
     )
     return conn
 
-
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
 # Caminho para forms registro e login
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    id_utilizador = gerar_id()
-    username = request.form["username"]
-    email = request.form["reg_email"]
-    nationality = request.form["nacionalidade"]
-    phone_number = request.form["numero_telemovel"]
-    password = request.form["reg_password"]
+    if request.method == "POST":
+        return registration()
+    return render_template("index.html")
+    
 
-    # Gera o hash da senha
-    h_password = generate_password_hash(password)
-
-    with create_connection() as conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute("INSERT INTO Utilizador (ID, Nome, Email, Num_Tele, Password, Nacionalidade) VALUES (?, ?, ?, ?, ?, ?)", 
-                (id_utilizador, username, email, phone_number, h_password, nationality)) # Comando SQL para inserir o utilizador na tabela Utilizador
-            
-            cursor.execute("INSERT INTO Jogador (ID, Idade, Descricao) VALUES (?, ?, ?)",
-                (id_utilizador, 0, '')) # Comando SQL para inserir o jogador na tabela Jogador
-
-            conn.commit()
-
-            return render_template_string("""
-            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                Registo realizado com sucesso! Agora pode iniciar sessão.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-            </div>
-            """)
-        except pyodbc.IntegrityError:
-            return render_template_string("""
-            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                O email já está registado.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-            </div>
-            """)
-
-
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    email = request.form["login_email"]
-    password = request.form["login_password"]
+    if request.method == "POST":
+        return login()
+    return render_template("index.html")
 
-    if email == "admin@admin.pt" and password == "admin":
-        session["user_id"] = 0
-        session["user_nome"] = "Admin"
-        return redirect(url_for("admin_dashboard"))
-
-    with create_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Utilizador WHERE Email=?", email)
-        user = cursor.fetchone()
-
-    if user and check_password_hash(user[4], password):
-        session["user_id"] = user[0]
-        session["user_nome"] = user[1]
-
-        # Verifica se é arrendador
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?
-            """, (user[0],))
-            is_arrendador = cursor.fetchone()[0] == 1
-
-        tipo_utilizador = "Arrendador" if is_arrendador else "Jogador"
-
-        flash(f'''
-        <div class="alert alert-success" role="alert">
-            Bem-vindo, {user[1]}! Perfil: {tipo_utilizador}.
-        </div>
-        ''')
-
-        # Redireciona para a página dashboard
-        return redirect(url_for("user_dashboard", name=user[1]))
-    else:
-        flash("Email ou password incorretos.", "danger")
-        return render_template("index.html")
 
 # Caminho para interface do utilizador
 @app.route("/user/<name>", methods=["GET", "POST"])
-def user_dashboard(name):
-    if request.method == "POST":
-        #TODO: Editar perfil do utilizador
-        user_id = session["user_id"]
-    elif request.method == "GET":
-        if "user_id" not in session:
-            return redirect(url_for("index"))
-
-        user_id = session["user_id"]
-
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM Utilizador WHERE ID=?", user_id)
-            user = cursor.fetchone()
-
-        # Retorna a página dashboard
-        return render_template("user_dashboard.html", user=user)
+def jog_dashboard(name):
     
-@app.route("/atualizar_info", methods=["GET", "POST"])
+
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+    
+    user_id = session["user_id"]
+    user = get_user_info(user_id)
+
+    tipo_utilizador = "Arrendador" if is_arrendador(user_id) else "Jogador"
+
+    if tipo_utilizador == "Arrendador":
+        return render_template("arr_dashboard.html", user=user)
+    else:
+        return render_template("jog_dashboard.html", user=user)
+    
+@app.route("/update_info", methods=["GET", "POST"])
 def update_info():
     if "user_id" not in session:
         return redirect(url_for("index"))
 
     user_id = session["user_id"]
+
     if request.method == "POST":
-        nome = request.form["nome"]
+        username = request.form["username"]
         email = request.form["email"]
-        telefone = request.form["telefone"]
-        nacionalidade = request.form["nacionalidade"]
-        idade = request.form["idade"]
-        descricao = request.form["descricao"]
+        nationality = request.form["nacionalidade"]
+        phone_number = request.form["numero_telemovel"]
+        age = request.form.get("idade")
+        description = request.form.get("descricao")
+        iban = None
+        no_campos = None
+
+        tipo_utilizador = "Arrendador" if is_arrendador(user_id) else "Jogador"
 
         with create_connection() as conn:
+
             cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE Utilizador SET Nome=?, Email=?, Num_Tele=?, Nacionalidade=? WHERE ID=?
-            """, (nome, email, telefone, nacionalidade, user_id))
-            cursor.execute("""
-                UPDATE Jogador SET Idade=?, Descricao=? WHERE ID=?
-            """, (idade, descricao, user_id))
+            if tipo_utilizador == "Jogador":
+                cursor.execute("""
+                    UPDATE Utilizador
+                    SET Nome=?, Email=?, Num_Tele=?, Nacionalidade=?
+                    WHERE ID=?
+                """, (username, email, phone_number, nationality, user_id))
+                
+                cursor.execute("""
+                    UPDATE Jogador
+                    SET Idade=?, Descricao=?
+                    WHERE ID=?
+                """, (age, description, user_id))
+            else:
+                iban = request.form["iban"]
+                no_campos = request.form["no_campos"]
+                
+                cursor.execute("""
+                    UPDATE Utilizador
+                    SET Nome=?, Email=?, Num_Tele=?, Nacionalidade=?
+                    WHERE ID=?
+                """, (username, email, phone_number, nationality, user_id))
+                
+                cursor.execute("""
+                    UPDATE Jogador
+                    SET Idade=?, Descricao=?
+                    WHERE ID=?
+                """, (age, description, user_id))
+                
+                cursor.execute("""
+                    UPDATE Arrendador
+                    SET IBAN=?, No_Campos=?
+                    WHERE ID_Arrendador=?
+                """, (iban, no_campos, user_id))
+                
             conn.commit()
 
         flash("Informações atualizadas com sucesso!", "success")
-        return redirect(url_for("user_dashboard", name=session["user_nome"]))
+        user = get_user_info(user_id)
 
-    else:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, j.Idade, j.Descricao
-                FROM Utilizador u JOIN Jogador j ON u.ID = j.ID WHERE u.ID=?
-            """, (user_id,))
-            user = cursor.fetchone()
-        return render_template("update_info.html", user=user)
+        if tipo_utilizador == "Arrendador":
+            return render_template("arr_dashboard.html", user=user)
+        else:
+            return render_template("jog_dashboard.html", user=user)
+
     
-@app.route("/arrendador", methods=["POST"])
-def arrendador_dashboard():
-    if "user_id" not in session:
-        return redirect(url_for("index"))
-
-    user_id = session["user_id"]
-    iban = request.form["iban"]
-    no_campos = 0
-    descricao = ''
-
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO ARRENDADOR (ID_Arrendador, IBAN, No_Campos, Descricao,), VALUES (?, ?, ?, ?)", (user_id, iban, no_campos, descricao))
-        conn.commit()
+        cursor.execute("SELECT * FROM Utilizador WHERE ID = ?", (user_id,))
+        user = cursor.fetchone()
 
-    return render_template("arrendador_dashboard.html", user=user_id)
-
-
+    return render_template("jog_dashboard.html", user=user)
     
 @app.route("/excluir_conta", methods=["POST", "GET"])
 def delete_account():
@@ -182,26 +131,53 @@ def delete_account():
     user_id = session["user_id"]
 
     if request.method == "POST":
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            # Remover de Jogador, Arrendador (se existir), e Utilizador
-            cursor.execute("DELETE FROM Jogador WHERE ID=?", (user_id,))
-            cursor.execute("DELETE FROM Arrendador WHERE ID_Arrendador=?", (user_id,))
-            cursor.execute("DELETE FROM Utilizador WHERE ID=?", (user_id,))
-            conn.commit()
+        try:
+            with create_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("DELETE FROM Jogador WHERE ID=?", (user_id,))
+                cursor.execute("DELETE FROM Arrendador WHERE ID_Arrendador=?", (user_id,))
+                cursor.execute("DELETE FROM Utilizador WHERE ID=?", (user_id,))
+                conn.commit()
 
-        session.clear()
-        flash("Conta excluída com sucesso!", "success")
-        return redirect(url_for("index"))
+            flash("Conta excluída com sucesso!", "success")
+            session.clear()
+            return redirect(url_for("index"))
 
-    return render_template("confirmar_exclusao.html")
+        except Exception as e:
+            flash(f"Erro ao excluir conta: {str(e)}", "danger")
+            return redirect(url_for("account"))
 
-
+    return render_template("account_settings.html")
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
+@app.route("/arrendador", methods=["POST"])
+def arrendador_dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+
+    user_id = session["user_id"]
+    iban = request.form["iban"]
+    termos = request.form.get("termos")
+    user = get_user_info(user_id)
+    if not termos:
+        flash("Deves aceitar os termos e condições para continuares.", "danger")
+        return redirect(url_for("arr_dashboard", user=user))
+
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO ARRENDADOR (ID_Arrendador, IBAN, No_Campos)
+            VALUES (?, ?, ?)
+        """, (user_id, iban, 0,))
+        conn.commit()
+
+    flash("Agora és um arrendador!", "success")
+    return redirect(url_for("arr_dashboard", user=user))
     
 
 # Caminho para o painel de administração
@@ -229,23 +205,98 @@ def view_utilizadores():
     return render_template("gestao_utilizadores.html", utilizadores=utilizadores)
 
 
-
-
-
-
 ### Funções AUXILIARES ###
 #-----------------------------------------------------------------------#
 
 # Função para gerar um ID único para o utilizador
 def gerar_id():
-    timestamp = int(time.time() % 1000000 )
+    timestamp = int(time.time() % 100000)
     random_number = random.randint(1000, 9999)
-    return int(f"{random_number}{timestamp}")
+    return int(f"{timestamp}{random_number}")
+
+def is_arrendador(user_id):
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM Arrendador WHERE ID_Arrendador=?", user_id)
+        return cursor.fetchone()[0] == 1
+
+def registration():
+    id_utilizador = gerar_id()
+    username = request.form["username"]
+    email = request.form["reg_email"]
+    nationality = request.form["nacionalidade"]
+    phone_number = request.form["numero_telemovel"]
+    password = request.form["reg_password"]
+
+    # Gera o hash da senha
+    h_password = generate_password_hash(password)
+        
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Utilizador WHERE Email=?", email)
+        user = cursor.fetchone()
+        if user:
+            flash("Email já registado. Tente novamente.", "danger")
+            return render_template("index.html")
+
+        try:
+            cursor.execute("INSERT INTO Utilizador (ID, Nome, Email, Num_Tele, Password, Nacionalidade) VALUES (?, ?, ?, ?, ?, ?)", 
+                (id_utilizador, username, email, phone_number, h_password, nationality)) # Comando SQL para inserir o utilizador na tabela Utilizador
+            
+            cursor.execute("INSERT INTO Jogador (ID, Idade, Descricao) VALUES (?, ?, ?)",
+                (id_utilizador, 0, '')) # Comando SQL para inserir o jogador na tabela Jogador
+
+            conn.commit()
+
+            flash("Registo realizado com sucesso!", "success")
+            return redirect(url_for("index"))
+        except pyodbc.IntegrityError:
+            flash("Erro ao registar o utilizador. Tente novamente.", "danger")
+            return render_template("index.html")
+
+def login():
+    email = request.form["login_email"]
+    password = request.form["login_password"]
+
+    if email == "admin@admin.pt" and password == "admin":
+        session["user_id"] = 0
+        session["user_nome"] = "Admin"
+        return redirect(url_for("admin_dashboard"))
+
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Utilizador WHERE Email=?", email)
+        user = cursor.fetchone()
+
+    if user and check_password_hash(user[4], password):
+        session["user_id"] = user[0]
+        session["user_nome"] = user[1]
+
+        tipo_utilizador = "Arrendador" if is_arrendador(user[0]) else "Jogador"
+
+        flash(f"Login realizado com sucesso! Tipo de utilizador: {tipo_utilizador}", "success")
+        # Redireciona para a página dashboard
+        return redirect(url_for("jog_dashboard", name=user[1]))
+    else:
+        flash("Email ou password incorretos.", "danger")
+        return render_template("index.html")
 
 
-
-
-
+def get_user_info(user_id):
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Utilizador WHERE ID=?", user_id)
+        user = cursor.fetchone()
+        tipo_utilizador = "Arrendador" if is_arrendador(user_id) else "Jogador"
+        if tipo_utilizador == "Arrendador":
+            cursor.execute("""Select U.ID, U.Nome, U.Email, U.Num_Tele, U.Password, U.Nacionalidade, J.Idade, J.Descricao, A.IBAN, A.No_Campos 
+                FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID JOIN Arrendador AS A ON U.ID = A.ID_Arrendador
+                WHERE U.ID=?""", (user_id,))
+        else:
+            cursor.execute("""SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Password, U.Nacionalidade, J.Idade, J.Descricao 
+                FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID WHERE U.ID=?""", (user_id,))
+        user = cursor.fetchone()
+    return user
 
 
 # Main

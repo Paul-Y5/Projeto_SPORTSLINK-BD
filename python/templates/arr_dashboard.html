@@ -1,0 +1,122 @@
+{% extends "base_index.html" %}
+
+{% block title %}Main Page{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Flash Messages Section -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="alert-container flash-message">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mt-3">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+
+    <!-- Account Information -->
+    <div class="card user-info p-4">
+        <div class="d-flex align-items-center">
+            <h1>Bem-vindo,</h1>
+            <h1 style="color: orange;">{{ user[1] }}</h1>
+            <h5>#{{ user[0] }}</h5>
+            <p style="color: rgb(255, 255, 255);">Aqui podes gerir as tuas informações pessoais e realizar algumas
+                ações.
+            </p>
+        </div>
+        <h2 style="color: orange;">
+            Informações de Utilizador
+            <div class="float-end">
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Sair</a>
+            </div>
+        </h2>
+        <form method="POST" action="{{ url_for('update_info') }}">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <strong>Nome:</strong>
+                    <input type="text" name="username" class="form-control" value="{{ user[1] }}">
+                </li>
+                <li class="list-group-item">
+                    <strong>Email:</strong>
+                    <input type="email" name="email" class="form-control" value="{{ user[2] }}">
+                </li>
+                <li class="list-group-item">
+                    <strong>Número de Telemóvel:</strong>
+                    <input type="text" name="numero_telemovel" class="form-control" value="{{ user[3] }}">
+                </li>
+                <li class="list-group-item">
+                    <label class="form-label">Nacionalidade</label>
+                    <select class="form-control" name="nacionalidade" required>
+                        {% set nacionalidades = ["Portugal", "Espanha", "França", "Alemanha", "Itália", "Reino Unido"]
+                        %}
+                        {% for pais in nacionalidades %}
+                        <option value="{{ pais }}" {% if user[5]==pais %}selected{% endif %}>{{ pais }}</option>
+                        {% endfor %}
+                    </select>
+                </li>
+                <li class="list-group-item">
+                    <strong>Idade:</strong>
+                    <input type="number" name="idade" class="form-control" value="{{ user[6] }}">
+                </li>
+                <li class="list-group-item">
+                    <strong>IBAN:</strong>
+                    <input type="text" name="iban" class="form-control" value="{{ user[8] }}">
+                </li>
+                <li class="list-group-item">
+                    <strong>Números de campos associados:</strong>
+                    <input type="number" name="no_campos" class="form-control" value="{{ user[9] }}">
+                </li>
+                <li class="list-group-item">
+                    <strong>Descrição:</strong>
+                    <textarea name="descricao" class="form-control">{{ user[7] }}</textarea>
+                </li>
+            </ul>
+            <button type="submit" class="btn btn-primary mt-3">Salvar Alterações</button>
+        </form>
+    </div>
+
+    <!-- Actions -->
+    <div class="card user-info p-4 mt-4">
+        <h2 style="color: black;">Ações</h2>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><a href="#" class="btn btn-primary">Ver Amigos</a></li>
+            <li class="list-group-item"><a href="#" class="btn btn-primary">Meus Campos</a></li>
+
+            <!-- Form to trigger account deletion -->
+            <li class="list-group-item">
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                    data-bs-target="#deleteModal">Excluir Conta</button>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Exclusão de Conta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Tens a certeza de que desejas excluir a tua conta? Esta ação é irreversível e todos os dados associados
+                à
+                conta serão permanentemente apagados. Se tiveres dúvidas, por favor, contacta o suporte.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('delete_account') }}">
+                    <button type="submit" class="btn btn-danger">Excluir Conta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

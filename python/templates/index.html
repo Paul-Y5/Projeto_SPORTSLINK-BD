@@ -17,6 +17,20 @@
             </li>
         </ul>
 
+        <!-- Flash Messages (para ambas as tabs) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container mb-4 flash-message">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
         <!-- Conteúdo das tabs -->
         <div class="tab-content animate__animated animate__fadeIn" id="authTabsContent">
             <!-- Login -->
@@ -40,22 +54,6 @@
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Entrar</button>
                     </form>
-
-                    <!-- Flash Messages -->
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                    <div class="container mt-4">
-                        {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    {% endwith %}
-
-                    <div id="login_result" class="mt-3"></div>
                 </div>
             </div>
 
@@ -63,7 +61,7 @@
             <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
                 <div class="card p-4 shadow-sm rounded-4">
                     <h2 class="text-center mb-3">Registar</h2>
-                    <form hx-post="/register" hx-target="#register_result" hx-indicator="#register_loading" onsubmit="showRegisterLoading()">
+                    <form action="/register" method="POST" onsubmit="showRegisterLoading()">
                         <div class="mb-3">
                             <label class="form-label">Nome</label>
                             <input type="text" class="form-control" name="username" required>
@@ -98,9 +96,8 @@
                                 A registar utilizador... por favor, aguarde.
                             </div>
                         </div>
-                        <button type="submit" id="register-btn" class="btn btn-primary w-100">Registar</button>
+                        <button type="submit" class="btn btn-primary w-100">Registar</button>
                     </form>
-                    <div id="register_result" class="mt-3"></div>
                 </div>
             </div>
         </div>
