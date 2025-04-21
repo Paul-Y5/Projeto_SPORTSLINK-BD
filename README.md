@@ -84,7 +84,6 @@ Representa os usuários cadastrados na aplicação.
 - 📝 **Descrição**  
 
 #### 🏢 **Empresa / Arrendador Particular** (Subtipo de Utilizador)   
-- 📝 **Descrição**
 - 💰 **IBAN** 
 - 💰 **Métodos Pagamento**
 - 📊 **Número de Campos**
@@ -133,6 +132,7 @@ Representa os usuários cadastrados na aplicação.
 - 📊 **Resultado**  
 - ⏰ **Hora**  
 - 📅 **Data**  
+- **Status**  (não implementada)
 
 ---
 
@@ -206,3 +206,5 @@ Representa os usuários cadastrados na aplicação.
 
 ---
 ---
+
+Atualizações realizadas na BD de acordo com Normalização e alteração de alguma lógica. Definição de indices

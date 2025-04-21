@@ -5,37 +5,43 @@ USE SPORTSLINK;
 GO
 
 CREATE TABLE Utilizador (
-  ID                INT PRIMARY KEY,
+  ID                INT,
   Nome              VARCHAR(256),
   Email             VARCHAR(512),
   Num_Tele          VARCHAR(64),
   [Password]        VARCHAR(512),
-  Nacionalidade     VARCHAR(128)
+  Nacionalidade     VARCHAR(128),
+
+  PRIMARY KEY (ID),
 );
 
 
 CREATE TABLE Jogador (
-  ID                INT PRIMARY KEY,
+  ID                INTm
   Idade             INT,
   Descricao         VARCHAR(2500),
 
+  PRIMARY KEY (ID),
   FOREIGN KEY (ID) REFERENCES Utilizador(ID) ON DELETE CASCADE
 );
 
 
 CREATE TABLE Arrendador (
-  ID_Arrendador     INT PRIMARY KEY,
+  ID_Arrendador     INT,
   IBAN              VARCHAR(34) UNIQUE,
   No_Campos         INT,
   Descricao         VARCHAR(2500),
 
+  PRIMARY KEY (ID_Arrendador),
   FOREIGN KEY (ID_Arrendador) REFERENCES Utilizador(ID) ON DELETE CASCADE
 );
 
 
 CREATE TABLE Mapa (
-  ID            INT PRIMARY KEY,
+  ID            INT,
   Ultimo_update TIMESTAMP
+
+  PRIMARY KEY (ID),
 );
 
 
