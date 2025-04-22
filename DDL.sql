@@ -30,7 +30,6 @@ CREATE TABLE Arrendador (
   ID_Arrendador     INT,
   IBAN              VARCHAR(34) UNIQUE,
   No_Campos         INT,
-  Descricao         VARCHAR(2500),
 
   PRIMARY KEY (ID_Arrendador),
   FOREIGN KEY (ID_Arrendador) REFERENCES Utilizador(ID) ON DELETE CASCADE
