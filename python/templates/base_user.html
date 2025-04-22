@@ -28,6 +28,15 @@
 
         <!-- Conteúdo Principal -->
         <div class="container mt-4">
+            <div class="d-flex align-items-center mb-4">
+                <img src="{{ user[10] or url_for('static', filename='../static/img/icon_def.png') }}" alt="Foto de Perfil"
+                    class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                <div>
+                    <h1>Bem-vindo,</h1>
+                    <h1 style="color: orange;">{{ user[1] }}</h1>
+                    <h5>#{{ user[0] }}</h5>
+                </div>
+            </div>
             {% block content %}
             {% endblock %}
         </div>

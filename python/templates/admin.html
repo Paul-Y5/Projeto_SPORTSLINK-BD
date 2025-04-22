@@ -5,20 +5,163 @@
     <meta charset="UTF-8">
     <title>Painel de Administração</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
-<body>
-    <div class="container mt-5">
-        <h1 class="mb-4">Painel de Administração</h1>
-
-        <form method="POST" action="/executar-query">
+<main>
+    <nav class="navbar navbar-light bg-light shadow-sm">
+        <div class="container d-flex justify-content-center">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="{{ url_for('static', filename='img/SPORTSLINK.png') }}" alt="Logo" height="30"
+                    class="d-inline-block align-text-top me-2">
+            </a>
+        </div>
+    </nav>
+    <main class="container mt-5">
+        <div class="container mt-5">
+            <!-- Motor de Pesquisa -->
             <div class="mb-3">
-                <label for="query" class="form-label">Executar Comando SQL:</label>
-                <textarea class="form-control" name="query" rows="4" required></textarea>
+                <label for="filterInput" class="form-label"></label>
+                <input type="text" id="filterInput" class="form-control" placeholder="Escreve para pesquisar..." oninput="filterTable()">
             </div>
-            <button type="submit" class="btn btn-danger">Executar</button>
-        </form>
-    </div>
+
+            <!-- Order by -->
+            <div class="mb-3">
+                <label for="orderSelect" class="form-label">Ordenar por</label>
+                <select id="orderSelect" class="form-select" onchange="sortTable()">
+                    <option value="ID">ID</option>
+                    <option value="Nome">Nome</option>
+                    <option value="Email">Email</option>
+                    <option value="Telefone">Telefone</option>
+                    <option value="Nacionalidade">Nacionalidade</option>
+                    <option value="Idade">Idade</option>
+                    <option value="Descrição">Descrição</option>
+                    <option value="IBAN">IBAN</option>
+                    <option value="Número de Campos">Número de Campos</option>
+                </select>
+            </div>
+
+            <!-- Selecionar por tipo -->
+            <div class="mb-3">
+                <label for="userTypeSelect" class="form-label">Ordenar por Tipo de Utilizador</label>
+                <select id="userTypeSelect" class="form-select" onchange="filterByUserType()">
+                <option value="todos">Todos</option>
+                <option value="Jogador">Jogador</option>
+                <option value="Arrendador">Arrendador</option>
+                </select>
+            </div>
+
+            <!-- Utilizadores -->
+            <table id="usersTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Nacionalidade</th>
+                        <th>Idade</th>
+                        <th>Descrição</th>
+                        <th>IBAN</th>
+                        <th>Número de Campos</th>
+                        <th>Tipo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in utilizadores %}
+                    <tr>
+                        <td>{{ user.ID }}</td>
+                        <td>{{ user.Nome }}</td>
+                        <td>{{ user.Email }}</td>
+                        <td>{{ user.Num_Tele }}</td>
+                        <td>{{ user.Nacionalidade }}</td>
+                        <td>{{ user.Idade or '---' }}</td>
+                        <td>{{ user.Descricao or '---' }}</td>
+                        <td>{{ user.IBAN or '---' }}</td>
+                        <td>{{ user.No_Campos if user.No_Campos is not none else '---' }}</td>
+                        <td class="user-type">{{ 'Jogador' if user.IBAN is none else 'Arrendador' }}</td>
+                        <td>
+                            <a href="/admin/edit_user/{{ user.ID }}" class="btn btn-primary btn-sm">Editar</a>
+                            <a href="/admin/delete_user/{{ user.ID }}" class="btn btn-danger btn-sm">Excluir</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Campos -->
+            <h2>Campos</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Comprimento</th>
+                        <th>Largura</th>
+                        <th>Ocupado</th>
+                        <th>Descrição</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field in fields %}
+                    <tr>
+                        <td>{{ field.ID }}</td>
+                        <td>{{ field.Nome }}</td>
+                        <td>{{ field.Comprimento }}</td>
+                        <td>{{ field.Largura }}</td>
+                        <td>{{ 'Sim' if field.ocupado else 'Não' }}</td>
+                        <td>{{ field.Descricao }}</td>
+                        <td>
+                            <a href="/admin/edit_field/{{ field.ID }}" class="btn btn-primary">Editar</a>
+                            <a href="/admin/delete_field/{{ field.ID }}" class="btn btn-danger">Excluir</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="/admin/add_field" class="btn btn-success mb-3">Adicionar Campo</a>
+
+            <!-- Partidas -->
+            <h2>Partidas</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data e Hora</th>
+                        <th>Campo</th>
+                        <th>Número de Jogadores</th>
+                        <th>Resultado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in matches %}
+                    <tr>
+                        <td>{{ match.ID }}</td>
+                        <td>{{ match.Data_Hora }}</td>
+                        <td>{{ match.Campo }}</td>
+                        <td>{{ match.no_jogadores }}</td>
+                        <td>{{ match.Resultado }}</td>
+                        <td>
+                            <a href="/admin/edit_match/{{ match.ID }}" class="btn btn-primary">Editar</a>
+                            <a href="/admin/delete_match/{{ match.ID }}" class="btn btn-danger">Excluir</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="/admin/add_match" class="btn btn-success mb-3">Adicionar Partida</a>
+        </div>
+    </main>
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3">
+            © 2025 SportsLink. ADMIN TOOLS.
+        </div>
+    </footer>
+    <script src="/static/js/scripts.js"></script>
 </body>
 
 </html>

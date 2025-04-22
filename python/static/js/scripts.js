@@ -83,3 +83,67 @@ function closeFlashMessages() {
 }
 
 document.addEventListener("DOMContentLoaded", closeFlashMessages);
+
+// Admin Dashboard Functions
+// Função para filtrar a tabela com base no texto digitado
+function filterTable() {
+    const filterValue = document.getElementById("filterInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#usersTable tbody tr");
+
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll("td"));
+        const matches = cells.some(cell => cell.textContent.toLowerCase().includes(filterValue));
+        row.style.display = matches ? "" : "none";
+    });
+}
+
+
+// Função para filtrar a tabela por tipo de utilizador
+function filterByUserType() {
+    const userType = document.getElementById("userTypeSelect").value; 
+    const rows = document.querySelectorAll("#usersTable tbody tr"); 
+
+    rows.forEach(row => {
+        const userTypeCell = row.querySelector(".user-type").textContent;
+        if (userType === "todos" ) {
+            row.style.display = ""; // Exibe todas as linhas
+        } else if (userType === userTypeCell) {
+            row.style.display = ""; // Exibe a linha se o tipo de utilizador corresponder
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// Função para ordenar a tabela com base na coluna selecionada
+function sortTable() {
+    const table = document.getElementById("usersTable");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const sortBy = document.getElementById("orderSelect").value;
+
+    const columnIndex = {
+        "ID": 0,
+        "Nome": 1,
+        "Email": 2,
+        "Telefone": 3,
+        "Nacionalidade": 4,
+        "Idade": 5,
+        "Descrição": 6,
+        "IBAN": 7,
+        "Número de Campos": 8
+    }[sortBy];
+
+    const sortedRows = rows.sort((a, b) => {
+        const cellA = a.cells[columnIndex].textContent.trim();
+        const cellB = b.cells[columnIndex].textContent.trim();
+
+        if (!isNaN(cellA) && !isNaN(cellB)) {
+            return Number(cellA) - Number(cellB); // Numeric sorting
+        }
+        return cellA.localeCompare(cellB); // Alphabetical sorting
+    });
+
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+    sortedRows.forEach(row => tbody.appendChild(row));
+}

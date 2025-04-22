@@ -27,7 +27,7 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        return login()
+        return log()
     return render_template("index.html")
 
 
@@ -183,27 +183,10 @@ def arrendador_dashboard():
 # Caminho para o painel de administração
 @app.route("/admin")
 def admin_dashboard():
-    return render_template("admin.html")
-
-@app.route("/admin/gestao_utilizadores", methods=["GET", "POST"])
-def view_utilizadores():
-    tipo_utilizador = request.args.get("tipo_utilizador", "todos")  # "todos" é o valor padrão
-    
-    with create_connection() as conn:
-        cursor = conn.cursor()
-        
-        # Construir a consulta SQL com base no tipo de utilizador selecionado
-        if tipo_utilizador == "todos":
-            cursor.execute("Select * from Utilizador as u Join Jogador as j on u.ID = j.ID Left Join Arrendador as a on u.ID = a.ID_Arrendador")
-        elif tipo_utilizador == "jogador":
-            cursor.execute("Select * from Utilizador as u Join Jogador as j on u.ID = j.ID Left Join Arrendador as a on u.ID = a.ID_Arrendador Where a.ID_Arrendador is null")
-        elif tipo_utilizador == "arrendador":
-            cursor.execute("Select * from Utilizador as u Join Jogador as j on u.ID = j.ID Left Join Arrendador as a on u.ID = a.ID_Arrendador where a.ID_Arrendador is not null")
-        
-        utilizadores = cursor.fetchall()
-    
-    return render_template("gestao_utilizadores.html", utilizadores=utilizadores)
-
+    utilizadores = get_all_users()
+    campos = get_campos()
+    partidas = get_partidas()
+    return render_template("admin.html", utilizadores=utilizadores, campos=campos, partidas=partidas)
 
 ### Funções AUXILIARES ###
 #-----------------------------------------------------------------------#
@@ -254,7 +237,7 @@ def registration():
             flash("Erro ao registar o utilizador. Tente novamente.", "danger")
             return render_template("index.html")
 
-def login():
+def log():
     email = request.form["login_email"]
     password = request.form["login_password"]
 
@@ -297,6 +280,76 @@ def get_user_info(user_id):
                 FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID WHERE U.ID=?""", (user_id,))
         user = cursor.fetchone()
     return user
+
+def get_all_users():
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                U.ID, 
+                U.Nome, 
+                U.Email, 
+                U.Num_Tele, 
+                U.Nacionalidade, 
+                J.Idade, 
+                J.Descricao, 
+                A.IBAN, 
+                A.No_Campos,
+                CASE 
+                    WHEN A.ID_Arrendador IS NOT NULL THEN 'Arrendador'
+                    ELSE 'Jogador'
+                END AS Tipo
+            FROM Utilizador AS U
+            JOIN Jogador AS J ON U.ID = J.ID
+            LEFT JOIN Arrendador AS A ON U.ID = A.ID_Arrendador
+        """)
+        utilizadores = cursor.fetchall()
+    return utilizadores
+
+def get_campos():
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT C.ID, C.Nome, C.Comprimento, C.Largura, C.ocupado, C.Descricao
+            FROM Campo AS C
+        """)
+        return cursor.fetchall()
+
+def get_partidas():
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT P.ID, P.Data_Hora, C.Nome AS Campo, P.no_jogadores, P.Resultado
+            FROM Partida AS P
+            JOIN Campo AS C ON P.ID_Campo = C.ID
+        """)
+        return cursor.fetchall()
+
+
+
+# Pode ser necessário
+def get_jogadores():
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT J.ID, U.Nome, U.Email, J.Idade, J.Descricao
+            FROM Jogador AS J
+            JOIN Utilizador AS U ON J.ID = U.ID
+        """)
+        return cursor.fetchall()
+
+def get_arrendadores():
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT A.ID_Arrendador, U.Nome, U.Email, A.IBAN, A.No_Campos
+            FROM Arrendador AS A
+            JOIN Utilizador AS U ON A.ID_Arrendador = U.ID
+        """)
+        return cursor.fetchall()
+######################
+
+
 
 
 # Main
