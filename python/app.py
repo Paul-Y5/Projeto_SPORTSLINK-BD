@@ -35,7 +35,6 @@ def login():
 @app.route("/user/<name>", methods=["GET", "POST"])
 def jog_dashboard(name):
     
-
     if "user_id" not in session:
         return redirect(url_for("index"))
     
@@ -188,14 +187,53 @@ def admin_dashboard():
     partidas = get_partidas()
     return render_template("admin.html", utilizadores=utilizadores, campos=campos, partidas=partidas)
 
+@app.route('/admin/add_field', methods=['POST'])
+def add_field():
+    #Informações do campo
+    nome = request.form.get('nome')
+    comprimento = request.form.get('comprimento')
+    largura = request.form.get('largura')
+    descricao = request.form.get('descricao', '')
+    latitude = float(request.form.get('latitude'))
+    longitude = float(request.form.get('longitude'))
+
+    # Informações do campo publico
+    entidade_publica = request.form.get('entR')
+    id_campo = create_campo(nome, comprimento, largura, descricao, latitude, longitude)
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp) VALUES (?, ?)", (id_campo, entidade_publica,))
+            conn.commit()
+        flash("Campo público adicionado com sucesso!", "success")
+    except Exception as e:
+        flash(f"Erro ao adicionar campo: {str(e)}", "danger")
+
+    return redirect(url_for('admin_dashboard'))
+
 ### Funções AUXILIARES ###
 #-----------------------------------------------------------------------#
 
 # Função para gerar um ID único para o utilizador
-def gerar_id():
+def gerar_id_utilizador():
     timestamp = int(time.time() % 100000)
     random_number = random.randint(1000, 9999)
     return int(f"{timestamp}{random_number}")
+
+def gerar_id_partida():
+    timestamp = int(time.time() % 100000)
+    random_number = random.randint(100, 999)
+    return int(f"{timestamp}{random_number}")
+
+def gerar_id_campo():
+    timestamp = int(time.time() % 1000)
+    random_number = random.randint(1000, 9999)
+    return int(f"{random_number}{timestamp}")
+
+def gerar_id_ponto():
+    timestamp = int(time.time() % 1000)
+    random_number = random.randint(1000, 9999)
+    return int(f"{random_number}{timestamp}")
 
 def is_arrendador(user_id):
     with create_connection() as conn:
@@ -204,7 +242,7 @@ def is_arrendador(user_id):
         return cursor.fetchone()[0] == 1
 
 def registration():
-    id_utilizador = gerar_id()
+    id_utilizador = gerar_id_utilizador()
     username = request.form["username"]
     email = request.form["reg_email"]
     nationality = request.form["nacionalidade"]
@@ -272,12 +310,13 @@ def get_user_info(user_id):
         user = cursor.fetchone()
         tipo_utilizador = "Arrendador" if is_arrendador(user_id) else "Jogador"
         if tipo_utilizador == "Arrendador":
-            cursor.execute("""Select U.ID, U.Nome, U.Email, U.Num_Tele, U.Password, U.Nacionalidade, J.Idade, J.Descricao, A.IBAN, A.No_Campos 
-                FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID JOIN Arrendador AS A ON U.ID = A.ID_Arrendador
+            cursor.execute("""Select U.ID, U.Nome, U.Email, U.Num_Tele, U.Password, U.Nacionalidade, J.Idade, J.Descricao, A.IBAN, A.No_Campos, IMG.URL AS FotoPerfil
+                FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID JOIN Arrendador AS A ON U.ID = A.ID_Arrendador LEFT JOIN IMG_Perfil AS IMG ON U.ID = IMG.ID_Utilizador
                 WHERE U.ID=?""", (user_id,))
         else:
-            cursor.execute("""SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Password, U.Nacionalidade, J.Idade, J.Descricao 
-                FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID WHERE U.ID=?""", (user_id,))
+            cursor.execute("""SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Password, U.Nacionalidade, J.Idade, J.Descricao, IMG.URL AS FotoPerfil
+                FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID LEFT JOIN IMG_Perfil AS IMG ON U.ID = IMG.ID_Utilizador 
+                WHERE U.ID=?""", (user_id,))
         user = cursor.fetchone()
     return user
 
@@ -310,8 +349,21 @@ def get_campos():
     with create_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT C.ID, C.Nome, C.Comprimento, C.Largura, C.ocupado, C.Descricao
-            FROM Campo AS C
+            SELECT 
+                c.Nome AS Nome_Campo, 
+                c.Comprimento, 
+                c.Largura, 
+                c.ocupado, 
+                c.Descricao,
+                p.Latitude, 
+                p.Longitude, 
+                u.Nome AS Nome_Responsável, 
+                cpb.Entidade_publica_resp
+            FROM Campo AS c
+            JOIN Ponto AS p ON c.ID_Ponto = p.ID
+            LEFT JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
+            LEFT JOIN Utilizador AS u ON cp.ID_Arrendador = u.ID
+            LEFT JOIN Campo_Pub AS cpb ON c.ID = cpb.ID_Campo
         """)
         return cursor.fetchall()
 
@@ -326,6 +378,29 @@ def get_partidas():
         return cursor.fetchall()
 
 
+def create_ponto(lat, long):
+    id_map = 1
+    id_ponto = gerar_id_ponto()
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO Ponto (ID, ID_Mapa, Latitude, Longitude)
+            VALUES (?, ?, ?, ?)
+        """, (id_ponto, id_map, lat, long))
+        conn.commit()
+    return id_ponto
+
+def create_campo(nome, comprimento, largura, descricao, lat, long):
+    id_campo = gerar_id_campo()
+    id_ponto = create_ponto(lat, long)
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO Campo (ID, ID_Ponto, Nome, Comprimento, Largura, Ocupado, Descricao)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (id_campo, id_ponto, nome, comprimento, largura, 0, descricao))
+        conn.commit()
+    return id_campo
 
 # Pode ser necessário
 def get_jogadores():
@@ -347,7 +422,6 @@ def get_arrendadores():
             JOIN Utilizador AS U ON A.ID_Arrendador = U.ID
         """)
         return cursor.fetchall()
-######################
 
 
 

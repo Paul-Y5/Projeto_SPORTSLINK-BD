@@ -147,3 +147,82 @@ function sortTable() {
     tbody.innerHTML = "";
     sortedRows.forEach(row => tbody.appendChild(row));
 }
+
+// Motor de busca para a tabela de campos
+function filterFieldsTable() {
+    const filterValue = document.getElementById("filterFieldsInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#fieldsTable tbody tr");
+
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll("td"));
+        const matches = cells.some(cell => cell.textContent.toLowerCase().includes(filterValue));
+        row.style.display = matches ? "" : "none";
+    });
+}
+
+// Ordenar a tabela de campos
+function sortFieldsTable() {
+    const table = document.getElementById("fieldsTable");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const sortBy = document.getElementById("orderFieldsSelect").value;
+
+    const columnIndex = {
+        "ID": 0,
+        "Nome": 1,
+        "Comprimento": 2,
+        "Largura": 3,
+        "Ocupado": 4
+    }[sortBy];
+
+    const sortedRows = rows.sort((a, b) => {
+        const cellA = a.cells[columnIndex].textContent.trim();
+        const cellB = b.cells[columnIndex].textContent.trim();
+
+        if (!isNaN(cellA) && !isNaN(cellB)) {
+            return Number(cellA) - Number(cellB); // Numeric sorting
+        }
+        return cellA.localeCompare(cellB); // Alphabetical sorting
+    });
+
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+    sortedRows.forEach(row => tbody.appendChild(row));
+}
+
+// Filtrar por tipo de campo (ocupado ou não)
+function filterByFieldType() {
+    const fieldType = document.getElementById("fieldTypeSelect").value;
+    const rows = document.querySelectorAll("#fieldsTable tbody tr");
+
+    rows.forEach(row => {
+        const fieldTypeCell = row.querySelector("td:nth-child(5)").textContent.trim();
+        if (fieldType === "todos" || fieldType === fieldTypeCell) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// Função para mostrar a tabela selecionada e ocultar as outras
+function showTable(tableId) {
+    const tables = ["usersTable", "fieldsTable", "matchesTable"];
+    tables.forEach(id => {
+        const table = document.getElementById(id);
+        if (table) {
+            table.style.display = (id == tableId) ? "block" : "none";
+        } else {
+            console.warn("Tabela não encontrada:", id);
+        }
+    });
+
+    // Atualiza a classe "active" na navbar
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        if (link.getAttribute('onclick').includes(tableId)) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}

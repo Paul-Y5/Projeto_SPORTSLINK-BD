@@ -18,42 +18,67 @@
             </a>
         </div>
     </nav>
+    <!-- Navbar para alternar entre tabelas -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Administração</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showTable('usersTable')">Utilizadores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showTable('fieldsTable')">Campos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showTable('matchesTable')">Partidas</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
     <main class="container mt-5">
-        <div class="container mt-5">
-            <!-- Motor de Pesquisa -->
-            <div class="mb-3">
-                <label for="filterInput" class="form-label"></label>
-                <input type="text" id="filterInput" class="form-control" placeholder="Escreve para pesquisar..." oninput="filterTable()">
-            </div>
-
-            <!-- Order by -->
-            <div class="mb-3">
-                <label for="orderSelect" class="form-label">Ordenar por</label>
-                <select id="orderSelect" class="form-select" onchange="sortTable()">
-                    <option value="ID">ID</option>
-                    <option value="Nome">Nome</option>
-                    <option value="Email">Email</option>
-                    <option value="Telefone">Telefone</option>
-                    <option value="Nacionalidade">Nacionalidade</option>
-                    <option value="Idade">Idade</option>
-                    <option value="Descrição">Descrição</option>
-                    <option value="IBAN">IBAN</option>
-                    <option value="Número de Campos">Número de Campos</option>
-                </select>
-            </div>
-
-            <!-- Selecionar por tipo -->
-            <div class="mb-3">
-                <label for="userTypeSelect" class="form-label">Ordenar por Tipo de Utilizador</label>
-                <select id="userTypeSelect" class="form-select" onchange="filterByUserType()">
-                <option value="todos">Todos</option>
-                <option value="Jogador">Jogador</option>
-                <option value="Arrendador">Arrendador</option>
-                </select>
-            </div>
-
-            <!-- Utilizadores -->
-            <table id="usersTable" class="table table-striped">
+        <!-- Tabela de Utilizadores -->
+        <div id="usersTable" class="table-container" style="display: block;">
+            <h2>Utilizadores</h2>
+            <div class="container mt-5">
+                <!-- Motor de Pesquisa -->
+                <div class="mb-3">
+                    <label for="filterInput" class="form-label">Pesquisar por</label>
+                    <input type="text" id="filterInput" class="form-control" placeholder="Escreve para pesquisar..."
+                        oninput="filterTable()">
+                </div>
+            
+                <!-- Order by -->
+                <div class="mb-3">
+                    <label for="orderSelect" class="form-label">Ordenar por</label>
+                    <select id="orderSelect" class="form-select" onchange="sortTable()">
+                        <option value="ID">ID</option>
+                        <option value="Nome">Nome</option>
+                        <option value="Email">Email</option>
+                        <option value="Telefone">Telefone</option>
+                        <option value="Nacionalidade">Nacionalidade</option>
+                        <option value="Idade">Idade</option>
+                        <option value="Descrição">Descrição</option>
+                        <option value="IBAN">IBAN</option>
+                        <option value="Número de Campos">Número de Campos</option>
+                    </select>
+                </div>
+            
+                <!-- Selecionar por tipo -->
+                <div class="mb-3">
+                    <label for="userTypeSelect" class="form-label">Ordenar por Tipo de Utilizador</label>
+                    <select id="userTypeSelect" class="form-select" onchange="filterByUserType()">
+                        <option value="todos">Todos</option>
+                        <option value="Jogador">Jogador</option>
+                        <option value="Arrendador">Arrendador</option>
+                    </select>
+                </div>
+                
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -90,42 +115,144 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
 
-            <!-- Campos -->
+        <!-- Tabela de Campos -->
+        <div id="fieldsTable" class="table-container" style="display: block;">
             <h2>Campos</h2>
+
+            <!-- Motor de Pesquisa -->
+            <div class="mb-3">
+                <label for="filterFieldsInput" class="form-label">Pesquisar Campos</label>
+                <input type="text" id="filterFieldsInput" class="form-control" placeholder="Escreve para pesquisar..." oninput="filterFieldsTable()">
+            </div>
+
+            <!-- Ordenar por -->
+            <div class="mb-3">
+                <label for="orderFieldsSelect" class="form-label">Ordenar por</label>
+                <select id="orderFieldsSelect" class="form-select" onchange="sortFieldsTable()">
+                    <option value="ID">ID</option>
+                    <option value="Nome">Nome</option>
+                    <option value="Comprimento">Comprimento</option>
+                    <option value="Largura">Largura</option>
+                    <option value="Ocupado">Ocupado</option>
+                </select>
+            </div>
+
+            <!-- Tabela de Campos -->
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
+                        <th>Nome do Campo</th>
+                        <th>Tipo</th>
                         <th>Comprimento</th>
                         <th>Largura</th>
                         <th>Ocupado</th>
                         <th>Descrição</th>
-                        <th>Ações</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Responsável</th>
+                        <th>Entidade Pública</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for field in fields %}
+                    {% for campo in campos %}
                     <tr>
-                        <td>{{ field.ID }}</td>
-                        <td>{{ field.Nome }}</td>
-                        <td>{{ field.Comprimento }}</td>
-                        <td>{{ field.Largura }}</td>
-                        <td>{{ 'Sim' if field.ocupado else 'Não' }}</td>
-                        <td>{{ field.Descricao }}</td>
-                        <td>
-                            <a href="/admin/edit_field/{{ field.ID }}" class="btn btn-primary">Editar</a>
-                            <a href="/admin/delete_field/{{ field.ID }}" class="btn btn-danger">Excluir</a>
-                        </td>
+                        <td>{{ campo[0] }}</td>
+                        <td> {{ 'Público' if campo[8] else 'Privado' }}  </td>
+                        <td>{{ campo[1] }}</td>
+                        <td>{{ campo[2] }}</td>
+                        <td>{{ 'Sim' if campo[3] else 'Não' }}</td>
+                        <td>{{ campo[4] }}</td>
+                        <td>{{ campo[5] }}</td>
+                        <td>{{ campo[6] }}</td>
+                        <td>{{ campo[7] or '---' }}</td>
+                        <td>{{ campo[8] or '---' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <a href="/admin/add_field" class="btn btn-success mb-3">Adicionar Campo</a>
+        
+            <!-- Botão para Adicionar Campo Público -->
+            <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addFieldModal">
+                Adicionar Campo Público
+            </button>
+        </div>
 
-            <!-- Partidas -->
+
+        <!-- Modal para Adicionar Campo Público -->
+        <div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addFieldModalLabel">Adicionar Campo Público</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('add_field') }}">
+                        <div class="modal-body">
+                            <h3>Ponto de Localização</h3>
+                            <div class="mb-3">
+                                <label for="fieldLatitude" class="form-label">Latitude</label>
+                                <input type="text" class="form-control" id="fieldLatitude" name="latitude" pattern="^-?\d+(\.\d+)?$" title="Por favor, insira um número real." required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fieldLongitude" class="form-label">Longitude</label>
+                                <input type="text" class="form-control" id="fieldLongitude" name="longitude" pattern="^-?\d+(\.\d+)?$" title="Por favor, insira um número real." required>
+                            </div>
+
+                            <h3>Campo</h3>
+                            <div class="mb-3">
+                                <label for="fieldName" class="form-label">Nome</label>
+                                <input type="text" class="form-control" id="fieldName" name="nome" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fieldLength" class="form-label">Comprimento</label>
+                                <input type="number" class="form-control" id="fieldLength" name="comprimento" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fieldWidth" class="form-label">Largura</label>
+                                <input type="number" class="form-control" id="fieldWidth" name="largura" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fieldEntR" class="form-label">Entidade Pública Responsável</label>
+                                <input type="text" class="form-control" id="fieldEntR" name="entR" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fieldDescription" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="fieldDescription" name="descricao" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Partidas -->
+        <div id="matchesTable" class="table-container" style="display: block;">
             <h2>Partidas</h2>
+
+            <!-- Motor de Pesquisa -->
+            <div class="mb-3">
+                <label for="filterMatchesInput" class="form-label">Pesquisar Partidas</label>
+                <input type="text" id="filterMatchesInput" class="form-control" placeholder="Escreve para pesquisar..." oninput="filterMatchesTable()">
+            </div>
+
+            <!-- Ordenar por -->
+            <div class="mb-3">
+                <label for="orderMatchesSelect" class="form-label">Ordenar por</label>
+                <select id="orderMatchesSelect" class="form-select" onchange="sortMatchesTable()">
+                    <option value="ID">ID</option>
+                    <option value="Data e Hora">Data e Hora</option>
+                    <option value="Campo">Campo</option>
+                    <option value="Número de Jogadores">Número de Jogadores</option>
+                    <option value="Resultado">Resultado</option>
+                </select>
+            </div>
+
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -153,14 +280,16 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <a href="/admin/add_match" class="btn btn-success mb-3">Adicionar Partida</a>
         </div>
+
     </main>
+
     <footer class="bg-light text-center text-lg-start mt-5">
         <div class="text-center p-3">
             © 2025 SportsLink. ADMIN TOOLS.
         </div>
     </footer>
+    
     <script src="/static/js/scripts.js"></script>
 </body>
 
