@@ -159,7 +159,7 @@
                     {% for campo in campos %}
                     <tr>
                         <td>{{ campo[0] }}</td>
-                        <td> {{ 'Público' if campo[8] else 'Privado' }}  </td>
+                        <td> {{ 'Público' if campo[8] is not none else 'Privado' }}  </td>
                         <td>{{ campo[1] }}</td>
                         <td>{{ campo[2] }}</td>
                         <td>{{ 'Sim' if campo[3] else 'Não' }}</td>
@@ -232,7 +232,7 @@
         </div>
 
         <!-- Tabela de Partidas -->
-        <div id="matchesTable" class="table-container" style="display: block;">
+        <div id="matchesTable" class="table-container" style="display: none;">
             <h2>Partidas</h2>
 
             <!-- Motor de Pesquisa -->

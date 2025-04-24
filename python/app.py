@@ -182,10 +182,10 @@ def arrendador_dashboard():
 # Caminho para o painel de administração
 @app.route("/admin")
 def admin_dashboard():
-    utilizadores = get_all_users()
+    utilizadores = get_users()
     campos = get_campos()
     partidas = get_partidas()
-    return render_template("admin.html", utilizadores=utilizadores, campos=campos, partidas=partidas)
+    return render_template("admin.html", utilizadores=utilizadores, campos=campos, matches=partidas)
 
 @app.route('/admin/add_field', methods=['POST'])
 def add_field():
@@ -320,7 +320,7 @@ def get_user_info(user_id):
         user = cursor.fetchone()
     return user
 
-def get_all_users():
+def get_users():
     with create_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""

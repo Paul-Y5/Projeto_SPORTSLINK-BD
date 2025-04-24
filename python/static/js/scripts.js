@@ -204,25 +204,24 @@ function filterByFieldType() {
     });
 }
 
-// Função para mostrar a tabela selecionada e ocultar as outras
+
+// Função para exibir a tabela correspondente ao link clicado na navbar
 function showTable(tableId) {
-    const tables = ["usersTable", "fieldsTable", "matchesTable"];
-    tables.forEach(id => {
-        const table = document.getElementById(id);
-        if (table) {
-            table.style.display = (id == tableId) ? "block" : "none";
-        } else {
-            console.warn("Tabela não encontrada:", id);
-        }
+    const tables = document.querySelectorAll('.table-container');
+    tables.forEach(table => {
+        table.style.display = 'none';
     });
 
-    // Atualiza a classe "active" na navbar
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        if (link.getAttribute('onclick').includes(tableId)) {
-            link.classList.add('active');
-        } else {
-            link.classList.remove('active');
-        }
-    });
+    document.getElementById(tableId).style.display = 'block';
+
+    // Atualiza a navbar para indicar o ativo
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    const activeLink = Array.from(navLinks).find(link => link.getAttribute('onclick')?.includes(tableId));
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
 }
+
+
