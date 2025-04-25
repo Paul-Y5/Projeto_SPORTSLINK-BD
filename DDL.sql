@@ -69,6 +69,7 @@ CREATE TABLE Campo (
   ID_Ponto      INT,
   ID_Mapa       INT,
   Nome          VARCHAR(256),
+  Endereco      VARCHAR(512),
   Comprimento   DECIMAL(10,2),
   Largura       DECIMAL(10,2),
   ocupado       BIT,
@@ -147,9 +148,13 @@ CREATE TABLE Reserva (
   ID                 INT PRIMARY KEY,
   ID_Campo           INT,
   ID_Jogador         INT,
-  Data_Hora          DATETIME NOT NULL,
+  [Data]               DATE NOT NULL,
+  Hora_Inicio        TIME,
+  Hora_Fim           TIME,
   Descricao          VARCHAR(2500),
 
+  CHECK (Hora_Inicio < Hora_Fim),
+  CHECK ([Data] >= GETDATE()),
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID) ON DELETE CASCADE,
   FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID) ON DELETE CASCADE
 );
@@ -188,19 +193,16 @@ CREATE TABLE Rating_Jogador (
 CREATE TABLE Dias_semana (
   ID               INT PRIMARY KEY CHECK (ID BETWEEN 1 AND 7),
   Nome             VARCHAR(50) UNIQUE NOT NULL CHECK (Nome IN ('Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado')),
-  ativo            BIT
 );
 
 
 CREATE TABLE Disponibilidade (
   ID_Campo           INT,
   ID_dia             INT CHECK (ID_dia BETWEEN 1 AND 7),
-  preco              DECIMAL(10,2),
-  Hora_Inicio        TIME,
-  Hora_Fim           TIME,
+  Preco              DECIMAL(10,2),
+  Hora               TIME,
 
-  CHECK (Hora_Inicio < Hora_Fim),
-  PRIMARY KEY (ID_Campo, ID_dia, Hora_Inicio),
+  PRIMARY KEY (ID_Campo, ID_dia, Hora),
   FOREIGN KEY (ID_Campo) REFERENCES Campo_Priv(ID_Campo) ON DELETE CASCADE,
   FOREIGN KEY (ID_dia) REFERENCES Dias_semana(ID) ON DELETE CASCADE
 );
