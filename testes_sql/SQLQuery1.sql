@@ -9,11 +9,38 @@ SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Nacionalidade, J.Idade, J.Descricao,
 FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID LEFT JOIN Arrendador AS A ON U.ID = A.ID_Arrendador
 
 
-Select * from Campo_Pub
-
 Select c.ID as Nome_Campo, c.Comprimento, c.Largura, c.ocupado, c.Descricao,
 p.Latitude, p.Longitude, u.Nome as Nome_responsável, cpb.Entidade_publica_resp
 from Campo as c join Ponto as p on c.ID_Ponto=p.ID
 left join Campo_Priv as cp on c.ID=cp.ID_Campo
 left join Utilizador as u on cp.ID_Arrendador=u.ID
 left join Campo_Pub as cpb on c.ID=cpb.ID_Campo
+
+Select * from Dias_semana
+order by ID
+
+Select * from Disponibilidade
+
+Select r.ID, r.ID_Campo, r.ID_Jogador, r.Hora_Inicio, r.Hora_Fim, d.ID_dia, d.preco
+from Disponibilidade as d join Reserva as r on d.ID_Campo=r.ID_Campo
+
+Select c.Nome, c.Largura, c.Comprimento, c.Descricao, p.Latitude, p.Longitude, d.Preco, d.Hora_abertura, d.Hora_fecho, d.ID_dia
+from Campo as c join Campo_Priv as cp on c.ID=cp.ID_Campo join Disponibilidade as d on cp.ID_Campo=d.ID_Campo 
+join Ponto as p on c.ID_Ponto=p.ID
+
+Select count(ID_Campo) as No_Campos
+from Campo_Priv where ID_Arrendador = 904281712
+
+Select * from Disponibilidade
+
+ SELECT c.Nome AS Nome_Campo, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
+                p.Longitude, c.Ocupado,
+                STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis
+            FROM Campo AS c
+			JOIN Ponto AS p ON c.ID_Ponto = p.ID
+			JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
+			JOIN Disponibilidade AS d ON c.ID = d.ID_Campo
+			JOIN Dias_semana AS di ON d.ID_Dia = di.ID
+            WHERE cp.ID_Arrendador = 904281712
+            GROUP BY c.ID, c.Nome, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
+                p.Longitude, c.Ocupado

@@ -200,8 +200,11 @@ CREATE TABLE Disponibilidade (
   ID_Campo           INT,
   ID_dia             INT CHECK (ID_dia BETWEEN 1 AND 7),
   Preco              DECIMAL(10,2),
-  Hora               TIME,
+  Hora_abertura      TIME,
+  Hora_fecho         TIME,
 
+  CHECK (Hora_abertura < Hora_fecho),
+  CHECK (Preco > 0),
   PRIMARY KEY (ID_Campo, ID_dia, Hora),
   FOREIGN KEY (ID_Campo) REFERENCES Campo_Priv(ID_Campo) ON DELETE CASCADE,
   FOREIGN KEY (ID_dia) REFERENCES Dias_semana(ID) ON DELETE CASCADE
