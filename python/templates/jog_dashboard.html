@@ -18,48 +18,47 @@
     {% endif %}
     {% endwith %}
 
-    
     <!-- Account Information -->
     <div class="card user-info p-4">
         <h2 style="color: orange;">
             Informações de Utilizador
             <div class="float-end">
-                <a href="{{ url_for('logout') }}" class="btn btn-danger">Sair</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Sair</a>
             </div>
         </h2>
-        <form method="POST" action="{{ url_for('update_info') }}">
+        <form method="POST" action="{{ url_for('dashboard.update_info') }}">
             <ul class="list-group list-group-flush">
                 <li class="list-group-item">
                     <strong>Nome:</strong>
-                    <input type="text" name="username" class="form-control" value="{{ user[1] }}">
+                    <input type="text" name="username" class="form-control" value="{{ user[0] }}">
                 </li>
                 <li class="list-group-item">
                     <strong>Email:</strong>
-                    <input type="email" name="email" class="form-control" value="{{ user[2] }}">
+                    <input type="email" name="email" class="form-control" value="{{ user[1] }}">
                 </li>
                 <li class="list-group-item">
                     <strong>Número de Telemóvel:</strong>
-                    <input type="text" name="numero_telemovel" class="form-control" value="{{ user[3] }}">
+                    <input type="text" name="numero_telemovel" class="form-control" value="{{ user[2] }}">
                 </li>
                 <li class="list-group-item">
                     <label class="form-label">Nacionalidade</label>
                     <select class="form-control" name="nacionalidade" required>
                         {% set nacionalidades = ["Portugal", "Espanha", "França", "Alemanha", "Itália", "Reino Unido"] %}
                         {% for pais in nacionalidades %}
-                        <option value="{{ pais }}" {% if user[5]==pais %}selected{% endif %}>{{ pais }}</option>
+                        <option value="{{ pais }}" {% if user[3] == pais %}selected{% endif %}>{{ pais }}</option>
                         {% endfor %}
                     </select>
                 </li>
                 <li class="list-group-item">
                     <strong>Idade:</strong>
-                    <input type="number" name="idade" class="form-control" value="{{ user[6] }}">
+                    <input type="number" name="idade" class="form-control" value="{{ user[4] }}">
                 </li>
                 <li class="list-group-item">
                     <strong>Descrição:</strong>
                     <textarea name="descricao" class="form-control">{{ user[7] }}</textarea>
                 </li>
             </ul>
-            <button type="submit" class="btn btn-primary mt-3">Salvar Alterações</button>
+            <button type="submit" class="btn btn-primary mt-3">Guardar Alterações</button>
         </form>
     </div>
 
@@ -73,11 +72,10 @@
                     Ser arrendador
                 </button>
             </li>
-
-            <!-- Form to trigger account deletion -->
             <li class="list-group-item">
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                    data-bs-target="#deleteModal">Excluir Conta</button>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    Excluir Conta
+                </button>
             </li>
         </ul>
     </div>
@@ -93,12 +91,11 @@
             </div>
             <div class="modal-body">
                 Tens a certeza de que desejas excluir a tua conta? Esta ação é irreversível e todos os dados associados
-                à
-                conta serão permanentemente apagados. Se tiveres dúvidas, por favor, contacta o suporte.
+                à conta serão permanentemente apagados. Se tiveres dúvidas, por favor, contacta o suporte.
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form method="POST" action="{{ url_for('delete_account') }}">
+                <form method="POST" action="{{ url_for('dashboard.delete_account') }}">
                     <button type="submit" class="btn btn-danger">Excluir Conta</button>
                 </form>
             </div>
@@ -110,7 +107,7 @@
 <div class="modal fade" id="arrendadorModal" tabindex="-1" aria-labelledby="arrendadorModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="POST" action="{{ url_for('arrendador_dashboard') }}">
+            <form method="POST" action="{{ url_for('dashboard.arrendador_form') }}">
                 <div class="modal-header">
                     <h5 class="modal-title" id="arrendadorModalLabel">Tornar-se Arrendador</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>

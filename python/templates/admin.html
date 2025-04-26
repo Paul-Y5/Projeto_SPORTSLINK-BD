@@ -9,7 +9,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
-<main>
+<body>
     <nav class="navbar navbar-light bg-light shadow-sm">
         <div class="container d-flex justify-content-center">
             <a class="navbar-brand d-flex align-items-center" href="/">
@@ -18,6 +18,7 @@
             </a>
         </div>
     </nav>
+
     <!-- Navbar para alternar entre tabelas -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <div class="container-fluid">
@@ -40,9 +41,10 @@
             </div>
         </div>
     </nav>
+
     <main class="container mt-5">
         <!-- Tabela de Utilizadores -->
-        <div id="usersTable" class="table-container" style="display: block;">
+        <div id="usersTable" class="table-container">
             <h2>Utilizadores</h2>
             <div class="container mt-5">
                 <!-- Motor de Pesquisa -->
@@ -51,8 +53,8 @@
                     <input type="text" id="filterInput" class="form-control" placeholder="Escreve para pesquisar..."
                         oninput="filterTable()">
                 </div>
-            
-                <!-- Order by -->
+
+                <!-- Ordenar por -->
                 <div class="mb-3">
                     <label for="orderSelect" class="form-label">Ordenar por</label>
                     <select id="orderSelect" class="form-select" onchange="sortTable()">
@@ -67,7 +69,7 @@
                         <option value="Número de Campos">Número de Campos</option>
                     </select>
                 </div>
-            
+
                 <!-- Selecionar por tipo -->
                 <div class="mb-3">
                     <label for="userTypeSelect" class="form-label">Ordenar por Tipo de Utilizador</label>
@@ -77,48 +79,49 @@
                         <option value="Arrendador">Arrendador</option>
                     </select>
                 </div>
-                
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Telefone</th>
-                        <th>Nacionalidade</th>
-                        <th>Idade</th>
-                        <th>Descrição</th>
-                        <th>IBAN</th>
-                        <th>Número de Campos</th>
-                        <th>Tipo</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in utilizadores %}
-                    <tr>
-                        <td>{{ user.ID }}</td>
-                        <td>{{ user.Nome }}</td>
-                        <td>{{ user.Email }}</td>
-                        <td>{{ user.Num_Tele }}</td>
-                        <td>{{ user.Nacionalidade }}</td>
-                        <td>{{ user.Idade or '---' }}</td>
-                        <td>{{ user.Descricao or '---' }}</td>
-                        <td>{{ user.IBAN or '---' }}</td>
-                        <td>{{ user.No_Campos if user.No_Campos is not none else '---' }}</td>
-                        <td class="user-type">{{ 'Jogador' if user.IBAN is none else 'Arrendador' }}</td>
-                        <td>
-                            <a href="/admin/edit_user/{{ user.ID }}" class="btn btn-primary btn-sm">Editar</a>
-                            <a href="/admin/delete_user/{{ user.ID }}" class="btn btn-danger btn-sm">Excluir</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Nacionalidade</th>
+                            <th>Idade</th>
+                            <th>Descrição</th>
+                            <th>IBAN</th>
+                            <th>Número de Campos</th>
+                            <th>Tipo</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in utilizadores %}
+                        <tr>
+                            <td>{{ user.ID }}</td>
+                            <td>{{ user.Nome }}</td>
+                            <td>{{ user.Email }}</td>
+                            <td>{{ user.Num_Tele }}</td>
+                            <td>{{ user.Nacionalidade }}</td>
+                            <td>{{ user.Idade or '---' }}</td>
+                            <td>{{ user.Descricao or '---' }}</td>
+                            <td>{{ user.IBAN or '---' }}</td>
+                            <td>{{ user.No_Campos if user.No_Campos is not none else '---' }}</td>
+                            <td class="user-type">{{ 'Jogador' if user.IBAN is none else 'Arrendador' }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.edit_user', user_id=user.ID) }}" class="btn btn-primary btn-sm">Editar</a>
+                                <a href="{{ url_for('admin.delete_user', user_id=user.ID) }}" class="btn btn-danger btn-sm">Excluir</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Tabela de Campos -->
-        <div id="fieldsTable" class="table-container" style="display: block;">
+        <div id="fieldsTable" class="table-container" style="display: none;">
             <h2>Campos</h2>
 
             <!-- Motor de Pesquisa -->
@@ -139,7 +142,6 @@
                 </select>
             </div>
 
-            <!-- Tabela de Campos -->
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -159,7 +161,7 @@
                     {% for campo in campos %}
                     <tr>
                         <td>{{ campo[0] }}</td>
-                        <td> {{ 'Público' if campo[8] is not none else 'Privado' }}  </td>
+                        <td>{{ 'Público' if campo[8] is not none else 'Privado' }}</td>
                         <td>{{ campo[1] }}</td>
                         <td>{{ campo[2] }}</td>
                         <td>{{ 'Sim' if campo[3] else 'Não' }}</td>
@@ -172,86 +174,11 @@
                     {% endfor %}
                 </tbody>
             </table>
-        
-            <!-- Botão para Adicionar Campo Público -->
-            <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addFieldModal">
-                Adicionar Campo Público
-            </button>
-        </div>
-
-
-        <!-- Modal para Adicionar Campo Público -->
-        <div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addFieldModalLabel">Adicionar Campo Público</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form method="POST" action="{{ url_for('add_field') }}">
-                        <div class="modal-body">
-                            <h3>Ponto de Localização</h3>
-                            <div class="mb-3">
-                                <label for="fieldLatitude" class="form-label">Latitude</label>
-                                <input type="text" class="form-control" id="fieldLatitude" name="latitude" pattern="^-?\d+(\.\d+)?$" title="Por favor, insira um número real." required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="fieldLongitude" class="form-label">Longitude</label>
-                                <input type="text" class="form-control" id="fieldLongitude" name="longitude" pattern="^-?\d+(\.\d+)?$" title="Por favor, insira um número real." required>
-                            </div>
-
-                            <h3>Campo</h3>
-                            <div class="mb-3">
-                                <label for="fieldName" class="form-label">Nome</label>
-                                <input type="text" class="form-control" id="fieldName" name="nome" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="fieldLength" class="form-label">Comprimento</label>
-                                <input type="number" class="form-control" id="fieldLength" name="comprimento" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="fieldWidth" class="form-label">Largura</label>
-                                <input type="number" class="form-control" id="fieldWidth" name="largura" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="fieldEntR" class="form-label">Entidade Pública Responsável</label>
-                                <input type="text" class="form-control" id="fieldEntR" name="entR" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="fieldDescription" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="fieldDescription" name="descricao" rows="3"></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Adicionar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         </div>
 
         <!-- Tabela de Partidas -->
         <div id="matchesTable" class="table-container" style="display: none;">
             <h2>Partidas</h2>
-
-            <!-- Motor de Pesquisa -->
-            <div class="mb-3">
-                <label for="filterMatchesInput" class="form-label">Pesquisar Partidas</label>
-                <input type="text" id="filterMatchesInput" class="form-control" placeholder="Escreve para pesquisar..." oninput="filterMatchesTable()">
-            </div>
-
-            <!-- Ordenar por -->
-            <div class="mb-3">
-                <label for="orderMatchesSelect" class="form-label">Ordenar por</label>
-                <select id="orderMatchesSelect" class="form-select" onchange="sortMatchesTable()">
-                    <option value="ID">ID</option>
-                    <option value="Data e Hora">Data e Hora</option>
-                    <option value="Campo">Campo</option>
-                    <option value="Número de Jogadores">Número de Jogadores</option>
-                    <option value="Resultado">Resultado</option>
-                </select>
-            </div>
 
             <table class="table table-striped">
                 <thead>
@@ -273,15 +200,14 @@
                         <td>{{ match.no_jogadores }}</td>
                         <td>{{ match.Resultado }}</td>
                         <td>
-                            <a href="/admin/edit_match/{{ match.ID }}" class="btn btn-primary">Editar</a>
-                            <a href="/admin/delete_match/{{ match.ID }}" class="btn btn-danger">Excluir</a>
+                            <a href="{{ url_for('admin.edit_match', match_id=match.ID) }}" class="btn btn-primary">Editar</a>
+                            <a href="{{ url_for('admin.delete_match', match_id=match.ID) }}" class="btn btn-danger">Excluir</a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
     </main>
 
     <footer class="bg-light text-center text-lg-start mt-5">
@@ -289,7 +215,7 @@
             © 2025 SportsLink. ADMIN TOOLS.
         </div>
     </footer>
-    
+
     <script src="/static/js/scripts.js"></script>
 </body>
 

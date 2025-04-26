@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Campos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Meus Campos</h1>
+        <div class="text-end mb-3">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                data-bs-target="#addPrivateFieldModal">Adicionar Novo Campo</button>
+            <a href="{{ url_for('dashboard.jog_dashboard', name=user[0]) }}" class="btn btn-secondary">Voltar</a>
+        </div>
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alert-container">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} mt-3">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Tabela de Campos -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Dimensões</th>
+                    <th>Descrição</th>
+                    <th>Endereço</th>
+                    <th>Coordenadas</th>
+                    <th>Dias Disponíveis</th>
+                    <th>Ocupado</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for campo in campos %}
+                <tr>
+                    <td>{{ campo[0] }}</td>
+                    <td>{{ campo[1] }}x{{ campo[2] }}</td>
+                    <td>{{ campo[3] or '---' }}</td>
+                    <td>{{ campo[4] or '---' }}</td>
+                    <td>{{ campo[5] }}, {{ campo[6] }}</td>
+                    <td>{{ campo[8] }}</td>
+                    <td>
+                        {% if campo[7] == 1 %} Sim {% else %} Não {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('dashboard.info_field', ID=campo[9]) }}" class="btn btn-warning">Detalhes</a>
+                        <a href="{{ url_for('dashboard.delete_field', ID=campo[9]) }}" class="btn btn-danger">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if campos|length == 0 %}
+                <tr>
+                    <td colspan="8" class="text-center">Nenhum campo encontrado.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Modal para Adicionar Campo Privado -->
+        <div class="modal fade" id="addPrivateFieldModal" tabindex="-1" aria-labelledby="addPrivateFieldModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addPrivateFieldModalLabel">Adicionar Campo Privado</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('dashboard.add_private_field') }}">
+                        <div class="modal-body">
+                            <h3>Localização do Campo</h3>
+                            <!-- Latitude -->
+                            <div class="mb-3">
+                                <label for="fieldLatitude" class="form-label">Latitude</label>
+                                <input type="text" class="form-control" id="fieldLatitude" name="latitude" required>
+                            </div>
+        
+                            <!-- Longitude -->
+                            <div class="mb-3">
+                                <label for="fieldLongitude" class="form-label">Longitude</label>
+                                <input type="text" class="form-control" id="fieldLongitude" name="longitude" required>
+                            </div>
+        
+                            <!-- Endereço -->
+                            <div class="mb-3">
+                                <label for="fieldAddress" class="form-label">Endereço</label>
+                                <input type="text" class="form-control" id="fieldAddress" name="endereco" required>
+                            </div>
+        
+                            <h3>Detalhes do Campo</h3>
+                            <!-- Nome do Campo -->
+                            <div class="mb-3">
+                                <label for="fieldName" class="form-label">Nome do Campo</label>
+                                <input type="text" class="form-control" id="fieldName" name="nome" required>
+                            </div>
+        
+                            <!-- Comprimento -->
+                            <div class="mb-3">
+                                <label for="fieldLength" class="form-label">Comprimento</label>
+                                <input type="number" class="form-control" id="fieldLength" name="comprimento" required>
+                            </div>
+        
+                            <!-- Largura -->
+                            <div class="mb-3">
+                                <label for="fieldWidth" class="form-label">Largura</label>
+                                <input type="number" class="form-control" id="fieldWidth" name="largura" required>
+                            </div>
+        
+                            <!-- Descrição -->
+                            <div class="mb-3">
+                                <label for="fieldDescription" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="fieldDescription" name="descricao" rows="3"></textarea>
+                            </div>
+        
+                            <!-- Preço por Hora -->
+                            <div class="mb-3">
+                                <label for="fieldPrice" class="form-label">Preço por Hora (€)</label>
+                                <input type="number" class="form-control" id="fieldPrice" name="preco" step="0.01" required>
+                            </div>
+        
+                            <h3>Disponibilidade</h3>
+                            <!-- Seleção de Dias -->
+                            <div class="mb-3">
+                                <label class="form-label">Dias Disponíveis e Horários</label>
+        
+                                <!-- Loop para cada dia da semana -->
+                                {% for dia, sigla in siglas_dias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="day{{ sigla }}" name="dias[]"
+                                        value="{{ dia }}">
+                                    <label class="form-check-label" for="day{{ sigla }}">{{ dia }}</label>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <label for="hora_abertura_{{ sigla }}" class="form-label">Hora de Abertura</label>
+                                            <input type="time" class="form-control" id="hora_abertura_{{ sigla }}"
+                                                name="hora_abertura_{{ sigla }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="hora_fecho_{{ sigla }}" class="form-label">Hora de Fecho</label>
+                                            <input type="time" class="form-control" id="hora_fecho_{{ sigla }}"
+                                                name="hora_fecho_{{ sigla }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar Campo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>  
+    </div>
+</body>
+</html>
