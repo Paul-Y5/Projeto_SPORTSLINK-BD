@@ -1,6 +1,7 @@
 from flask import Blueprint, request, session, redirect, url_for, flash, render_template
 from controllers.campo import adicionar_campo_privado, excluir_campo
-from controllers.user import delete_user_account, listar_campos_arrendador, tornar_arrendador, update_user_info, get_user_info
+from controllers.user import add_friend, delete_user_account, get_friends, listar_campos_arrendador, tornar_arrendador, update_user_info, get_user_info
+from models.campo import get_campo_by_id, get_disponibilidade_por_campo
 from utils.decorator_login import login_required
 from utils.decorator_login import login_required
 
@@ -82,6 +83,27 @@ def delete_field():
 def add_private_field():
     return adicionar_campo_privado()
 
-@dashboard_bp.route("/info_field<ID>", methods=["GET"])
+@dashboard_bp.route("/info_field<ID>", methods=["GET", "POST"])
+@login_required
 def info_field(ID):
-    return render_template("info_field.html", ID=ID)
+    campo_info = get_campo_by_id(ID)
+    if campo_info is None:
+        flash("Campo não encontrado.", "danger")
+        return redirect(url_for("dashboard.arr_campos_list"))
+    disponibilidade = get_disponibilidade_por_campo(ID)
+    if disponibilidade is None:
+        flash("Disponibilidade não encontrada.", "danger")
+        return redirect(url_for("dashboard.arr_campos_list"))
+    if request.method == "POST":
+        ...
+        
+@dashboard_bp.route("/amigos/<int:ID>" , methods=["GET", "POST"])
+@login_required
+def list_friends(ID):
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+    
+    if request.method == "GET":
+        return get_friends()
+    return add_friend()
+    

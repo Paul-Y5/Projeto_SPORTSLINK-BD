@@ -31,6 +31,7 @@ join Ponto as p on c.ID_Ponto=p.ID
 Select count(ID_Campo) as No_Campos
 from Campo_Priv where ID_Arrendador = 904281712
 
+Select * from Campo
 Select * from Disponibilidade
 
  SELECT c.Nome AS Nome_Campo, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
@@ -44,3 +45,15 @@ Select * from Disponibilidade
             WHERE cp.ID_Arrendador = 904281712
             GROUP BY c.ID, c.Nome, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
                 p.Longitude, c.Ocupado
+
+
+
+Select * from Utilizador as u join Jogador as j on u.ID=j.ID left join Arrendador on u.ID=ID_Arrendador
+
+SELECT j2.ID, u.Nome, AVG(r.Avaliacao) AS Rating
+FROM Jogador_Amizade as ja JOIN Jogador as j2 ON (ja.ID_J1=j2.ID OR ja.ID_J2=j2.ID)
+JOIN Utilizador as u ON u.ID=j2.ID
+LEFT JOIN Rating_Jogador as rj ON rj.ID_Jogador=j2.ID
+LEFT JOIN Rating as r ON r.ID_Avaliador=rj.ID_Avaliador
+WHERE (ja.ID_J1 = 511126546 OR ja.ID_J2 = 511126546) AND j2.ID <> 511126546
+GROUP BY j2.ID, u.Nome

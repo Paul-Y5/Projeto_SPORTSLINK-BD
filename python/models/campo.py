@@ -1,4 +1,4 @@
-
+import pyodbc
 from models.ponto import create_ponto
 from utils.general import gerar_id_campo
 from utils.db import create_connection
@@ -57,3 +57,41 @@ def get_campos():
             LEFT JOIN Campo_Pub AS cpb ON c.ID = cpb.ID_Campo
         """)
         return cursor.fetchall()
+    
+
+def get_campo_by_id(campo_id):
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT c.Nome AS Nome_Campo, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
+                p.Longitude, c.Ocupado,
+                STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, c.ID
+            FROM Campo AS c
+            JOIN Ponto AS p ON c.ID_Ponto = p.ID
+            JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
+            JOIN Disponibilidade AS d ON c.ID = d.ID_Campo
+            JOIN Dias_semana AS di ON d.ID_Dia = di.ID
+            WHERE c.ID = ?
+            GROUP BY c.ID, c.Nome, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
+                p.Longitude, c.Ocupado
+        """, (campo_id,))
+        return cursor.fetchone()
+
+def get_disponibilidade_por_campo(campo_id):
+    with create_connection() as conn:
+        conn.row_factory = pyodbc.Row  
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ds.Nome AS dia, d.Hora_Abertura, d.Hora_Fecho
+            FROM Disponibilidade d
+            JOIN Dias_semana ds ON ds.ID = d.ID_Dia
+            WHERE d.ID_Campo = ?
+        """, (campo_id,))
+        results = cursor.fetchall()
+        return {
+            row.dia: {
+                "hora_abertura": row.Hora_Abertura,
+                "hora_fecho": row.Hora_Fecho
+            }
+            for row in results
+        }

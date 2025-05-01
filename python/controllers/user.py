@@ -9,7 +9,7 @@ def get_user_info(user_id):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, j.idade, a.IBAN, a.No_Campos, j.Descricao
+                SELECT u.ID, u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, j.idade, a.IBAN, a.No_Campos, j.Descricao
                 FROM Utilizador u
                 JOIN Jogador j ON u.ID = j.ID
                 LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador
@@ -129,3 +129,58 @@ def listar_campos_arrendador():
         siglas_dias=get_siglas_dias().items(),
         dias=get_dias_semana().items()
     )
+
+def get_friends():
+    user_id = session.get("user_id")
+    if not user_id:
+        flash("Utilizador não encontrado.", "danger")
+        return redirect(url_for("index"))
+
+    user = get_user_info(user_id)
+
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+
+            # Obter amigos
+            cursor.execute("""
+                SELECT j2.ID, u.Nome, AVG(r.Avaliacao) AS Rating
+                FROM Jogador_Amizade AS ja
+                JOIN Jogador AS j2 ON (ja.ID_J1 = j2.ID OR ja.ID_J2 = j2.ID)
+                JOIN Utilizador AS u ON u.ID = j2.ID
+                LEFT JOIN Rating_Jogador AS rj ON rj.ID_Jogador = j2.ID
+                LEFT JOIN Rating AS r ON r.ID_Avaliador = rj.ID_Avaliador
+                WHERE (ja.ID_J1 = ? OR ja.ID_J2 = ?) AND j2.ID <> ?
+                GROUP BY j2.ID, u.Nome
+            """, (user_id, user_id, user_id))
+
+            amigos = cursor.fetchall()
+
+        return render_template("lista_amigos.html", user=user, amigos=amigos)
+
+    except Exception as e:
+        print(f"Erro ao obter informações do utilizador: {e}")
+        flash("Erro ao carregar os amigos.", "danger")
+        return render_template("lista_amigos.html", user=user, amigos=[])
+
+def add_friend():
+    id_friend = request.form["ID_Amigo"]
+    if not id_friend:
+        flash("Deves escolher um amigo para adicionar.", "danger")
+        return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO Jogador_Amizade (ID_J1, ID_J2)
+                VALUES (?, ?)
+            """, (session["user_id"], id_friend))
+            conn.commit()
+
+        flash("Amigo adicionado com sucesso!", "success")
+        return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
+
+    except Exception as e:
+        print(f"Erro ao adicionar amigo: {e}")
+        flash("Erro ao adicionar amigo.", "danger")
+        return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))

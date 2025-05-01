@@ -7,6 +7,8 @@ from utils.general import get_siglas_dias, get_dias_semana
 def excluir_campo():
     if "user_id" not in session:
         return redirect(url_for("index"))
+    
+    user_id = session["user_id"]
 
     campo_id = request.args.get("ID")
 
@@ -15,6 +17,14 @@ def excluir_campo():
             cursor = conn.cursor()
             cursor.execute("DELETE FROM Campo WHERE ID=?", (campo_id,))
             conn.commit()
+
+            conn.execute("""
+                UPDATE Arrendador
+                SET No_Campos = No_Campos - 1
+                WHERE ID_Arrendador = ?
+            """, (user_id,))
+            conn.commit()
+        
 
         flash("Campo excluído com sucesso!", "success")
     except Exception as e:

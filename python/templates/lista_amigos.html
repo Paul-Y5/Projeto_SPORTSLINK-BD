@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Amigos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Amigos</h1>
+        <div class="text-end mb-3">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFriendModal">
+                Adicionar Amigo
+            </button>
+            <a href="{{ url_for('dashboard.jog_dashboard', name=user[0]) }}" class="btn btn-secondary">Voltar</a>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alert-container">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} mt-3">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Tabela de Campos -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Rating</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for amigo in amigos %}
+                <tr>
+                    <td>{{ amigo[0] }}</td>
+                    <td>{{ amigo[1] }}</td>
+                    <td>{{ amigo[2] or 0.0 }}</td>
+                    <td>
+                        <a href="#"
+                            class="btn btn-warning">Detalhes</a>
+                        <a href="#"
+                            class="btn btn-danger">Remover Amigo</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if campos|length == 0 %}
+                <tr>
+                    <td colspan="8" class="text-center">Nenhum amigo encontrado.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Modal para Adicionar Campo Privado -->
+        <div class="modal fade" id="addFriendModal" tabindex="-1" aria-labelledby="addFriendModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addaddFriendModalLabel">Adicionar Amigo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('dashboard.list_friends', ID=user[0]) }}">
+                        <div class="modal-body">
+                           
+                            <!-- ID do utilizador -->
+                            <div class="mb-3">
+                                <label for="fieldAddress" class="form-label">ID</label>
+                                <input type="number" class="form-control" id="fieldid" name="ID_Amigo" required>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
