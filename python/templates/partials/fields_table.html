@@ -1,0 +1,34 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome do Campo</th>
+            <th>Tipo</th>
+            <th>Comprimento</th>
+            <th>Largura</th>
+            <th>Ocupado</th>
+            <th>Descrição</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Responsável</th>
+            <th>Entidade Pública</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for campo in campos %}
+        <tr>
+            <td>{{ campo.ID }}</td>
+            <td>{{ campo.Nome }}</td>
+            <td>{{ 'Público' if campo.Entidade_publica_resp is not none else 'Privado' }}</td>
+            <td>{{ campo.Comprimento }}</td>
+            <td>{{ campo.Largura }}</td>
+            <td>{{ 'Sim' if campo.ocupado else 'Não' }}</td>
+            <td>{{ campo.Descricao }}</td>
+            <td>{{ campo.Latitude }}</td>
+            <td>{{ campo.Longitude }}</td>
+            <td>{{ campo.Nome_Responsavel or '---' }}</td>
+            <td>{{ campo.Entidade_publica_resp or '---' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

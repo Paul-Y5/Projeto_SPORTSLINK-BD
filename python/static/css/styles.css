@@ -81,3 +81,9 @@ body {
     color: orange;
     box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
 }
+
+#loading {
+    text-align: center;
+    font-size: 18px;
+    color: #555;
+}

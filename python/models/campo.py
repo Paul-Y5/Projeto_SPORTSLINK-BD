@@ -1,3 +1,4 @@
+from flask import request
 import pyodbc
 from models.ponto import create_ponto
 from utils.general import gerar_id_campo
@@ -36,26 +37,52 @@ def get_campos_by_user(user_id):
     return campos
 
 
-def get_campos():
+def get_campos(order, direction, search=None, tipo_campo=None):
+    if direction not in ["ASC", "DESC"]:
+        direction = "ASC"
+
+    if order not in ["c.ID", "c.Nome", "c.Comprimento", "c.Largura", "c.ocupado", "u.Nome", "cpb.Entidade_publica_resp"]:
+        order = "c.Nome"
+
+    where_clauses = []
+    params = []
+
+    if search:
+        search = f"%{search}%"
+        where_clauses.append(
+            "(c.Nome LIKE ? OR c.Descricao LIKE ? OR u.Nome LIKE ? OR cpb.Entidade_publica_resp LIKE ?)"
+        )
+        params.extend([search, search, search, search])
+
+    if tipo_campo == "Priv":
+        where_clauses.append("cp.ID_Campo IS NOT NULL")
+    elif tipo_campo == "Pub":
+        where_clauses.append("cpb.ID_Campo IS NOT NULL")
+
+    where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT 
-                c.Nome AS Nome_Campo, 
+        cursor.execute(f"""
+            SELECT
+                c.ID,
+                c.Nome, 
                 c.Comprimento, 
                 c.Largura, 
                 c.ocupado, 
                 c.Descricao,
                 p.Latitude, 
                 p.Longitude, 
-                u.Nome AS Nome_Responsável, 
+                u.Nome as Nome_Responsavel, 
                 cpb.Entidade_publica_resp
             FROM Campo AS c
             JOIN Ponto AS p ON c.ID_Ponto = p.ID
             LEFT JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
             LEFT JOIN Utilizador AS u ON cp.ID_Arrendador = u.ID
             LEFT JOIN Campo_Pub AS cpb ON c.ID = cpb.ID_Campo
-        """)
+            {where_sql}
+            ORDER BY {order} {direction}
+        """, params)
         return cursor.fetchall()
     
 

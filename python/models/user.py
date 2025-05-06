@@ -25,10 +25,36 @@ def get_user_info(user_id):
         user = cursor.fetchone()
     return user
 
-def get_users():
+def get_users(order, direction, search=None, tipo_utilizador=None):
+    if direction not in ["ASC", "DESC"]:
+        direction = "ASC"
+
+    if order not in [
+        "U.ID", "U.Nome", "U.Email", "U.Num_Tele", "U.Nacionalidade",
+        "J.Idade", "J.Descricao", "A.IBAN", "A.No_Campos"
+    ]:
+        order = "U.ID"
+
+    where_clauses = []
+    params = []
+
+    if search:
+        search = f"%{search}%"
+        where_clauses.append(
+            "(U.Nome LIKE ? OR U.Email LIKE ? OR U.Num_Tele LIKE ? OR U.Nacionalidade LIKE ?)"
+        )
+        params.extend([search, search, search, search])
+
+    if tipo_utilizador == "Arrendador":
+        where_clauses.append("A.ID_Arrendador IS NOT NULL")
+    elif tipo_utilizador == "Jogador":
+        where_clauses.append("A.ID_Arrendador IS NULL")
+
+    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT 
                 U.ID, 
                 U.Nome, 
@@ -46,9 +72,12 @@ def get_users():
             FROM Utilizador AS U
             JOIN Jogador AS J ON U.ID = J.ID
             LEFT JOIN Arrendador AS A ON U.ID = A.ID_Arrendador
-        """)
+            {where_clause}
+            ORDER BY {order} {direction}
+        """, params)
         utilizadores = cursor.fetchall()
     return utilizadores
+
 
 # Podem ser necessárias
 def get_jogadores():
