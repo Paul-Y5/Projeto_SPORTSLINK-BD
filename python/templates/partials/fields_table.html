@@ -1,5 +1,11 @@
 <!-- Formulário com HTMX para buscar e ordenar campos -->
 <form id="fieldFilterForm" class="d-flex gap-2 my-2">
+    <select name="field_type" class="form-select">
+        <option value="all">Todos</option>
+        <option value="public">Público</option>
+        <option value="private">Privado</option>
+    </select>
+
     <input type="text" name="search" placeholder="Procurar..." class="form-control" />
 
     <select name="field_order" class="form-select">
