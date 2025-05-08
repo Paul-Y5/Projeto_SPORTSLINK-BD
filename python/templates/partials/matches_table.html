@@ -1,5 +1,5 @@
 <!-- Formulário com HTMX para buscar e ordenar partidas -->
-<form id="filterForm" class="d-flex gap-2 my-2">
+<form id="filterForm" class="d-flex gap-2 my-2" method="get" action="/admin/dashboard/matches">
     <input type="text" name="search" placeholder="Procurar..." class="form-control" />
 
     <select name="match_order" class="form-select">

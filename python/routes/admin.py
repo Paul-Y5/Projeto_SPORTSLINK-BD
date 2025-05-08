@@ -64,8 +64,9 @@ def admin_dashboard(section):
     context["section"] = section
     return render_template("admin.html", **context)
 
-# Admin routes - Ações de admin
+@admin_bp.route("")
 
+# Admin routes - Ações de admin
 @admin_bp.route('/add_user', methods=['POST'])
 def add_user():
     username = request.form.get('username')
