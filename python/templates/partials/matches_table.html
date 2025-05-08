@@ -1,27 +1,50 @@
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Data e Hora</th>
-            <th>Campo</th>
-            <th>Número de Jogadores</th>
-            <th>Resultado</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for match in matches %}
-        <tr>
-            <td>{{ match.ID }}</td>
-            <td>{{ match.Data_Hora }}</td>
-            <td>{{ match.Campo }}</td>
-            <td>{{ match.no_jogadores }}</td>
-            <td>{{ match.Resultado }}</td>
-            <td>
-                <a href="{{ url_for('admin.edit_match', match_id=match.ID) }}" class="btn btn-primary">Editar</a>
-                <a href="{{ url_for('admin.delete_match', match_id=match.ID) }}" class="btn btn-danger">Excluir</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<!-- Formulário com HTMX para buscar e ordenar partidas -->
+<form id="filterForm" class="d-flex gap-2 my-2">
+    <input type="text" name="search" placeholder="Procurar..." class="form-control" />
+
+    <select name="match_order" class="form-select">
+        <option value="P.ID">ID</option>
+        <option value="P.Data_Hora">Data e Hora</option>
+        <option value="P.Campo">Campo</option>
+        <option value="P.no_jogadores">Número de Jogadores</option>
+        <option value="P.Resultado">Resultado</option>
+    </select>
+
+    <select name="match_direction" class="form-select">
+        <option value="ASC">Crescente</option>
+        <option value="DESC">Decrescente</option>
+    </select>
+</form>
+
+<!-- Div que recebe o conteúdo da tabela via HTMX -->
+<div id="matchesTable">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Data e Hora</th>
+                <th>Campo</th>
+                <th>Número de Jogadores</th>
+                <th>Resultado</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for match in matches %}
+            <tr>
+                <td>{{ match.ID }}</td>
+                <td>{{ match.Data_Hora }}</td>
+                <td>{{ match.Campo }}</td>
+                <td>{{ match.no_jogadores }}</td>
+                <td>{{ match.Resultado }}</td>
+                <td>
+                    <a href="{{ url_for('admin.edit_match', match_id=match.ID) }}"
+                        class="btn btn-primary btn-sm">Editar</a>
+                    <a href="{{ url_for('admin.delete_match', match_id=match.ID) }}"
+                        class="btn btn-danger btn-sm">Excluir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

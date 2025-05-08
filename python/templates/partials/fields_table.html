@@ -1,34 +1,62 @@
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nome do Campo</th>
-            <th>Tipo</th>
-            <th>Comprimento</th>
-            <th>Largura</th>
-            <th>Ocupado</th>
-            <th>Descrição</th>
-            <th>Latitude</th>
-            <th>Longitude</th>
-            <th>Responsável</th>
-            <th>Entidade Pública</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for campo in campos %}
-        <tr>
-            <td>{{ campo.ID }}</td>
-            <td>{{ campo.Nome }}</td>
-            <td>{{ 'Público' if campo.Entidade_publica_resp is not none else 'Privado' }}</td>
-            <td>{{ campo.Comprimento }}</td>
-            <td>{{ campo.Largura }}</td>
-            <td>{{ 'Sim' if campo.ocupado else 'Não' }}</td>
-            <td>{{ campo.Descricao }}</td>
-            <td>{{ campo.Latitude }}</td>
-            <td>{{ campo.Longitude }}</td>
-            <td>{{ campo.Nome_Responsavel or '---' }}</td>
-            <td>{{ campo.Entidade_publica_resp or '---' }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<!-- Formulário com HTMX para buscar e ordenar campos -->
+<form id="fieldFilterForm" class="d-flex gap-2 my-2">
+    <input type="text" name="search" placeholder="Procurar..." class="form-control" />
+
+    <select name="field_order" class="form-select">
+        <option value="C.ID">ID</option>
+        <option value="C.Nome">Nome</option>
+        <option value="C.Comprimento">Comprimento</option>
+        <option value="C.Largura">Largura</option>
+        <option value="C.Latitude">Latitude</option>
+        <option value="C.Longitude">Longitude</option>
+    </select>
+
+    <select name="field_direction" class="form-select">
+        <option value="ASC">Crescente</option>
+        <option value="DESC">Decrescente</option>
+    </select>
+</form>
+
+<div id="fieldsTable">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome do Campo</th>
+                <th>Tipo</th>
+                <th>Comprimento</th>
+                <th>Largura</th>
+                <th>Ocupado</th>
+                <th>Descrição</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Responsável</th>
+                <th>Entidade Pública</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for campo in campos %}
+            <tr>
+                <td>{{ campo.ID }}</td>
+                <td>{{ campo.Nome }}</td>
+                <td>{{ 'Público' if campo.Entidade_publica_resp is not none else 'Privado' }}</td>
+                <td>{{ campo.Comprimento }}</td>
+                <td>{{ campo.Largura }}</td>
+                <td>{{ 'Sim' if campo.ocupado else 'Não' }}</td>
+                <td>{{ campo.Descricao }}</td>
+                <td>{{ campo.Latitude }}</td>
+                <td>{{ campo.Longitude }}</td>
+                <td>{{ campo.Nome_Responsavel or '---' }}</td>
+                <td>{{ campo.Entidade_publica_resp or '---' }}</td>
+                <td>
+                    <a href="{{ url_for('admin.edit_user', user_id=campo.ID) }}"
+                        class="btn btn-primary btn-sm">Editar</a>
+                    <a href="{{ url_for('admin.delete_user', user_id=campo.ID) }}"
+                        class="btn btn-danger btn-sm">Excluir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

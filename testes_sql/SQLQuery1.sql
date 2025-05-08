@@ -1,13 +1,13 @@
 Use SPORTSLINK;
 Go
 
-
 SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Nacionalidade, J.Idade, J.Descricao, A.IBAN, A.No_Campos,
     CASE WHEN A.ID_Arrendador IS NOT NULL THEN 'Arrendador'
         ELSE 'Jogador'
     END AS Tipo
 FROM Utilizador AS U JOIN Jogador AS J ON U.ID = J.ID LEFT JOIN Arrendador AS A ON U.ID = A.ID_Arrendador
 
+Select * from Jogador join Utilizador on Jogador.ID = Utilizador.ID join Arrendador on Utilizador.ID = Arrendador.ID_Arrendador
 
 Select c.ID as Nome_Campo, c.Comprimento, c.Largura, c.ocupado, c.Descricao,
 p.Latitude, p.Longitude, u.Nome as Nome_responsavel, cpb.Entidade_publica_resp
@@ -43,10 +43,9 @@ Select * from Disponibilidade
 			JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
 			JOIN Disponibilidade AS d ON c.ID = d.ID_Campo
 			JOIN Dias_semana AS di ON d.ID_Dia = di.ID
-            WHERE cp.ID_Arrendador = 904281712
+            WHERE cp.ID_Arrendador = 456783456
             GROUP BY c.ID, c.Nome, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
                 p.Longitude, c.Ocupado
-
 
 
 Select * from Utilizador as u join Jogador as j on u.ID=j.ID left join Arrendador on u.ID=ID_Arrendador

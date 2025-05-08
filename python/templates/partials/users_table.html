@@ -1,37 +1,59 @@
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Email</th>
-            <th>Telefone</th>
-            <th>Nacionalidade</th>
-            <th>Idade</th>
-            <th>Descrição</th>
-            <th>IBAN</th>
-            <th>Número de Campos</th>
-            <th>Tipo</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in utilizadores %}
-        <tr>
-            <td>{{ user.ID }}</td>
-            <td>{{ user.Nome }}</td>
-            <td>{{ user.Email }}</td>
-            <td>{{ user.Num_Tele }}</td>
-            <td>{{ user.Nacionalidade }}</td>
-            <td>{{ user.Idade or '---' }}</td>
-            <td>{{ user.Descricao or '---' }}</td>
-            <td>{{ user.IBAN or '---' }}</td>
-            <td>{{ user.No_Campos if user.No_Campos is not none else '---' }}</td>
-            <td class="user-type">{{ 'Jogador' if user.IBAN is none else 'Arrendador' }}</td>
-            <td>
-                <a href="{{ url_for('admin.edit_user', user_id=user.ID) }}" class="btn btn-primary btn-sm">Editar</a>
-                <a href="{{ url_for('admin.delete_user', user_id=user.ID) }}" class="btn btn-danger btn-sm">Excluir</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<form id="userFilterForm" class="d-flex gap-2 my-2">
+    <input type="text" name="search" placeholder="Procurar..." class="form-control"/>
+
+    <select name="user_order" class="form-select">
+        <option value="U.ID">ID</option>
+        <option value="U.Nome">Nome</option>
+        <option value="U.Email">Email</option>
+        <option value="U.Num_Tele">Telefone</option>
+        <option value="U.Nacionalidade">Nacionalidade</option>
+        <option value="U.Idade">Idade</option>
+    </select>
+
+    <select name="user_direction" class="form-select">
+        <option value="ASC">Crescente</option>
+        <option value="DESC">Decrescente</option>
+    </select>
+</form>
+
+<div id="usersTable">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Nacionalidade</th>
+                <th>Idade</th>
+                <th>Descrição</th>
+                <th>IBAN</th>
+                <th>Número de Campos</th>
+                <th>Tipo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in utilizadores %}
+            <tr>
+                <td>{{ user.ID }}</td>
+                <td>{{ user.Nome }}</td>
+                <td>{{ user.Email }}</td>
+                <td>{{ user.Num_Tele }}</td>
+                <td>{{ user.Nacionalidade }}</td>
+                <td>{{ user.Idade or '---' }}</td>
+                <td>{{ user.Descricao or '---' }}</td>
+                <td>{{ user.IBAN or '---' }}</td>
+                <td>{{ user.No_Campos if user.No_Campos is not none else '---' }}</td>
+                <td class="user-type">{{ 'Jogador' if user.IBAN is none else 'Arrendador' }}</td>
+                <td>
+                    <a href="{{ url_for('admin.edit_user', user_id=user.ID) }}"
+                        class="btn btn-primary btn-sm">Editar</a>
+                    <a href="{{ url_for('admin.delete_user', user_id=user.ID) }}"
+                        class="btn btn-danger btn-sm">Excluir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

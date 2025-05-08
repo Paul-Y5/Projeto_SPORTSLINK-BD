@@ -8,12 +8,16 @@ from utils.decorator_login import login_required
 from controllers.user import get_user_info
 from utils.decorator_login import login_required
 
+from flask import Blueprint, render_template, request
+
 admin_bp = Blueprint("admin", __name__)
+
 @admin_bp.route("/dashboard", defaults={"section": "users"}, methods=["GET"], endpoint="admin_dashboard")
 @admin_bp.route("/dashboard/<section>", methods=["GET"])
 @login_required
 def admin_dashboard(section):
-    is_htmx = "HX-Request" in request.headers
+    # Default values
+    context = {}
 
     if section == "users":
         user_order = request.args.get("user_order", "U.ID")
@@ -21,11 +25,10 @@ def admin_dashboard(section):
         user_search = request.args.get("user_search", "")
         user_type = request.args.get("user_type", "")
         utilizadores = get_users(user_order, user_direction, user_search, user_type)
-
-        if is_htmx:
-            return render_template("partials/users_table.html", utilizadores=utilizadores)
-        else:
-            return render_template("admin.html", content="partials/users_table.html", utilizadores=utilizadores)
+        context.update({
+            "content": "partials/users_table.html",
+            "utilizadores": utilizadores
+        })
 
     elif section == "fields":
         field_order = request.args.get("field_order", "c.ID")
@@ -33,23 +36,33 @@ def admin_dashboard(section):
         field_search = request.args.get("field_search", "")
         field_type = request.args.get("field_type", "")
         campos = get_campos(field_order, field_direction, field_search, field_type)
-
-        if is_htmx:
-            return render_template("partials/fields_table.html", campos=campos)
-        else:
-            return render_template("admin.html", content="partials/fields_table.html", campos=campos)
+        context.update({
+            "content": "partials/fields_table.html",
+            "campos": campos
+        })
 
     elif section == "matches":
         match_order = request.args.get("match_order", "P.ID")
         match_direction = request.args.get("match_direction", "ASC").upper()
         partidas = get_partidas(match_order, match_direction)
+        context.update({
+            "content": "partials/matches_table.html",
+            "matches": partidas
+        })
 
-        if is_htmx:
-            return render_template("partials/matches_table.html", matches=partidas)
-        else:
-            return render_template("admin.html", content="partials/matches_table.html", matches=partidas)
+    elif section == "reservations":
+        #TODO: Implementar a lógica para obter as reservas
+        reservas = ...
+        context.update({
+            "content": "partials/reservetions_table.html",
+            "reservas": reservas
+        })
 
-    return render_template("admin.html", content=None)
+    else:
+        context["content"] = None  # UNKOWN SECTION
+
+    return render_template("admin.html", **context)
+
 
 
 @admin_bp.route('/add_field', methods=['POST'])
