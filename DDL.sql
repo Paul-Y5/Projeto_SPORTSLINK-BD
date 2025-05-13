@@ -181,7 +181,8 @@ CREATE TABLE Dias_semana (
   ID               INT,
   Nome             VARCHAR(50) UNIQUE NOT NULL CHECK (Nome IN ('Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado')),
 
-  PRIMARY KEY CHECK (ID BETWEEN 1 AND 7)
+  CHECK (ID BETWEEN 1 AND 7),
+  PRIMARY KEY (ID)
 );
 
 CREATE TABLE Disponibilidade (
@@ -208,9 +209,9 @@ CREATE TABLE Chat_Live (
 
 CREATE TABLE Desporto (
   ID          INT IDENTITY(1,1),
-  Nome        VARCHAR(50) UNIQUE NOT NULL
+  Nome        VARCHAR(50) UNIQUE NOT NULL,
 
-  PRIMARY KEY,
+  PRIMARY KEY (ID)
 );
 
 CREATE TABLE Desporto_Jogador (

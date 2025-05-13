@@ -30,7 +30,7 @@ from Campo as c join Campo_Priv as cp on c.ID=cp.ID_Campo join Disponibilidade a
 join Ponto as p on c.ID_Ponto=p.ID
 
 Select count(ID_Campo) as No_Campos
-from Campo_Priv where ID_Arrendador = 904281712
+from Campo_Priv where ID_Arrendador = 1
 
 Select * from Campo
 Select * from Disponibilidade
@@ -43,7 +43,7 @@ Select * from Disponibilidade
 			JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
 			JOIN Disponibilidade AS d ON c.ID = d.ID_Campo
 			JOIN Dias_semana AS di ON d.ID_Dia = di.ID
-            WHERE cp.ID_Arrendador = 456783456
+            WHERE cp.ID_Arrendador = 3
             GROUP BY c.ID, c.Nome, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
                 p.Longitude, c.Ocupado
 

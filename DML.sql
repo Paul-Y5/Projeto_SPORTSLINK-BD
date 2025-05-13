@@ -138,7 +138,6 @@ FROM Jogador WHERE ID <= 3;
 INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Descricao)
 SELECT 2, ID, '2025-05-16', '10:00', '11:30', 'Partida de futsal'
 FROM Jogador WHERE ID <= 3;
-INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Descricao)
 
 -- ===================================================
 -- 17. RATING
