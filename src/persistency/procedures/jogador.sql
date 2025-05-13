@@ -1,0 +1,60 @@
+-- CRUD para a tabela Jogador
+
+CREATE PROCEDURE sp_CreateJogador
+  @ID INT,
+  @Idade INT,
+  @Descricao VARCHAR(2500)
+AS
+BEGIN
+  INSERT INTO Jogador (ID, Idade, Descricao)
+  VALUES (@ID, @Idade, @Descricao);
+END;
+GO
+
+CREATE PROCEDURE sp_GetJogador
+  @ID INT
+AS
+BEGIN
+  SELECT * FROM Jogador WHERE ID = @ID;
+END;
+GO
+
+CREATE PROCEDURE sp_UpdateJogador
+  @ID INT,
+  @Idade INT,
+  @Descricao VARCHAR(2500)
+AS
+BEGIN
+  UPDATE Jogador
+  SET Idade = @Idade, Descricao = @Descricao
+  WHERE ID = @ID;
+END;
+GO
+
+CREATE PROCEDURE sp_GetFriends
+  @UserID INT
+AS
+BEGIN
+  SELECT 
+    j2.ID, 
+    u.Nome, 
+    AVG(r.Avaliacao) AS Rating
+  FROM Jogador_Amizade AS ja
+  JOIN Jogador AS j2 ON (ja.ID_J1 = j2.ID OR ja.ID_J2 = j2.ID)
+  JOIN Utilizador AS u ON u.ID = j2.ID
+  LEFT JOIN Rating_Jogador AS rj ON rj.ID_Jogador = j2.ID
+  LEFT JOIN Rating AS r ON r.ID_Avaliador = rj.ID_Avaliador
+  WHERE (ja.ID_J1 = @UserID OR ja.ID_J2 = @UserID) AND j2.ID <> @UserID
+  GROUP BY j2.ID, u.Nome;
+END;
+GO
+
+CREATE PROCEDURE sp_AddFriend
+  @UserID INT,
+  @FriendID INT
+AS
+BEGIN
+  INSERT INTO Jogador_Amizade (ID_J1, ID_J2)
+  VALUES (@UserID, @FriendID);
+END;
+GO
