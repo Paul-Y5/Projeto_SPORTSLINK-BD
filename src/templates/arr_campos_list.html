@@ -13,7 +13,7 @@
         <div class="text-end mb-3">
             <button type="button" class="btn btn-success" data-bs-toggle="modal"
                 data-bs-target="#addPrivateFieldModal">Adicionar Novo Campo</button>
-            <a href="{{ url_for('dashboard.jog_dashboard', name=user[0]) }}" class="btn btn-secondary">Voltar</a>
+            <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary">Voltar</a>
         </div>
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -45,18 +45,23 @@
             <tbody>
                 {% for campo in campos %}
                 <tr>
-                    <td>{{ campo[0] }}</td>
-                    <td>{{ campo[1] }}x{{ campo[2] }}</td>
-                    <td>{{ campo[3] or '---' }}</td>
+                    <td>{{ campo[1] }}</td>
+                    <td>{{ campo[2] }}x{{ campo[3] }}</td>
                     <td>{{ campo[4] or '---' }}</td>
-                    <td>{{ campo[5] }}, {{ campo[6] }}</td>
-                    <td>{{ campo[8] }}</td>
+                    <td>{{ campo[5] or '---' }}</td>
+                    <td>({{ campo[6] }}, {{ campo[7] }})</td>
+                    <td>{{ campo[9] }}</td>
                     <td>
-                        {% if campo[7] == 1 %} Sim {% else %} Não {% endif %}
+                        {% if campo[8] == 1 %} Sim {% else %} Não {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('dashboard.info_field', ID=campo[9]) }}" class="btn btn-warning">Detalhes</a>
-                        <a href="{{ url_for('dashboard.delete_field', ID=campo[9]) }}" class="btn btn-danger">Eliminar</a>
+                        <a href="{{ url_for('dashboard.info_field', ID=campo[0]) }}" class="btn btn-warning">Detalhes</a>
+                        <form action="{{ url_for('dashboard.arr_campos_list')}}" method="post" style="display:inline;">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id_campo" value="{{ campo[0] }}">
+                            <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Tem certeza que deseja eliminar este campo?')">Eliminar</button>
+                        </form>                          
                     </td>
                 </tr>
                 {% endfor %}
@@ -77,7 +82,7 @@
                         <h5 class="modal-title" id="addPrivateFieldModalLabel">Adicionar Campo Privado</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form method="POST" action="{{ url_for('dashboard.add_private_field') }}">
+                    <form method="POST" action="{{ url_for('dashboard.arr_campos_list') }}">
                         <div class="modal-body">
                             <h3>Localização do Campo</h3>
                             <!-- Latitude -->
@@ -159,7 +164,7 @@
         
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Adicionar Campo</button>
+                            <button name="action" value="add" type="submit" class="btn btn-primary">Adicionar Campo</button>
                         </div>
                     </form>
                 </div>

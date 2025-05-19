@@ -1,3 +1,6 @@
+USE SPORTSLINK;
+GO
+
 -- Autenticar Utilizador
 CREATE PROCEDURE sp_AuthenticateUtilizador
   @Email VARCHAR(512),
@@ -8,11 +11,18 @@ BEGIN
 END;
 GO
 
+
 -- Verificar se o utilizador existe
-CREATE PROCEDURE sp_CheckUtilizadorExists
+CREATE PROCEDURE sp_UtilizadorExists
   @Email VARCHAR(512)
 AS
 BEGIN
-  SELECT COUNT(*) AS UtilizadorExists FROM Utilizador WHERE Email = @Email;
+  SET NOCOUNT ON;
+  SELECT CASE 
+    WHEN COUNT(*) > 0 THEN 1
+      ELSE 0
+    END AS UtilizadorExists
+  FROM Utilizador
+  WHERE Email = @Email;
 END;
 GO

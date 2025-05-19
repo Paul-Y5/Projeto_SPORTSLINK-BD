@@ -11,26 +11,6 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE sp_GetJogador
-  @ID INT
-AS
-BEGIN
-  SELECT * FROM Jogador WHERE ID = @ID;
-END;
-GO
-
-CREATE PROCEDURE sp_UpdateJogador
-  @ID INT,
-  @Idade INT,
-  @Descricao VARCHAR(2500)
-AS
-BEGIN
-  UPDATE Jogador
-  SET Idade = @Idade, Descricao = @Descricao
-  WHERE ID = @ID;
-END;
-GO
-
 CREATE PROCEDURE sp_GetFriends
   @UserID INT
 AS
@@ -56,5 +36,15 @@ AS
 BEGIN
   INSERT INTO Jogador_Amizade (ID_J1, ID_J2)
   VALUES (@UserID, @FriendID);
+END;
+GO
+
+CREATE PROCEDURE sp_RemoveFriend
+  @UserID INT,
+  @FriendID INT
+AS
+BEGIN
+  DELETE FROM Jogador_Amizade 
+  WHERE (ID_J1 = @UserID AND ID_J2 = @FriendID) OR (ID_J1 = @FriendID AND ID_J2 = @UserID);
 END;
 GO

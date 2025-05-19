@@ -19,6 +19,12 @@ def registration():
             return render_template("index.html")
 
         try:
+            # Verifica se o utilizador já existe
+            existe = cursor.execute("EXEC sp_UtilizadorExists ?", email).fetchone()
+            if existe[0] == 1:
+                flash("Email já registado. Tente novamente.", "danger")
+                return render_template("index.html")
+            
             # Insere o utilizador na tabela Utilizador usando a stored procedure
             cursor.execute("EXEC sp_CreateUtilizador ?, ?, ?, ?, ?", 
                 username, email, phone_number, password, nationality)
@@ -46,21 +52,20 @@ def log():
         return redirect(url_for("admin.admin_dashboard"))
 
     with create_connection() as conn:
+        # Verifica se o utilizador existe
         cursor = conn.cursor()
-        cursor.execute("EXEC sp_GetUtilizadorByEmail ?", email)
+        cursor.execute("EXEC sp_AuthenticateUtilizador ?, ?", email, password)
         user = cursor.fetchone()
 
-    if user and user[4] == password:
+    if user:
         session["user_id"] = user[0]
-        session["user_nome"] = user[1]
+        session["username"] = user[1]
 
-        tipo_utilizador = "Arrendador" if is_arrendador(user[0]) else "Jogador"
+        tipo_utilizador = "Arrendador" if is_arrendador(user[0]) == 1 else "Jogador"
         session["tipo_utilizador"] = tipo_utilizador
 
         flash(f"Login realizado com sucesso! Tipo de utilizador: {tipo_utilizador}", "success")
-        # Redireciona para a página dashboard
         return redirect(url_for("dashboard.jog_dashboard", name=user[1]))
     else:
         flash("Email ou password incorretos.", "danger")
         return render_template("index.html")
-

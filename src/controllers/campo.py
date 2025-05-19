@@ -48,10 +48,9 @@ def create_campo():
 def excluir_campo():
     if "user_id" not in session:
         return redirect(url_for("index"))
-    
-    user_id = session["user_id"]
 
-    campo_id = request.args.get("ID")
+    campo_id = request.form.get("id_campo")
+    print(f"Campo ID: {campo_id}")
 
     try:
         with create_connection() as conn:
@@ -60,8 +59,6 @@ def excluir_campo():
             # Chama a stored procedure para excluir o campo
             cursor.execute("EXEC sp_DeleteCampo ?", (campo_id,))
 
-            # Atualiza o número de campos do arrendador
-            cursor.execute("EXEC sp_UpdateNoCamposArrendador ?", (user_id,))
             conn.commit()
 
         flash("Campo excluído com sucesso!", "success")
@@ -71,7 +68,7 @@ def excluir_campo():
     return redirect(url_for("dashboard.arr_campos_list"))
 
 def adicionar_campo_privado():
-    user_id = session.get('user_id')
+    user_id = session["user_id"]
     if not user_id:
         return redirect(url_for('auth.login'))
 
@@ -89,28 +86,34 @@ def adicionar_campo_privado():
         with create_connection() as conn:
             cursor = conn.cursor()
 
-            # Itera sobre os dias selecionados e chama a stored procedure para cada dia
+            cursor.execute("""EXEC sp_addCampoPriv 
+                @ID_Utilizador = ?, 
+                @Latitude = ?, 
+                @Longitude = ?, 
+                @ID_Mapa = ?, 
+                @Nome = ?, 
+                @Endereco = ?, 
+                @Comprimento = ?, 
+                @Largura = ?, 
+                @Ocupado = ?, 
+                @Descricao = ?, 
+                @Preco = ?""",
+            (user_id, lat, long, 1, nome, endereco, comprimento, largura, 0, descricao, preco))
+
+            campo_id = cursor.fetchone()[0]
+            print(f"Campo criado com ID: {campo_id}")
+
             for dia in dias:
                 sigla = get_siglas_dias()[dia]
                 id_dia = get_dias_semana()[sigla]
                 hora_abertura = request.form.get(f'hora_abertura_{sigla}')
                 hora_fecho = request.form.get(f'hora_fecho_{sigla}')
 
-                # Chama a stored procedure para adicionar o campo privado e sua disponibilidade
-                cursor.execute("""
-                    EXEC sp_adicionar_campo_privado 
-                        @ID_Utilizador = ?, 
-                        @Nome = ?, 
-                        @Endereco = ?, 
-                        @Comprimento = ?, 
-                        @Largura = ?, 
-                        @Ocupado = 0, 
-                        @Descricao = ?, 
-                        @Preco = ?, 
-                        @ID_Dia = ?, 
-                        @Hora_Abertura = ?, 
-                        @Hora_Fecho = ?
-                """, (user_id, nome, endereco, comprimento, largura, descricao, preco, id_dia, hora_abertura, hora_fecho))
+                cursor.execute("""EXEC sp_SetDisponibilidadeCampo 
+                    @ID_Campo = ?,
+                    @ID_Dia = ?,
+                    @Hora_Abertura = ?,
+                    @Hora_Fecho = ?""", (campo_id, id_dia, hora_abertura, hora_fecho))
 
             conn.commit()
 
@@ -118,8 +121,7 @@ def adicionar_campo_privado():
     except Exception as e:
         flash(f'Ocorreu um erro ao adicionar o campo: {e}', 'danger')
 
-    user = get_user_info(user_id)
-    return redirect(url_for('dashboard.arr_campos_list', user=user))
+    return redirect(url_for('dashboard.arr_campos_list'))
 
 def get_disponibilidade_por_campo(campo_id):
     try:
@@ -147,6 +149,17 @@ def get_campos():
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC sp_GetCampos ? ", (user_id,))
+            campos = cursor.fetchall()
+        return campos
+    except Exception as e:
+        print(f"Erro ao obter campos: {e}")
+        return None
+    
+def get_All_campos(field_order, field_direction, field_search, field_type):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_GetAllCampos ?, ?, ?, ?", (field_order, field_direction, field_search, field_type))
             campos = cursor.fetchall()
         return campos
     except Exception as e:

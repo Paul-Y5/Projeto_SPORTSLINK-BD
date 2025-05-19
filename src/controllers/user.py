@@ -17,43 +17,56 @@ def get_user_info(user_id):
         print(f"Erro ao obter informações do usuário: {e}")
         return None
     
-def get_users():
+def get_users(user_order, user_direction, user_search, user_type):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             # Chama a stored procedure para obter todos os utilizadores
-            cursor.execute("EXEC sp_GetAllUsers")
+            cursor.execute("EXEC sp_GetAllUsers ?, ?, ?, ?",
+                           (user_order, user_direction, user_search, user_type))
             users = cursor.fetchall()
         return users
     except Exception as e:
         print(f"Erro ao obter utilizadores: {e}")
         return []
 
-def update_user_info(user_id, username, email, nationality, phone_number, age, description, iban):
+def update_user_info(user_id, username=None, email=None, nationality=None, phone_number=None,
+                     age=None, description=None, iban=None, no_campos=None, password=None):
     try:
-        tipo_utilizador = "Arrendador" if is_arrendador(user_id) else "Jogador"
         with create_connection() as conn:
             cursor = conn.cursor()
-            # Atualiza informações básicas do utilizador
-            cursor.execute("EXEC sp_UpdateUserInfo ?, ?, ?, ?, ?", 
-                           (user_id, username, email, phone_number, nationality))
             
-            # Atualiza informações específicas do tipo de utilizador
-            if tipo_utilizador == "Jogador":
-                cursor.execute("EXEC sp_UpdateJogadorInfo ?, ?, ?", 
-                               (user_id, age, description))
-            else:
-                cursor.execute("EXEC sp_UpdateJogadorInfo ?, ?, ?", 
-                               (user_id, age, description))
-                cursor.execute("EXEC sp_UpdateArrendadorInfo ?, ?", 
-                               (user_id, iban))
+            cursor.execute("""
+                EXEC sp_UpdateUserInfo 
+                    @UserID = ?, 
+                    @Nome = ?, 
+                    @Email = ?, 
+                    @Num_Tele = ?, 
+                    @Nacionalidade = ?, 
+                    @Password = ?, 
+                    @Descricao = ?, 
+                    @Idade = ?, 
+                    @IBAN = ?, 
+                    @No_Campos = ?
+            """, (
+                user_id,
+                username,
+                email,
+                phone_number,
+                nationality,
+                password,
+                description,
+                age,
+                iban,
+                no_campos
+            ))
+
             conn.commit()
-        
-        # Obter informações atualizadas do utilizador
-        user = get_user_info(user_id)
-        return True, tipo_utilizador, user
+            flash("Dados atualizados com sucesso!", "success")
+
+            return True, session.get("tipo_utilizador", "Jogador"), get_user_info(user_id)
     except Exception as e:
-        print(f"Erro ao atualizar informações do usuário: {e}")
+        flash(f"Erro ao atualizar dados: {str(e)}", "danger")
         return False, None, None
     
 def delete_user_account():
@@ -62,7 +75,7 @@ def delete_user_account():
         with create_connection() as conn:
             cursor = conn.cursor()
             # Chama a stored procedure para excluir o utilizador
-            cursor.execute("EXEC sp_DeleteUser ?", (user_id,))
+            cursor.execute("EXEC sp_DeleteUtilizador ?", (user_id,))
             conn.commit()
         flash("Conta excluída com sucesso!", "success")
         session.clear()
@@ -71,29 +84,28 @@ def delete_user_account():
         flash(f"Erro ao excluir conta: {str(e)}", "danger")
         return redirect(url_for("account"))
 
-
 # Arrendador
 def make_arrendador():
     if "user_id" not in session:
+        flash("ERROR: Utilizador não encontrado.", "danger")
         return redirect(url_for("index"))
     user_id = session["user_id"]
     iban = request.form["iban"]
-    termos = request.form.get("termos")
-    user = get_user_info(user_id)
-    if not termos:
-        flash("Deves aceitar os termos e condições para continuares.", "danger")
-        return redirect(url_for("arrendador.arrendador_dashboard"))
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             # Chama a stored procedure para criar um arrendador
-            cursor.execute("EXEC sp_CreateArrendador ?, ?", (user_id, iban))
+            cursor.execute(
+                "EXEC sp_CreateArrendador @ID_Utilizador = ?, @IBAN = ?",
+                (user_id, iban)
+            )
+
             conn.commit()
         flash("Agora és um arrendador!", "success")
-        return redirect(url_for("arrendador.arrendador_dashboard"))
+        return redirect(url_for("dashboard.jog_dashboard", name = session["username"]))
     except Exception as e:
         flash(f"Erro ao tornar-se arrendador: {str(e)}", "danger")
-        return redirect(url_for("arrendador.arrendador_dashboard"))
+        return redirect(url_for("dashboard.jog_dashboard", name = session["username"]))
 
 def list_campos_arrendador():
     user_id = session.get("user_id")

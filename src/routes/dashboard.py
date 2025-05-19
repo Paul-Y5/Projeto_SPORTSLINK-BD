@@ -6,9 +6,9 @@ from utils.decorator_login import login_required
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
-@dashboard_bp.route("/user/<name>", methods=["GET", "POST"])
+@dashboard_bp.route("/user", methods=["GET", "POST"])
 @login_required
-def jog_dashboard(name):
+def jog_dashboard():
     user_id = session["user_id"]
     user = get_user_info(user_id)
     tipo_utilizador = session.get("tipo_utilizador", "Jogador")
@@ -37,7 +37,6 @@ def update_info():
         )
 
         if success:
-            flash("Informações atualizadas com sucesso!", "success")
             if tipo_utilizador == "Arrendador":
                 return render_template("arr_dashboard.html", user=user)
             else:
@@ -70,17 +69,22 @@ def delete_account():
 def arrendador_form():
     return make_arrendador()
 
-@dashboard_bp.route("/arr_campos_list")
+@dashboard_bp.route("/arr_campos_list", methods=["GET", "POST"])
+@login_required
 def arr_campos_list():
-    return listar_campos_arrendador()
+    if request.method == "GET":
+        return listar_campos_arrendador()
+    
+    action = request.form.get("action")
 
-@dashboard_bp.route("/delete_field", methods=["GET", "POST"])
-def delete_field():
-    return excluir_campo()
+    if action == "add":
+        return adicionar_campo_privado()
+    elif action == "delete":
+        return excluir_campo()
+    else:
+        flash("Ação inválida.", "danger")
+        return redirect(url_for("dashboard.arr_campos_list"))
 
-@dashboard_bp.route("/add_private_field", methods=["POST"])
-def add_private_field():
-    return adicionar_campo_privado()
 
 @dashboard_bp.route("/info_field<ID>", methods=["GET", "POST"])
 @login_required

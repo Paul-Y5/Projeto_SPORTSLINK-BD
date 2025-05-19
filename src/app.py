@@ -17,7 +17,7 @@ app.register_blueprint(admin_bp, url_prefix="/admin")
 @app.route("/")
 def index():
     if "user_id" in session:
-        return redirect(url_for("dashboard.dashboard_home"))
+        return redirect(url_for("dashboard.jog_dashboard", name = session["username"]))
     return render_template("index.html")
 
 # Ponto de entrada principal

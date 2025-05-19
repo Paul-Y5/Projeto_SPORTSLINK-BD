@@ -4,7 +4,7 @@ from utils.db import create_connection
 from utils.decorator_login import login_required
 from controllers.user import get_users
 from controllers.partidas import get_partidas
-from controllers.campo import create_campo, get_campos
+from controllers.campo import create_campo, get_All_campos
 from utils.decorator_login import login_required
 
 from flask import Blueprint, render_template, request
@@ -34,7 +34,7 @@ def admin_dashboard(section):
         field_direction = request.args.get("field_direction", "ASC").upper()
         field_search = request.args.get("field_search", "")
         field_type = request.args.get("field_type", "")
-        campos = get_campos(field_order, field_direction, field_search, field_type)
+        campos = get_All_campos(field_order, field_direction, field_search, field_type)
         context.update({
             "content": "partials/fields_table.html",
             "campos": campos

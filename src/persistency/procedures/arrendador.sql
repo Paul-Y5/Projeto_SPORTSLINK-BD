@@ -1,33 +1,15 @@
 -- CRUD Tabela Arrendador
+USE SPORTSLINK;
+GO
 
 CREATE PROCEDURE sp_CreateArrendador
   @ID_Utilizador INT,
   @IBAN   VARCHAR(34),
-  @No_Campos INT,
+  @No_Campos INT = 0
 AS
 BEGIN
-  INSERT INTO Arrendador (ID_Utilizador, IBAN, No_Campos)
+  INSERT INTO Arrendador (ID_Arrendador, IBAN, No_Campos)
   VALUES (@ID_Utilizador, @IBAN, @No_Campos);
-END;
-GO
-
-CREATE PROCEDURE sp_GetArrendador
-  @ID INT
-AS
-BEGIN
-  SELECT * FROM Arrendador WHERE ID = @ID;
-END;
-GO
-
-CREATE PROCEDURE sp_UpdateArrendador
-  @ID INT,
-  @IBAN   VARCHAR(34),
-  @No_Campos INT,
-AS
-BEGIN
-  UPDATE Arrendador
-  SET IBAN = @IBAN, No_Campos = @No_Campos
-  WHERE ID = @ID;
 END;
 GO
 
@@ -35,34 +17,46 @@ CREATE PROCEDURE sp_DeleteArrendador
   @ID INT
 AS
 BEGIN
-  DELETE FROM Arrendador WHERE ID = @ID;
-END;
-GO
-
-CREATE PROCEDURE sp_GetArrendadorByID
-  @ID_Utilizador INT
-AS
-BEGIN
-  SELECT * FROM Arrendador WHERE ID_Utilizador = @ID_Utilizador;
+  DELETE FROM Arrendador WHERE ID_Arrendador = @ID;
 END;
 GO
 
 CREATE PROCEDURE sp_UpdateNoCamposArrendador
-  @ID_Utilizador INT,
+  @ID_Utilizador INT
 AS
 BEGIN
   UPDATE Arrendador
   SET No_Campos = No_Campos - 1
   WHERE ID_Arrendador = @ID_Utilizador;
 END;
+GO
 
 CREATE PROCEDURE sp_GetCamposByUser
   @UserID INT
 AS
 BEGIN
-  SELECT *
-  FROM Campo
-  WHERE ID_Arrendador = @UserID;
+ SELECT 
+    c.ID, 
+    c.Nome, 
+    c.Largura, 
+    c.Comprimento, 
+    c.Descricao, 
+    c.Endereco, 
+    p.Latitude, 
+    p.Longitude, 
+    c.Ocupado,
+    STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis,
+    CASE WHEN c.Ocupado = 1 THEN 'Sim' ELSE 'Não' END AS OcupadoStr,
+    CASE WHEN cp.ID_Arrendador IS NOT NULL THEN 'Privado' ELSE 'Publico' END AS Tipo
+  FROM Campo AS c
+  JOIN Ponto AS p ON c.ID_Ponto = p.ID
+  LEFT JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
+  JOIN Disponibilidade AS d ON c.ID = d.ID_Campo
+  JOIN Dias_semana AS di ON d.ID_Dia = di.ID
+
+	Where ID_Arrendador = @UserID
+    GROUP BY c.ID, c.Nome, c.Largura, c.Comprimento, c.Descricao, c.Endereco, p.Latitude, 
+      p.Longitude, c.Ocupado, cp.ID_Arrendador
 END;
 GO
 
@@ -71,37 +65,69 @@ CREATE PROCEDURE sp_IsArrendador
 AS
 BEGIN
   SELECT CASE 
-           WHEN COUNT(*) > 0 THEN 1
-           ELSE 0
-         END AS IsArrendador
+    WHEN COUNT(*) > 0 THEN 1
+      ELSE 0
+    END AS IsArrendador
   FROM Arrendador
   WHERE ID_Arrendador = @UserID;
 END;
 GO
 
-CREATE PROCEDURE sp_adicionar_campo_privado
+CREATE PROCEDURE sp_addCampoPriv
   @ID_Utilizador INT,
+  @Latitude DECIMAL(9,6),
+  @Longitude DECIMAL(9,6),
+  @ID_Mapa INT = 1,
   @Nome VARCHAR(256),
   @Endereco VARCHAR(512),
   @Comprimento DECIMAL(10,2),
   @Largura DECIMAL(10,2),
   @Ocupado BIT,
   @Descricao VARCHAR(2500),
-  @Preco DECIMAL(10,2),
-  @ID_Dia INT,
-  @Hora_Abertura TIME,
-  @Hora_Fecho TIME
+  @Preco DECIMAL(10,2)
 AS
 BEGIN
-  DECLARE @ID_Campo INT;
+  SET NOCOUNT ON;
 
-  -- Inserir o campo privado
-  INSERT INTO CampoPrivado (ID_Ponto, ID_Mapa, Nome, Endereco, Comprimento, Largura, Ocupado, Descricao)
-  VALUES (@ID_Ponto, @ID_Mapa, @Nome, @Endereco, @Comprimento, @Largura, @Ocupado, @Descricao);
+  BEGIN TRY
+    BEGIN TRANSACTION;
 
-  SET @ID_Campo = SCOPE_IDENTITY();
+    DECLARE @ID_Campo INT;
 
-  -- Inserir a disponibilidade
-  INSERT INTO Disponibilidade (ID_Campo, ID_Dia, Preco, Hora_Abertura, Hora_Fecho)
-  VALUES (@ID_Campo, @ID_Dia, @Preco, @Hora_Abertura, @Hora_Fecho);
+    EXEC sp_CreateCampo
+      @Nome, 
+      @Endereco, 
+      @Comprimento, 
+      @Largura, 
+      @Ocupado, 
+      @Descricao,
+      @Latitude, 
+      @Longitude,
+      @ID_Mapa,
+      @ID_Campo OUTPUT;
+
+    IF @ID_Campo IS NULL
+    BEGIN
+      RAISERROR('Erro ao criar o campo. ID_Campo é NULL.', 16, 1);
+    END
+
+    INSERT INTO Campo_Priv(ID_Campo, ID_Arrendador)
+    VALUES (@ID_Campo, @ID_Utilizador);
+
+    UPDATE Arrendador
+    SET No_Campos = No_Campos + 1
+    WHERE ID_Arrendador = @ID_Utilizador;
+
+    SELECT @ID_Campo AS ID_Campo;
+
+    COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+    ROLLBACK TRANSACTION;
+
+    DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
+    DECLARE @ErrSeverity INT = ERROR_SEVERITY();
+    RAISERROR(@ErrMsg, @ErrSeverity, 1);
+  END CATCH
 END;
+GO
