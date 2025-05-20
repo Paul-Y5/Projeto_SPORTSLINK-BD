@@ -1,5 +1,5 @@
-from flask import Blueprint, request, session, redirect, url_for, flash, render_template
-from controllers.campo import adicionar_campo_privado, excluir_campo, get_campo_by_id, get_disponibilidade_por_campo
+from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
+from controllers.campo import adicionar_campo_privado, editar_campo, excluir_campo, get_campo_by_id, get_disponibilidade_por_campo
 from controllers.user import add_friend, delete_user_account, get_friends, make_arrendador, update_user_info, get_user_info, listar_campos_arrendador
 from utils.decorator_login import login_required
 from utils.decorator_login import login_required
@@ -88,17 +88,13 @@ def arr_campos_list():
 
 @dashboard_bp.route("/info_field<ID>", methods=["GET", "POST"])
 @login_required
-def info_field(ID):
-    campo_info = get_campo_by_id(ID)
-    if campo_info is None:
-        flash("Campo não encontrado.", "danger")
-        return redirect(url_for("dashboard.arr_campos_list"))
-    disponibilidade = get_disponibilidade_por_campo(ID)
-    if disponibilidade is None:
-        flash("Disponibilidade não encontrada.", "danger")
-        return redirect(url_for("dashboard.arr_campos_list"))
+def campo_detail(ID):
     if request.method == "POST":
-        ...
+        editar_campo()
+    campo, disponibilidade = get_campo_by_id(ID)
+    if not campo:
+        abort(404)
+    return render_template('campo_details.html', campo=campo, disponibilidade=disponibilidade)
         
 @dashboard_bp.route("/amigos/<int:ID>" , methods=["GET", "POST"])
 @login_required

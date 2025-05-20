@@ -87,3 +87,18 @@ body {
     font-size: 18px;
     color: #555;
 }
+
+.horario-box {
+    background-color: #198754; /* Bootstrap 'success' green */
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    min-width: 60px;
+    text-align: center;
+}
+
+.modal-body textarea {
+    resize: vertical;
+    min-height: 100px;
+}

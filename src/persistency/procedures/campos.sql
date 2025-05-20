@@ -57,7 +57,7 @@ BEGIN
       SELECT ID_Arrendador FROM Campo_Priv WHERE ID_Campo = @ID
     );
   END
-  
+
   -- Apagar o campo
   DELETE FROM Campo WHERE ID = @ID;
 END
@@ -109,6 +109,23 @@ CREATE PROCEDURE sp_GetCamposPub
   -- TODO
 
 -- CampoPrivado
+CREATE PROCEDURE sp_GetCampoByID
+  @ID_Campo INT
+AS
+BEGIN
+  SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis
+FROM Campo as c
+LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
+JOIN Ponto as p on p.ID = c.ID_Ponto
+JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
+JOIN Dias_semana as di on di.ID = dp.ID_dia
+group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho
+HAVING c.ID = @ID_Campo;
+END;
+GO
+
 CREATE PROCEDURE sp_GetDisponibilidadePorCampo
   @ID_Campo INT
 AS
@@ -116,21 +133,23 @@ BEGIN
   SELECT 
     ds.Nome AS Dia,
     d.Hora_Abertura,
-    d.Hora_Fecho
+    d.Hora_Fecho,
+    d.Preco
   FROM Disponibilidade d
   JOIN Dias_semana ds ON ds.ID = d.ID_Dia
   WHERE d.ID_Campo = @ID_Campo;
 END;
 GO
 
-CREATE PROCEDURE sp_SetDisponibilidadeCampo
+CREATE OR ALTER PROCEDURE sp_SetDisponibilidadeCampo
   @ID_Campo INT,
   @ID_Dia INT,
   @Hora_Abertura TIME,
-  @Hora_Fecho TIME
+  @Hora_Fecho TIME,
+  @Preco DECIMAL(10,2)
 AS
 BEGIN
-  INSERT INTO Disponibilidade(ID_Campo, ID_Dia, Hora_Abertura, Hora_Fecho)
-  VALUES (@ID_Campo, @ID_Dia, @Hora_Abertura, @Hora_Fecho);
+  INSERT INTO Disponibilidade(ID_Campo, ID_Dia, Hora_Abertura, Hora_Fecho, Preco)
+  VALUES (@ID_Campo, @ID_Dia, @Hora_Abertura, @Hora_Fecho, @Preco);
 END;
 GO

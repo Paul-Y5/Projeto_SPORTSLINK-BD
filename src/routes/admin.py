@@ -4,7 +4,7 @@ from utils.db import create_connection
 from utils.decorator_login import login_required
 from controllers.user import get_users
 from controllers.partidas import get_partidas
-from controllers.campo import create_campo, get_All_campos
+from controllers.campo import get_All_campos
 from utils.decorator_login import login_required
 
 from flask import Blueprint, render_template, request
@@ -97,15 +97,7 @@ def add_field():
 
     # Informações do campo publico
     entidade_publica = request.form.get('entR')
-    id_campo = create_campo(nome, comprimento, largura, descricao, latitude, longitude)
-    try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp) VALUES (?, ?)", (id_campo, entidade_publica,))
-            conn.commit()
-        flash("Campo público adicionado com sucesso!", "success")
-    except Exception as e:
-        flash(f"Erro ao adicionar campo: {str(e)}", "danger")
+    ...
 
     return redirect(url_for('admin_dashboard'))
 

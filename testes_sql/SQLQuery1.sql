@@ -57,3 +57,14 @@ LEFT JOIN Rating_Jogador as rj ON rj.ID_Jogador=j2.ID
 LEFT JOIN Rating as r ON r.ID_Avaliador=rj.ID_Avaliador
 WHERE (ja.ID_J1 = 511126546 OR ja.ID_J2 = 511126546) AND j2.ID <> 511126546
 GROUP BY j2.ID, u.Nome
+
+
+SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis
+FROM Campo as c
+LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
+JOIN Ponto as p on p.ID = c.ID_Ponto
+JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
+JOIN Dias_semana as di on di.ID = dp.ID_dia
+group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho
+

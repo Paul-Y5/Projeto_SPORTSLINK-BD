@@ -83,8 +83,7 @@ CREATE PROCEDURE sp_addCampoPriv
   @Comprimento DECIMAL(10,2),
   @Largura DECIMAL(10,2),
   @Ocupado BIT,
-  @Descricao VARCHAR(2500),
-  @Preco DECIMAL(10,2)
+  @Descricao VARCHAR(2500)
 AS
 BEGIN
   SET NOCOUNT ON;

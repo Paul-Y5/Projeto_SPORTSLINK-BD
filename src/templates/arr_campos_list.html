@@ -55,7 +55,7 @@
                         {% if campo[8] == 1 %} Sim {% else %} Não {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('dashboard.info_field', ID=campo[0]) }}" class="btn btn-warning">Detalhes</a>
+                        <a href="{{ url_for('dashboard.campo_detail', ID=campo[0]) }}" class="btn btn-warning">Detalhes</a>
                         <form action="{{ url_for('dashboard.arr_campos_list')}}" method="post" style="display:inline;">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id_campo" value="{{ campo[0] }}">
