@@ -7,11 +7,12 @@
     <title>Informações do Campo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>      
 
 </head>
 
@@ -41,40 +42,53 @@
         {% endif %}
         {% endwith %}
 
-        <!-- Informações do Campo -->
+    <!-- Informações do Campo -->
         <div class="card mb-4">
-            <div class="card-header">
-                <h2>Detalhes do Campo</h2>
+            <div class="card-header bg-primary text-white rounded-top-4">
+                <h2 class="mb-0">Detalhes do Campo</h2>
             </div>
             <div class="card-body">
-                <img src="{{ url_for('static', filename='imagens/campo/' ~ campo.Imagem) }}" alt="Campo" class="img-fluid mb-3">
-                <p><strong>Dimensões:</strong> ({{ campo.Comprimento }}x{{ campo.Largura }})</p>
-                <p><strong>Descrição:</strong> {{ campo.Descricao or '---' }}</p>
-                <p><strong>Endereço:</strong> {{ campo.Endereco or '---' }}</p>
-                <p><strong>Preço:</strong> {{ campo.Preco or '---' }} €</p>
-                <p><strong>Localização:</strong></p>
-                <div class="card-body">
-                    <div id="map" style="height: 300px; width: 400px; border-radius: 5%;"></div>
+                <div class="row g-4 align-items-center">
+                    <!-- Imagem do Campo -->
+                    <div class="col-md-5 text-center">
+                        <img src="{{ url_for('static', filename=campo.URL if campo.URL else 'img/campo.png') }}"
+                            alt="Imagem do Campo" class="img-fluid rounded-3 border"
+                            style="max-height: 300px; object-fit: cover; width: 100%;">
+                    </div>
+
+                    <!-- Informações do Campo -->
+                    <div class="col-md-7">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Dimensões:</strong> {{ campo.Comprimento }} x {{ campo.Largura
+                                }} m</li>
+                            <li class="list-group-item"><strong>Descrição:</strong> {{ campo.Descricao or '---' }}</li>
+                            <li class="list-group-item"><strong>Endereço:</strong> {{ campo.Endereco or '---' }}</li>
+                            <li class="list-group-item"><strong>Preço por hora:</strong> {{ campo.Preco or '---' }} €</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Localização -->
+                <div class="mt-4">
+                    <h5 class="fw-semibold">Localização</h5>
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 10px;" class="border"></div>
                 </div>
             </div>
 
             <!-- Disponibilidade -->
-            <div class="card-header">
-                <h2>Disponibilidade</h2>
-            </div>
-            
-            <div class="card-body">
+            <div class="card-footer bg-light">
+                <h4 class="fw-semibold mb-3">Disponibilidade</h4>
                 {% for item in disponibilidade %}
-                <p><strong>{{ item.dia }}:</strong></p>
+                <p class="mb-1"><strong>{{ item.dia }}:</strong></p>
                 <div class="d-flex flex-wrap mb-3">
                     {% set start = item.hora_abertura[:5] %}
                     {% set end = item.hora_fecho[:5] %}
-            
+
                     {% set hora_inicio = start.split(':')[0]|int %}
                     {% set hora_fim = end.split(':')[0]|int %}
-            
+
                     {% for hora in range(hora_inicio, hora_fim) %}
-                    <div class="horario-box me-2 mb-2">
+                    <div class="px-3 py-1 border rounded me-2 mb-2 bg-secondary text-white small">
                         {{ "%02d:00"|format(hora) }}
                     </div>
                     {% endfor %}
@@ -85,7 +99,7 @@
 
         <!-- Modal Editar -->
         <div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalEditarLabel">Editar Campo</h5>
@@ -93,24 +107,101 @@
                     </div>
                     <div class="modal-body">
                         <!-- Formulário de edição -->
-                        <form action="#" method="POST"
-                            enctype="multipart/form-data">
+                        <form action="#" method="POST" enctype="multipart/form-data">
+                            <!-- Nome -->
                             <div class="mb-3">
                                 <label for="nome" class="form-label">Nome</label>
                                 <input type="text" class="form-control" id="nome" name="nome" value="{{ campo.Nome }}" required>
                             </div>
+                
+                            <!-- Descrição -->
                             <div class="mb-3">
                                 <label for="descricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="descricao" name="descricao">{{ campo.Descricao }}</textarea>
+                                <textarea class="form-control" id="descricao" name="descricao" required>{{ campo.Descricao }}</textarea>
                             </div>
-                            <!-- Adicione outros campos conforme necessário -->
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                
+                            <!-- Comprimento -->
+                            <div class="mb-3">
+                                <label for="comprimento" class="form-label">Comprimento (m)</label>
+                                <input type="number" step="0.01" class="form-control" id="comprimento" name="comprimento"
+                                    value="{{ campo.Comprimento }}">
+                            </div>
+                
+                            <!-- Largura -->
+                            <div class="mb-3">
+                                <label for="largura" class="form-label">Largura (m)</label>
+                                <input type="number" step="0.01" class="form-control" id="largura" name="largura" value="{{ campo.Largura }}">
+                            </div>
+                
+                            <!-- Endereço -->
+                            <div class="mb-3">
+                                <label for="endereco" class="form-label">Endereço</label>
+                                <input type="text" class="form-control" id="endereco" name="endereco" value="{{ campo.Endereco }}">
+                            </div>
+                
+                            <!-- Preço -->
+                            <div class="mb-3">
+                                <label for="preco" class="form-label">Preço por hora (€)</label>
+                                <input type="number" step="0.01" class="form-control" id="preco" name="preco" value="{{ campo.Preco }}">
+                            </div>
+                            
+                            <!-- Seleção de Dias -->
+                            <div class="mb-3">
+                                <label class="form-label">Dias Disponíveis e Horários</label>
+                                {% for dia, sigla in siglas_dias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="day{{ sigla }}" name="dias[]" value="{{ dia }}"
+                                    {% if dia in campo.dias_disponiveis %}checked{% endif %}>
+                                    <label class="form-check-label" for="day{{ sigla }}">{{ dia }}</label>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <label for="hora_abertura_{{ sigla }}" class="form-label">Hora de Abertura</label>
+                                            <input type="time" class="form-control" id="hora_abertura_{{ sigla }}" name="hora_abertura_{{ sigla }}"
+                                            value="{{ campo.horarios[dia].hora_abertura if campo.horarios and dia in campo.horarios else '' }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="hora_fecho_{{ sigla }}" class="form-label">Hora de Fecho</label>
+                                            <input type="time" class="form-control" id="hora_fecho_{{ sigla }}" name="hora_fecho_{{ sigla }}"
+                                            value="{{ campo.horarios[dia].hora_fecho if campo.horarios and dia in campo.horarios else '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                
+                            <!-- Coordenadas - Mapa para selecionar -->
+                            <div class="mb-3">
+                                <label class="form-label">Localização no Mapa</label>
+                                <div id="mapEditar" style="height: 300px; border: 1px solid #ccc; border-radius: 8px;"></div>
+                            </div>
+                
+                            <!-- Inputs para Latitude e Longitude -->
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="text" class="form-control" id="latitude" name="latitude" readonly
+                                    value="{{ campo.Latitude|replace(',', '.') }}">
+                                </div>
+                                <div class="col">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="text" class="form-control" id="longitude" name="longitude" readonly
+                                    value="{{ campo.Longitude|replace(',', '.') }}">
+                                </div>
+                    
+                                <!-- Upload nova imagem -->
+                                <div class="mb-3">
+                                    <label for="imagem" class="form-label">Nova Imagem</label>
+                                    <input type="file" class="form-control" id="imagem" name="imagem">
+                                </div>
+                            </div>
+                            <!-- Botão de envio -->
+                            <button type="submit" class="btn btn-primary">Guardar Alterações</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-        
+  
         <!-- Modal Reservas -->
         <div class="modal fade" id="modalReservas" tabindex="-1" aria-labelledby="modalReservasLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
@@ -125,21 +216,25 @@
                             <thead>
                                 <tr>
                                     <th>Data</th>
-                                    <th>Hora de Início</th>
-                                    <th>Hora de Término</th>
                                     <th>Reservado por</th>
+                                    <th>Hora de Início</th>
+                                    <th>Tempo da Reserva</th>
+                                    <th>Valor Pago</th>
+                                    <th>Descrição</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for reserva in reservas %}
                                 <tr>
-                                    <td>{{ reserva.data }}</td>
-                                    <td>{{ reserva.hora_inicio }}</td>
-                                    <td>{{ reserva.hora_fim }}</td>
-                                    <td>{{ reserva.usuario }}</td>
+                                    <td>{{ reserva.Data }}</td>
+                                    <td>{{ reserva.Nome }}, {{ reserva.Nacionalidade }}, {{ reserva.Num_Tele }}</td>
+                                    <td>{{ reserva.Hora_Inicio[:5] }}</td>
+                                    <td>{{ reserva.Duracao }}</td>
+                                    <td>{{ reserva.TotalPago }} €</td>
+                                    <td>{{ reserva.Descricao }}</td>
                                 </tr>
                                 {% endfor %}
-                            </tbody>
+                            </tbody>                            
                         </table>
                         {% else %}
                         <p>Não há reservas para este campo.</p>
@@ -151,35 +246,19 @@
   
     </div>
 
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    
     <script>
-        function inicializarMapa(lat, lng, nome, descricao = '---') {
-            // Corrige vírgulas, se vierem como strings mal formatadas
-            lat = parseFloat(String(lat).replace(',', '.'));
-            lng = parseFloat(String(lng).replace(',', '.'));
-
-            // Inicializa o mapa
-            var map = L.map('map').setView([lat, lng], 13);
-
-            // Adiciona camada do OpenStreetMap
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 18,
-                minZoom: 12,
-                dragging: false,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            // Adiciona o marcador
-            var marker = L.marker([lat, lng]).addTo(map);
-        }
-
-        // Chamada da função com dados do campo (passados do Flask)
+        // Inicializar mapa principal na div com id "map", passando latitude e longitude como números
         inicializarMapa(
-            "{{ campo.Latitude|replace(',', '.') }}",
-            "{{ campo.Longitude|replace(',', '.') }}",
-            "{{ campo.Nome|escape }}",
-            "{{ campo.Descricao or '---'|escape }}"
+            'map',                                  // id do container do mapa no HTML
+            parseFloat("{{ campo.Latitude|replace(',', '.') }}"),  // latitude numérica
+            parseFloat("{{ campo.Longitude|replace(',', '.') }}"), // longitude numérica
+            13                                      // zoom opcional (ajuste conforme quiser)
         );
     </script>
+      
+    
     
 </body>
 

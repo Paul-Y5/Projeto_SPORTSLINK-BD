@@ -130,3 +130,24 @@ BEGIN
   END CATCH
 END;
 GO
+
+CREATE PROCEDURE sp_GetReservasByCampo
+  @ID_Campo INT
+AS
+BEGIN
+SELECT 
+  u.Nome, 
+  u.Nacionalidade, 
+  u.Num_Tele, 
+  r.[Data],
+  r.Hora_Inicio,
+  r.Descricao,
+  di.Preco, 
+  dbo.CalculaHorasFormatado(r.Hora_Inicio, r.Hora_Fim) AS Duracao_Horas
+  FROM Reserva AS r
+  JOIN Disponibilidade AS di ON di.ID_Campo = r.ID_Campo 
+  JOIN Utilizador AS u ON u.ID = r.ID_Jogador
+  WHERE r.ID_Campo = @ID_Campo
+  AND di.ID_Dia = DATEPART(WEEKDAY, r.Data)
+END;
+GO

@@ -1,104 +1,137 @@
+:root {
+    --orange: #f47c1f;
+    --black: #000000;
+    --white: #ffffff;
+    --gray-light: #f8f9fa;
+    --gray-border: #e0e0e0;
+}
+
 body {
-    background-color: #ffffff;
-    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--gray-light);
+    color: var(--black);
 }
 
-.nav-tabs .nav-link.active {
-    background-color: #000000; /* Bootstrap primary blue */
-    color: rgb(255, 123, 0) !important;
+.container {
+    max-width: 960px;
 }
 
-.nav-tabs .nav-link {
-    color: #495057; /* Texto padrão */
+/* Cabeçalho e botões */
+.text-center h1 {
+    color: var(--orange);
+    font-weight: bold;
 }
 
-.card {
-    background-color: #ffffff;
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.5s ease-in-out;
-}
-
-.form-switch {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.form-wrapper {
-    display: none;
-    animation: fadeIn 0.5s ease-in-out;
-}
-
-.form-wrapper.active {
-    display: block;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.form-control:focus {
-    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
+.text-end .btn {
+    margin-left: 0.5rem;
 }
 
 .btn-primary {
-    border: #000000;
-    background-color: #ff8400;
-    color: black;
-    transition: all 0.3s ease;
+    background-color: var(--orange);
+    color: var(--white);
+    border: none;
 }
 
 .btn-primary:hover {
-    background-color: black;
-    color: orange;
-    transform: scale(1.02);
+    background-color: #e06e10;
 }
 
-.btn-primary:active {
-    background-color: black;
-    color: orange;
-    transform: scale(0.95);
-}
-.btn-primary:focus {
-    outline: none;
+.btn-info {
+    background-color: var(--black);
+    color: var(--white);
     border: none;
-    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
 }
 
-.btn-primary:active:focus {
-    outline: none;
+.btn-info:hover {
+    background-color: #333333;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: var(--white);
     border: none;
-    background-color: black;
-    color: orange;
-    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
 }
-.btn-primary:focus-visible {
-    outline: none;
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+/* Cartão principal */
+.card {
+    border: 1px solid var(--gray-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    background-color: var(--orange) !important;
+    color: var(--white);
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.list-group-item {
     border: none;
-    background-color: black;
-    color: orange;
-    box-shadow: 0 0 5px rgba(255, 132, 0, 0.814);
+    background-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+    font-size: 1rem;
+    color: var(--black);
 }
 
-#loading {
-    text-align: center;
-    font-size: 18px;
-    color: #555;
+/* Imagem */
+.img-fluid {
+    border: 2px solid var(--orange);
+    border-radius: 10px;
 }
 
-.horario-box {
-    background-color: #198754; /* Bootstrap 'success' green */
-    color: white;
-    padding: 8px 12px;
+/* Mapa */
+#map, #map-edit {
+    border: 2px solid var(--orange);
+    border-radius: 10px;
+}
+
+/* Disponibilidade */
+.card-footer {
+    background-color: var(--gray-light);
+    padding: 1.5rem;
+}
+
+.card-footer h4 {
+    color: var(--black);
+}
+
+.card-footer .px-3 {
+    background-color: var(--orange);
+    color: var(--white);
+    border: none;
+}
+
+.alert {
     border-radius: 8px;
-    font-size: 0.9rem;
-    min-width: 60px;
-    text-align: center;
+    padding: 0.75rem 1.25rem;
 }
 
-.modal-body textarea {
-    resize: vertical;
-    min-height: 100px;
+.alert-container {
+    max-width: 720px;
+    margin: auto;
+}
+
+@media (max-width: 768px) {
+    .text-end {
+        text-align: center !important;
+        margin-top: 1rem;
+    }
+
+    .text-end .btn {
+        display: block;
+        margin: 0.5rem auto;
+    }
+
+    .img-fluid {
+        max-height: 200px;
+    }
 }
