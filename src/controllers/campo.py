@@ -1,3 +1,4 @@
+from decimal import Decimal
 from flask import session, redirect, url_for, flash, request
 from utils.db import create_connection
 from utils.general import get_siglas_dias, get_dias_semana
@@ -6,11 +7,10 @@ from utils.general import get_siglas_dias, get_dias_semana
 def create_CampoPub():
     ...
 
-def editar_campo():
+def editar_campo(ID):
     if "user_id" not in session:
         return redirect(url_for("index"))
 
-    campo_id = request.form.get("id_campo")
     nome = request.form.get("nome")
     lat = request.form.get("latitude")
     long = request.form.get("longitude")
@@ -24,40 +24,60 @@ def editar_campo():
         with create_connection() as conn:
             cursor = conn.cursor()
 
-            # Chama a stored procedure para editar o campo
-            cursor.execute("""EXEC sp_EditCampo 
-                @ID_Campo = ?, 
-                @Latitude = ?, 
-                @Longitude = ?, 
-                @Nome = ?, 
-                @Endereco = ?, 
-                @Comprimento = ?, 
-                @Largura = ?, 
-                @Descricao = ?""",
-            (campo_id, lat, long, nome, endereco, comprimento, largura, descricao))
+            # Atualiza dados do campo
+            cursor.execute("""
+                EXEC sp_EditCampo 
+                    @ID_Campo = ?, 
+                    @Nome = ?, 
+                    @Descricao = ?, 
+                    @Comprimento = ?, 
+                    @Largura = ?, 
+                    @Endereco = ?, 
+                    @URL = ?
+            """, (ID, nome, descricao, comprimento, largura, endereco, None))
 
-            # Atualiza a disponibilidade
+            # Atualiza a localização do campo
+            cursor.execute("""
+                EXEC sp_UpdatePonto
+                    @ID = ?,
+                    @Latitude = ?,
+                    @Longitude = ?
+                """, (ID, lat, long))
+
+            # Atualiza a disponibilidade por dia executando sp_SetDisponibilidadeCampo
             dias = request.form.getlist('dias[]')
-            for dia in dias:
-                sigla = get_siglas_dias()[dia]
-                id_dia = get_dias_semana()[sigla]
-                hora_abertura = request.form.get(f'hora_abertura_{sigla}')
-                hora_fecho = request.form.get(f'hora_fecho_{sigla}')
+            siglas = get_siglas_dias() 
+            ids_dia = get_dias_semana()
 
-                cursor.execute("""EXEC sp_SetDisponibilidadeCampo 
-                    @ID_Campo = ?,
-                    @ID_Dia = ?,
-                    @Hora_Abertura = ?,
-                    @Hora_Fecho = ?,
-                    @Preco = ?""", (campo_id, id_dia, hora_abertura, hora_fecho, preco))
+            for dia in dias:
+                sigla = siglas.get(dia)
+                if not sigla:
+                    continue
+
+                id_dia = ids_dia.get(sigla)
+                if not id_dia:
+                    continue
+
+                hora_abertura = request.form.get(f'hora_abertura_{sigla}') or None
+                hora_fecho = request.form.get(f'hora_fecho_{sigla}') or None
+
+                cursor.execute("""
+                    EXEC sp_SetDisponibilidadeCampo 
+                        @ID_Campo = ?,
+                        @ID_Dia = ?,
+                        @Hora_Abertura = ?,
+                        @Hora_Fecho = ?,
+                        @Preco = ?
+                """, (ID, id_dia, hora_abertura, hora_fecho, preco))
 
             conn.commit()
 
         flash('Campo editado com sucesso!', 'success')
+
     except Exception as e:
         flash(f'Ocorreu um erro ao editar o campo: {e}', 'danger')
 
-    return redirect(url_for('dashboard.arr_campos_list'))
+    return redirect(url_for('dashboard.campo_detail', ID=ID))
 
 def excluir_campo():
     if "user_id" not in session:
@@ -178,6 +198,32 @@ def get_campo_by_id(campo_id):
         return campo_dict, disponibilidade
 
     return None, None
+
+def getReservasByCampo(ID):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_GetReservasByCampo ?", (ID,))
+            reservas = cursor.fetchall()
+        if reservas:
+            reservas = [
+                {
+                    "Nome": row[0],
+                    "Nacionalidade": row[1],
+                    "Num_Tele": row[2],
+                    "Data": row[3],
+                    "Hora_Inicio": row[4],
+                    "Descricao": row[5],
+                    "Duracao": row[7],
+                    "TotalPago": Decimal(float(row[6])) * Decimal(str(int(row[7].split(':')[0]) + int(row[7].split(':')[1]) / 60)),
+                }
+                for row in reservas
+            ]
+            print(f"Reservas: {reservas}")
+        return reservas
+    except Exception as e:
+        print(f"Erro ao obter reservas: {e}")
+        return None
 
 def get_campos():
     user_id = session.get("user_id")

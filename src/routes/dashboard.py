@@ -1,5 +1,5 @@
 from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
-from controllers.campo import adicionar_campo_privado, editar_campo, excluir_campo, get_campo_by_id, get_disponibilidade_por_campo
+from controllers.campo import adicionar_campo_privado, editar_campo, excluir_campo, get_campo_by_id, get_disponibilidade_por_campo, getReservasByCampo
 from controllers.user import add_friend, delete_user_account, get_friends, make_arrendador, update_user_info, get_user_info, listar_campos_arrendador
 from utils.decorator_login import login_required
 from utils.decorator_login import login_required
@@ -90,11 +90,12 @@ def arr_campos_list():
 @login_required
 def campo_detail(ID):
     if request.method == "POST":
-        editar_campo()
+        editar_campo(ID)
     campo, disponibilidade = get_campo_by_id(ID)
+    reservas = getReservasByCampo(ID)
     if not campo:
         abort(404)
-    return render_template('campo_details.html', campo=campo, disponibilidade=disponibilidade)
+    return render_template('campo_details.html', campo=campo, disponibilidade=disponibilidade, reservas=reservas)
         
 @dashboard_bp.route("/amigos/<int:ID>" , methods=["GET", "POST"])
 @login_required

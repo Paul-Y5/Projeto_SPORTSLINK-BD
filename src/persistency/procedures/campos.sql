@@ -114,14 +114,16 @@ CREATE PROCEDURE sp_GetCampoByID
 AS
 BEGIN
   SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
-  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, IMG.[URL]
 FROM Campo as c
 LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
 JOIN Ponto as p on p.ID = c.ID_Ponto
 JOIN Utilizador as U on U.ID = cp.ID_Arrendador
 LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
+LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
 JOIN Dias_semana as di on di.ID = dp.ID_dia
-group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho
+group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
+c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, IMG.[URL]
 HAVING c.ID = @ID_Campo;
 END;
 GO
@@ -141,7 +143,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE sp_SetDisponibilidadeCampo
+CREATE PROCEDURE sp_SetDisponibilidadeCampo
   @ID_Campo INT,
   @ID_Dia INT,
   @Hora_Abertura TIME,
@@ -151,5 +153,46 @@ AS
 BEGIN
   INSERT INTO Disponibilidade(ID_Campo, ID_Dia, Hora_Abertura, Hora_Fecho, Preco)
   VALUES (@ID_Campo, @ID_Dia, @Hora_Abertura, @Hora_Fecho, @Preco);
+END;
+GO
+
+
+CREATE PROCEDURE sp_EditCampo
+  @ID_Campo INT,
+  @Nome VARCHAR(256),
+  @Endereco VARCHAR(512),
+  @Comprimento DECIMAL(10,2),
+  @Largura DECIMAL(10,2),
+  @Descricao VARCHAR(2500),
+  @URL NVARCHAR(255) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  BEGIN TRY
+    BEGIN TRANSACTION;
+
+    UPDATE Campo
+    SET Nome = @Nome,
+        Descricao = @Descricao,
+        Comprimento = @Comprimento,
+        Largura = @Largura,
+        Endereco = @Endereco
+    WHERE ID = @ID_Campo;
+
+    -- Atualizar URL da imagem se fornecida
+    IF @URL IS NOT NULL
+    BEGIN
+      UPDATE IMG_Campo
+      SET URL = @URL
+      WHERE ID_Campo = @ID_Campo;
+    END
+
+    COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+    ROLLBACK TRANSACTION;
+    THROW;
+  END CATCH
 END;
 GO
