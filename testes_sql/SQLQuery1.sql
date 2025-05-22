@@ -68,5 +68,12 @@ LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
 JOIN Dias_semana as di on di.ID = dp.ID_dia
 group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho
 
+<<<<<<< HEAD
 Select * from Ponto where ID = (Select ID_Ponto from Campo where ID = 1 )
 
+=======
+SELECT u.Nome, u.Nacionalidade, u.Num_Tele, di.Preco, (DATEDIFF(r.Hora_Fim, r.Hora_Inicio)
+FROM Reserva as r
+JOIN Disponibilidade as di on di.ID_Campo=r.ID_Campo 
+JOIN Utilizador as u on u.ID=r.ID_Jogador
+>>>>>>> d7c08b75bd1c519833594e3a638a41231bc771b1
