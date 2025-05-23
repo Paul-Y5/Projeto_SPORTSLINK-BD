@@ -6,21 +6,23 @@ GO
 
 CREATE TABLE Utilizador (
   ID                INT IDENTITY(1,1),
-  Nome              VARCHAR(256),
-  Email             VARCHAR(512),
-  Num_Tele          VARCHAR(64),
-  [Password]        VARCHAR(512),
+  Nome              VARCHAR(256) NOT NULL,
+  Email             VARCHAR(512) UNIQUE,
+  Num_Tele          VARCHAR(64)  UNIQUE,
+  [Password]        VARCHAR(512) NOT NULL,
   Nacionalidade     VARCHAR(128),
 
   PRIMARY KEY (ID)
 );
 
 CREATE TABLE Jogador (
-  ID                INT,
-  Idade             INT,
-  Descricao         VARCHAR(2500),
+  ID INT PRIMARY KEY,
+  Data_Nascimento DATE NOT NULL,
+  Idade INT, 
+  Descricao VARCHAR(2500),
+  Peso DECIMAL(5,2),
+  Altura DECIMAL(5,2),
 
-  PRIMARY KEY (ID),
   FOREIGN KEY (ID) REFERENCES Utilizador(ID) ON DELETE CASCADE
 );
 
@@ -40,13 +42,13 @@ CREATE TABLE Mapa (
   PRIMARY KEY (ID)
 );
 
-CREATE TABLE ModExib_Mapa (
+/* CREATE TABLE ModExib_Mapa (
   ID_Mapa           INT,
   Modo_exib         VARCHAR(50),
 
   PRIMARY KEY (ID_Mapa, Modo_exib),
   FOREIGN KEY (ID_Mapa) REFERENCES Mapa(ID) ON DELETE CASCADE
-);
+); */ -- Comentado porque achámos desnecessário
 
 CREATE TABLE Ponto (
   ID            INT IDENTITY(1,1),
@@ -91,34 +93,36 @@ CREATE TABLE Campo_Pub (
 );
 
 CREATE TABLE Imagem (
-  [URL]              VARCHAR(512) PRIMARY KEY
+  ID                 INT IDENTITY(1,1) PRIMARY KEY,
+  [URL]              VARCHAR(512) NOT NULL,
 );
 
 CREATE TABLE IMG_Campo (
-  ID_Campo           INT,
-  [URL]              VARCHAR(512),
+  ID_Campo          INT,
+  ID_img            INT,
 
-  PRIMARY KEY (ID_Campo, [URL]),
+  PRIMARY KEY (ID_Campo, ID_img),
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID) ON DELETE CASCADE,
-  FOREIGN KEY ([URL]) REFERENCES Imagem([URL]) ON DELETE CASCADE
+  FOREIGN KEY (ID_img) REFERENCES Imagem(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE IMG_Perfil (
-  ID_Utilizador         INT,
-  [URL]              VARCHAR(512),
+  ID_Utilizador       INT,
+  ID_img              INT,
 
-  PRIMARY KEY (ID_Utilizador, [URL]),
+  PRIMARY KEY (ID_Utilizador, ID_img),
   FOREIGN KEY (ID_Utilizador) REFERENCES Utilizador(ID) ON DELETE CASCADE,
-  FOREIGN KEY ([URL]) REFERENCES Imagem([URL]) ON DELETE CASCADE
+  FOREIGN KEY (ID_img) REFERENCES Imagem(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE Partida (
   ID                 INT IDENTITY(1,1),
   ID_Campo           INT,
   no_jogadores       INT,
-  Data_Hora          DATETIME,
+  Data_Hora          DATETIME NOT NULL,
   Duracao            INT,
   Resultado          VARCHAR(50),
+  Estado             VARCHAR(50) CHECK (Estado IN ('Aguardando', 'Em Andamento', 'Finalizada')),
 
   PRIMARY KEY (ID),
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID) ON DELETE SET NULL
@@ -138,8 +142,10 @@ CREATE TABLE Reserva (
   ID_Campo           INT,
   ID_Jogador         INT,
   [Data]             DATE NOT NULL,
-  Hora_Inicio        TIME,
-  Hora_Fim           TIME,
+  Hora_Inicio        TIME NOT NULL,
+  Hora_Fim           TIME NOT NULL,
+  Total_Pagamento    DECIMAL(10,2),
+  Estado             VARCHAR(50) CHECK (Estado IN ('Pendente', 'Confirmada', 'Cancelada')),
   Descricao          VARCHAR(2500),
 
   PRIMARY KEY (ID),
@@ -153,7 +159,7 @@ CREATE TABLE Rating (
   ID_Avaliador      INT,
   Data_Hora         DATETIME,
   Comentario        VARCHAR(2500),
-  Avaliacao         INT,
+  Avaliacao         INT CHECK (Avaliacao BETWEEN 1 AND 5) NOT NULL,
 
   PRIMARY KEY (ID_Avaliador),
   FOREIGN KEY (ID_Avaliador) REFERENCES Jogador(ID) ON DELETE CASCADE
@@ -188,9 +194,9 @@ CREATE TABLE Dias_semana (
 CREATE TABLE Disponibilidade (
   ID_Campo           INT,
   ID_dia             INT CHECK (ID_dia BETWEEN 1 AND 7),
-  Preco              DECIMAL(10,2),
-  Hora_abertura      TIME,
-  Hora_fecho         TIME,
+  Preco              DECIMAL(10,2) NOT NULL,
+  Hora_abertura      TIME NOT NULL,
+  Hora_fecho         TIME NOT NULL,
 
   PRIMARY KEY (ID_Campo, ID_dia, Hora_abertura),
   CHECK (Hora_abertura < Hora_fecho),
@@ -201,7 +207,7 @@ CREATE TABLE Disponibilidade (
 
 CREATE TABLE Chat_Live (
   ID_Partida         INT,
-  Titulo             VARCHAR(256),
+  Titulo             VARCHAR(256) NOT NULL,
   
   PRIMARY KEY (ID_Partida),
   FOREIGN KEY (ID_Partida) REFERENCES Partida(ID) ON DELETE CASCADE
