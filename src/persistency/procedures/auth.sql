@@ -26,3 +26,11 @@ BEGIN
   WHERE Email = @Email;
 END;
 GO
+
+-- lista de desportos
+CREATE PROCEDURE sp_GetDesportos
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT Nome FROM Desporto;
+END;

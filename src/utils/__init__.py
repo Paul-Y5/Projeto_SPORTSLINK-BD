@@ -1,4 +1,3 @@
-from .db import create_connection
 from .general import get_siglas_dias, get_dias_semana
 from .decorator_login import login_required
 

@@ -1,13 +1,14 @@
 -- CRUD para a tabela Jogador
-
 CREATE PROCEDURE sp_CreateJogador
   @ID INT,
-  @Idade INT,
+  @Data_Nascimento DATE,
+  @Peso DECIMAL(5,2),
+  @Altura DECIMAL(5,2),
   @Descricao VARCHAR(2500)
 AS
 BEGIN
-  INSERT INTO Jogador (ID, Idade, Descricao)
-  VALUES (@ID, @Idade, @Descricao);
+  INSERT INTO Jogador (ID, Data_Nascimento, Peso, Altura, Descricao)
+  VALUES (@ID, @Data_Nascimento, @Peso, @Altura, @Descricao);
 END;
 GO
 

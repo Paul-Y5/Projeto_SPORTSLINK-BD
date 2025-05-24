@@ -249,8 +249,9 @@ CREATE TABLE Jogador_Amizade (
 );
 
 CREATE TABLE Met_Paga_Arrendador (
-  ID_Arrendador       INT,
-  Met_pagamento       VARCHAR(50) CHECK (Met_pagamento IN ('MBWay', 'Transferência Bancária', 'ACobrança', 'PayPal')),
+  ID_Arrendador      INT,
+  Met_pagamento      VARCHAR(50) CHECK (Met_pagamento IN ('MBWay', 'Transferência Bancária', 'PayPal')),
+  Detalhes           NVARCHAR(5000),
 
   PRIMARY KEY (ID_Arrendador, Met_pagamento),
   FOREIGN KEY (ID_Arrendador) REFERENCES Arrendador(ID_Arrendador) ON DELETE CASCADE
