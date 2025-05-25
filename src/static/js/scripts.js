@@ -240,3 +240,85 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
+// Metodo de pagamento: adicionar/remover campos dinamicamente
+document.addEventListener("DOMContentLoaded", function () {
+  const checkboxes = document.querySelectorAll(".metodo-checkbox");
+  const container = document.getElementById("pagamento-details");
+
+  // Mapeia os valores dos checkboxes aos campos
+  const fields = {
+    CC: {
+      label: "Número do Cartão de Crédito",
+      name: "cartao_credito_numero",
+      type: "text",
+    },
+    PayPal: {
+      label: "Email do PayPal",
+      name: "paypal_email",
+      type: "email",
+    },
+    MBWay: {
+      label: "Número de Telemóvel (MB Way)",
+      name: "mbway_numero",
+      type: "text",
+    },
+  };
+
+  checkboxes.forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const value = cb.value;
+      const fieldId = `field-${value}`;
+
+      if (cb.checked && !document.getElementById(fieldId)) {
+        const field = fields[value];
+
+        if (!field) return; // valor não reconhecido
+
+        const div = document.createElement("div");
+        div.classList.add("mb-3");
+        div.id = fieldId;
+
+        const label = document.createElement("label");
+        label.textContent = field.label;
+        label.setAttribute("for", field.name);
+        label.classList.add("form-label");
+
+        const input = document.createElement("input");
+        input.type = field.type;
+        input.name = `detalhe_${value}`;
+        input.id = field.name;
+        input.classList.add("form-control");
+        input.required = true;
+
+        div.appendChild(label);
+        div.appendChild(input);
+        container.appendChild(div);
+      }
+
+      // Remover campo
+      if (!cb.checked) {
+        const existing = document.getElementById(fieldId);
+        if (existing) container.removeChild(existing);
+      }
+    });
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const checkboxes = document.querySelectorAll('.dia-checkbox');
+
+    checkboxes.forEach(checkbox => {
+        const sigla = checkbox.getAttribute('data-sigla');
+        const detalhesDiv = document.getElementById('detalhes_' + sigla);
+
+        // Mostrar/ocultar campos ao carregar (útil para edições)
+        if (checkbox.checked) {
+            detalhesDiv.style.display = 'block';
+        }
+
+        checkbox.addEventListener('change', function () {
+            detalhesDiv.style.display = checkbox.checked ? 'block' : 'none';
+        });
+    });
+});
+

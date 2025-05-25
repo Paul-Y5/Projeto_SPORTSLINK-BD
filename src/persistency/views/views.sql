@@ -2,7 +2,7 @@ USE SPORTSLINK;
 GO
 
 -- View para obter os detalhes de uma partida
-CREATE VIEW vw_PartidaDetalhes AS
+CREATE OR ALTER VIEW vw_PartidaDetalhes AS
 SELECT 
   p.ID AS ID_Partida,
   p.ID_Campo,
@@ -12,17 +12,22 @@ SELECT
   p.Resultado,
   p.Estado,
   p.no_jogadores,
-  STRING_AGG(u.Nome, ', ') AS Jogadores
+  (
+    SELECT STRING_AGG(Nome, ', ') 
+    FROM (
+      SELECT DISTINCT u2.Nome
+      FROM Jogador_joga jj2
+      JOIN Jogador j2 ON jj2.ID_Jogador = j2.ID
+      JOIN Utilizador u2 ON j2.ID = u2.ID
+      WHERE jj2.ID_Partida = p.ID
+    ) AS Sub
+  ) AS Jogadores
 FROM Partida p
-LEFT JOIN Campo c ON p.ID_Campo = c.ID
-LEFT JOIN Jogador_joga jj ON p.ID = jj.ID_Partida
-LEFT JOIN Jogador j ON jj.ID_Jogador = j.ID
-LEFT JOIN Utilizador u ON j.ID = u.ID
-GROUP BY p.ID, p.ID_Campo, c.Nome, p.Data_Hora, p.Duracao, p.Resultado, p.Estado, p.no_jogadores;
+LEFT JOIN Campo c ON p.ID_Campo = c.ID;
 GO
 
 -- View para obter os detalhes de um campo
-CREATE VIEW vw_CampoPrivDetalhes AS
+CREATE OR ALTER VIEW vw_CampoPrivDetalhes AS
 SELECT 
   c.ID AS ID_Campo,
   c.Nome AS Nome_Campo,
@@ -32,22 +37,53 @@ SELECT
   p.Latitude,
   p.Longitude,
   c.Descricao,
-  STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis,
-  dp.Preco,
-    dp.Hora_Abertura,
-    dp.Hora_Fecho,
-    STRING_AGG(img.[URL], ', ') AS Imagens
+  
+  -- Subquery agregada para Dias Disponíveis
+  (SELECT STRING_AGG(DISTINCT di.Nome, ', ')
+   FROM Disponibilidade dp2
+   JOIN Dias_semana di ON dp2.ID_Dia = di.ID
+   WHERE dp2.ID_Campo = c.ID) AS Dias_Disponiveis,
+
+  -- Assume que o campo tem sempre uma linha de disponibilidade
+  (SELECT TOP 1 dp.Preco
+   FROM Disponibilidade dp
+   WHERE dp.ID_Campo = c.ID) AS Preco,
+
+  (SELECT TOP 1 dp.Hora_Abertura
+   FROM Disponibilidade dp
+   WHERE dp.ID_Campo = c.ID) AS Hora_Abertura,
+
+  (SELECT TOP 1 dp.Hora_Fecho
+   FROM Disponibilidade dp
+   WHERE dp.ID_Campo = c.ID) AS Hora_Fecho,
+
+  -- Subquery de imagens agregadas
+  (SELECT STRING_AGG(DISTINCT img.URL, ', ')
+   FROM IMG_Campo ic
+   JOIN Imagem img ON img.ID = ic.ID_img
+   WHERE ic.ID_Campo = c.ID) AS Imagens
+
 FROM Campo c
-LEFT JOIN Ponto p ON c.ID_Ponto = p.ID
-LEFT JOIN Disponibilidade dp ON c.ID = dp.ID_Campo
-LEFT JOIN Dias_semana di ON dp.ID_Dia = di.ID
-LEFT JOIN IMG_Campo i ON c.ID = i.ID_Campo
-INNER JOIN Imagem as img on img.ID = i.ID_img
-GROUP BY c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, dp.Preco, dp.Hora_Abertura, dp.Hora_Fecho;
+LEFT JOIN Ponto p ON c.ID_Ponto = p.ID;
 GO
 
+
 -- View para obter os detalhes de um utilizador (Arrendador ou Jogador)
-CREATE VIEW vw_InfoUtilizador AS
+ALTER VIEW vw_InfoUtilizador AS
+WITH Metodos_Pagamento_Unicos AS (
+    SELECT DISTINCT ID_Arrendador, Met_pagamento
+    FROM Met_Paga_Arrendador
+),
+Imagens_Unicas AS (
+    SELECT DISTINCT ip.ID_Utilizador, i.URL
+    FROM IMG_Perfil ip
+    JOIN Imagem i ON ip.ID_img = i.ID
+),
+Desportos_Unicos AS (
+    SELECT DISTINCT dj.ID_Jogador, d.Nome
+    FROM Desporto_Jogador dj
+    JOIN Desporto d ON dj.ID_Desporto = d.ID
+)
 SELECT 
   u.ID AS ID_Utilizador,
   u.Nome,
@@ -61,26 +97,23 @@ SELECT
   j.Altura,
   a.IBAN,
   a.No_Campos,
-  STRING_AGG(mpa.Met_pagamento, ', ') AS Metodos_Pagamento,
-  STRING_AGG(i.URL, ', ') AS Imagens_Perfil,
-  STRING_AGG(d.Nome, ', ') AS Desportos_Favoritos,
+  -- Aqui o STRING_AGG agora funciona com dados já distintos
+  (SELECT STRING_AGG(mp.Met_pagamento, ', ') 
+   FROM Metodos_Pagamento_Unicos mp 
+   WHERE mp.ID_Arrendador = u.ID) AS Metodos_Pagamento,
+  (SELECT STRING_AGG(img.URL, ', ') 
+   FROM Imagens_Unicas img 
+   WHERE img.ID_Utilizador = u.ID) AS Imagens_Perfil,
+  (SELECT STRING_AGG(ds.Nome, ', ') 
+   FROM Desportos_Unicos ds 
+   WHERE ds.ID_Jogador = u.ID) AS Desportos_Favoritos,
   CASE 
     WHEN a.ID_Arrendador IS NOT NULL THEN 'Arrendador'
     ELSE 'Jogador'
   END AS Tipo
 FROM Utilizador u
 LEFT JOIN Jogador j ON u.ID = j.ID
-LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador
-LEFT JOIN Met_Paga_Arrendador mpa ON u.ID = mpa.ID_Arrendador
-LEFT JOIN IMG_Perfil ip ON u.ID = ip.ID_Utilizador
-LEFT JOIN Imagem i ON ip.ID_img = i.ID
-LEFT JOIN Desporto_Jogador dj ON u.ID = dj.ID_Jogador
-LEFT JOIN Desporto d ON dj.ID_Desporto = d.ID
-GROUP BY 
-  u.ID, u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, 
-  j.Idade, j.Data_Nascimento, j.Descricao, j.Peso, j.Altura, 
-  a.IBAN, a.No_Campos, mpa.Met_pagamento, a.ID_Arrendador;
-GO
+LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador;
 
 -- View para obter os detalhes das reservas
 CREATE OR ALTER VIEW vw_ReservasDetalhadas AS

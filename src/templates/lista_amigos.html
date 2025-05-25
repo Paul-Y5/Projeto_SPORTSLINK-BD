@@ -16,7 +16,7 @@
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFriendModal">
                 Adicionar Amigo
             </button>
-            <a href="{{ url_for('dashboard.jog_dashboard', name=user[0]) }}" class="btn btn-secondary">Voltar</a>
+            <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary">Voltar</a>
         </div>
 
         <!-- Flash Messages -->
@@ -37,18 +37,23 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th></th>
                     <th>Nome</th>
                     <th>Rating</th>
-                    <th>Ações</th>
+                    <th class="text-end">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for amigo in amigos %}
                 <tr>
                     <td>{{ amigo[0] }}</td>
+                    <td>
+                        <img src="{{ url_for('static', filename=(amigo['Imagens_Perfil'].split(',')[0] if user['Imagens_Perfil'] else 'img/icon_def.png')) }}"
+                            alt="Imagem de Perfil" class="img-fluid rounded-circle" style="width: 50px; height: 50px; margin: 2%;">
+                    </td>
                     <td>{{ amigo[1] }}</td>
                     <td>{{ amigo[2] or 0.0 }}</td>
-                    <td>
+                    <td class="text-end">
                         <a href="#"
                             class="btn btn-warning">Detalhes</a>
                         <a href="#"

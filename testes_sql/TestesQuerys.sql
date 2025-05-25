@@ -87,23 +87,36 @@ JOIN Desporto_Jogador dj ON dj.ID_Desporto = d.ID
 WHERE dj.ID_Jogador = 1;
 
 
-Alter PROCEDURE sp_CreateMetodosPagamento
-  @ID_Utilizador INT,
-  @Metodo_Pagamento VARCHAR(50),
-  @Detalhes NVARCHAR(500)
-AS
-BEGIN
-  SET NOCOUNT ON;
-
-  BEGIN TRY
-    INSERT INTO Met_Paga_Arrendador(ID_Arrendador, Met_pagamento, Detalhes)
-    VALUES (@ID_Utilizador, @Metodo_Pagamento, @Detalhes);
-  END TRY
-  BEGIN CATCH
-    ROLLBACK TRANSACTION;
-
-    DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
-    DECLARE @ErrSeverity INT = ERROR_SEVERITY();
-    RAISERROR(@ErrMsg, @ErrSeverity, 1);
-  END CATCH
-END;
+SELECT 
+  u.ID AS ID_Utilizador,
+  u.Nome,
+  u.Email,
+  u.Num_Tele,
+  u.Nacionalidade,
+  j.Idade,
+  j.Data_Nascimento,
+  j.Descricao AS DescricaoJogador,
+  j.Peso,
+  j.Altura,
+  a.IBAN,
+  a.No_Campos,
+  STRING_AGG(mpa.Met_pagamento, ', ') AS Metodos_Pagamento,
+  STRING_AGG(i.URL, ', ') AS Imagens_Perfil,
+  STRING_AGG(d.Nome, ', ') AS Desportos_Favoritos,
+  CASE 
+    WHEN a.ID_Arrendador IS NOT NULL THEN 'Arrendador'
+    ELSE 'Jogador'
+  END AS Tipo
+FROM Utilizador u
+LEFT JOIN Jogador j ON u.ID = j.ID
+LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador
+LEFT JOIN Met_Paga_Arrendador mpa ON u.ID = mpa.ID_Arrendador
+LEFT JOIN IMG_Perfil ip ON u.ID = ip.ID_Utilizador
+LEFT JOIN Imagem i ON ip.ID_img = i.ID
+LEFT JOIN Desporto_Jogador dj ON u.ID = dj.ID_Jogador
+LEFT JOIN Desporto d ON dj.ID_Desporto = d.ID
+GROUP BY 
+  u.ID, u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, 
+  j.Idade, j.Data_Nascimento, j.Descricao, j.Peso, j.Altura, 
+  a.IBAN, a.No_Campos, mpa.Met_pagamento, a.ID_Arrendador;
+GO

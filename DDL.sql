@@ -250,7 +250,7 @@ CREATE TABLE Jogador_Amizade (
 
 CREATE TABLE Met_Paga_Arrendador (
   ID_Arrendador      INT,
-  Met_pagamento      VARCHAR(50) CHECK (Met_pagamento IN ('MBWay', 'Transferência Bancária', 'PayPal')),
+  Met_pagamento      VARCHAR(50) CHECK (Met_pagamento IN ('MBWay', 'Transferência Bancária', 'PayPal', 'CC')),
   Detalhes           NVARCHAR(5000),
 
   PRIMARY KEY (ID_Arrendador, Met_pagamento),

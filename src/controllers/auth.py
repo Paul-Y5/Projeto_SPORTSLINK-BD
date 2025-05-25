@@ -1,43 +1,60 @@
+import datetime
+from decimal import Decimal
+import os
 from flask import session, flash, redirect, url_for, request, render_template
 import pyodbc
 from controllers.user import is_arrendador
-from utils import create_connection
+from db import create_connection
 
 def registration():
-    username = request.form["username"]
+    img_file = request.files.get("img")
+    img_url = None
+
+    if img_file and img_file.filename:
+        img_url = f"img/{img_file.filename}"
+        save_path = os.path.join("src", "static", "img", img_file.filename)
+        img_file.save(save_path)
+    else:
+        img_url = 'img/icon_def.png'
+
+    nome = request.form["username"]
     email = request.form["reg_email"]
-    nationality = request.form["nacionalidade"]
-    phone_number = request.form["numero_telemovel"]
+    nacionalidade = request.form["nacionalidade"]
+    numero_tele = request.form["numero_telemovel"]
     password = request.form["reg_password"]
-        
+    data_nascimento = request.form["data_nascimento"]
+    descricao = request.form["descricao"] or None
+    peso_str = request.form.get("peso")
+    peso = float(peso_str) if peso_str else None
+    altura_str = request.form.get("altura")
+    altura = float(altura_str) if altura_str else None
+    desportos_selecionados = [d for d in request.form.getlist("desportos") if d.strip()]
+    desportos_fav = ",".join(desportos_selecionados) if desportos_selecionados else None
+
+    print(f"Nome: {nome}, Email: {email}, Nacionalidade: {nacionalidade}, "
+          f"Numero Telefone: {numero_tele}, Password: {password}, "
+            f"Data Nascimento: {data_nascimento}, Descricao: {descricao}, "
+            f"Peso: {peso}, Altura: {altura}, Desportos Favoritos: {desportos_fav}, "
+            f"Imagem URL: {img_url}")
+
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Utilizador WHERE Email=?", email)
-        user = cursor.fetchone()
-        if user:
-            flash("Email já registado. Tente novamente.", "danger")
-            return render_template("index.html")
+        existe = cursor.execute("SELECT dbo.fn_UtilizadorExists(?)", (email,)).fetchone()
 
+        # Verifica se o email já existe na base de dados
         try:
-            # Verifica se o utilizador já existe
-            existe = cursor.execute("EXEC sp_UtilizadorExists ?", email).fetchone()
-            if existe[0] == 1:
+            if existe and existe[0] == 1:
                 flash("Email já registado. Tente novamente.", "danger")
                 return render_template("index.html")
-            
-            # Insere o utilizador na tabela Utilizador usando a stored procedure
-            cursor.execute("EXEC sp_CreateUtilizador ?, ?, ?, ?, ?", 
-                username, email, phone_number, password, nationality)
-            # Obtém o ID do último utilizador inserido
-            cursor.execute("SELECT @@IDENTITY")
-            new_id = cursor.fetchone()[0]
-            # Insere o jogador na tabela Jogador usando a stored procedure
-            cursor.execute("EXEC sp_CreateJogador ?, ?, ?", new_id, 0, '')
+            else:
+                # Insere o utilizador na tabela Utilizador usando a stored procedure
+                cursor.execute("EXEC sp_CreateUtilizador ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
+                (nome, email, numero_tele, password, nacionalidade,
+                data_nascimento, descricao, peso, altura, img_url, desportos_fav))
+                conn.commit()
 
-            conn.commit()
-
-            flash("Registo realizado com sucesso!", "success")
-            return redirect(url_for("index"))
+                flash("Registo realizado com sucesso!", "success")
+                return redirect(url_for("index"))
         except pyodbc.IntegrityError:
             flash("Erro ao registar o utilizador. Tente novamente.", "danger")
             return render_template("index.html")
@@ -46,10 +63,10 @@ def log():
     email = request.form["login_email"]
     password = request.form["login_password"]
 
-    if email == "admin@admin.pt" and password == "admin":
+    """ if email == "admin@admin.pt" and password == "admin":
         session["user_id"] = 0
         session["user_nome"] = "Admin"
-        return redirect(url_for("admin.admin_dashboard"))
+        return redirect(url_for("admin.admin_dashboard")) """
 
     with create_connection() as conn:
         # Verifica se o utilizador existe
@@ -61,7 +78,7 @@ def log():
         session["user_id"] = user[0]
         session["username"] = user[1]
 
-        tipo_utilizador = "Arrendador" if is_arrendador(user[0]) == 1 else "Jogador"
+        tipo_utilizador = "Arrendador" if is_arrendador(user[0]) else "Jogador"
         session["tipo_utilizador"] = tipo_utilizador
 
         flash(f"Login realizado com sucesso! Tipo de utilizador: {tipo_utilizador}", "success")

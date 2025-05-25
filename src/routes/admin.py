@@ -1,8 +1,7 @@
 from flask import Blueprint
 from flask import render_template, request, redirect, url_for, flash
-from utils.db import create_connection
+from db import create_connection
 from utils.decorator_login import login_required
-from controllers.user import get_users
 from controllers.partidas import get_partidas
 from controllers.campo import get_All_campos
 from utils.decorator_login import login_required
@@ -23,11 +22,11 @@ def admin_dashboard(section):
         user_direction = request.args.get("user_direction", "ASC").upper()
         user_search = request.args.get("user_search", "")
         user_type = request.args.get("user_type", "")
-        utilizadores = get_users(user_order, user_direction, user_search, user_type)
+        """ utilizadores = get_users(user_order, user_direction, user_search, user_type)
         context.update({
             "content": "partials/users_table.html",
             "utilizadores": utilizadores
-        })
+        }) """
 
     elif section == "fields":
         field_order = request.args.get("field_order", "c.ID")
