@@ -73,16 +73,8 @@ CREATE PROCEDURE sp_DeleteCampo
   @ID INT
 AS
 BEGIN
-  -- Se o campo for privado, atualizar o número de campos do arrendador
-  IF EXISTS (SELECT 1 FROM Campo_Priv WHERE ID_Campo = @ID)
-  BEGIN
-    UPDATE Arrendador
-    SET No_Campos = No_Campos - 1
-    WHERE ID_Arrendador = (
-      SELECT ID_Arrendador FROM Campo_Priv WHERE ID_Campo = @ID
-    );
-  END
-
+  SET NOCOUNT ON;
+  -- Atualização feita por trigger
   -- Apagar o campo
   DELETE FROM Campo WHERE ID = @ID;
 END
@@ -175,7 +167,7 @@ SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitu
   LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
   INNER JOIN Imagem as i on i.ID = IMG.ID_img
   JOIN Dias_semana as di on di.ID = dp.ID_dia
-  LEFT JOIN Desporto_Campo as dC on dc.ID_Campo=c.ID
+  LEFT JOIN Desporto_Campo as dc on dc.ID_Campo=c.ID
   LEFT JOIN  Desporto as desp on desp.ID=dc.ID_Desporto
   group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
   c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL]
@@ -206,38 +198,61 @@ CREATE PROCEDURE sp_SetDisponibilidadeCampo
   @Preco DECIMAL(10,2)
 AS
 BEGIN
-  INSERT INTO Disponibilidade(ID_Campo, ID_Dia, Hora_Abertura, Hora_Fecho, Preco)
-  VALUES (@ID_Campo, @ID_Dia, @Hora_Abertura, @Hora_Fecho, @Preco);
+  SET NOCOUNT ON;
+
+  BEGIN TRY
+    BEGIN TRANSACTION;
+
+    IF EXISTS (
+      SELECT 1 
+      FROM Disponibilidade 
+      WHERE ID_Campo = @ID_Campo AND ID_Dia = @ID_Dia
+    )
+    BEGIN
+      -- Atualiza se já existir
+      UPDATE Disponibilidade
+      SET Hora_Abertura = @Hora_Abertura,
+          Hora_Fecho = @Hora_Fecho,
+          Preco = @Preco
+      WHERE ID_Campo = @ID_Campo AND ID_Dia = @ID_Dia;
+    END
+    ELSE
+    BEGIN
+      -- Insere se não existir
+      INSERT INTO Disponibilidade (ID_Campo, ID_Dia, Hora_Abertura, Hora_Fecho, Preco)
+      VALUES (@ID_Campo, @ID_Dia, @Hora_Abertura, @Hora_Fecho, @Preco);
+    END
+
+    COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+    ROLLBACK TRANSACTION;
+
+    DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
+    DECLARE @ErrSeverity INT = ERROR_SEVERITY();
+    DECLARE @ErrState INT = ERROR_STATE();
+
+    RAISERROR(@ErrMsg, @ErrSeverity, @ErrState);
+  END CATCH
 END;
 GO
 
--- Associar Desportos
+
 CREATE PROCEDURE sp_AssociarDesportoCampo
   @ID_Campo INT,
   @ID_Desporto INT
 AS
 BEGIN
   SET NOCOUNT ON;
-
-  IF NOT EXISTS (
-    SELECT 1 
-    FROM Desporto_Campo 
-    WHERE ID_Campo = @ID_Campo AND ID_Desporto = @ID_Desporto
-  )
-  BEGIN
-    BEGIN TRY
+    IF NOT EXISTS (
+      SELECT 1 
+      FROM Desporto_Campo 
+      WHERE ID_Campo = @ID_Campo AND ID_Desporto = @ID_Desporto
+    )
+    BEGIN
       INSERT INTO Desporto_Campo (ID_Campo, ID_Desporto)
       VALUES (@ID_Campo, @ID_Desporto);
-    END TRY
-    BEGIN CATCH
-      DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-      RAISERROR('Erro ao associar desporto ao campo: %s', 16, 1, @ErrorMessage);
-    END CATCH
-  END
-  ELSE
-  BEGIN
-    RAISERROR('Desporto já associado a este campo.', 16, 1);
-  END
+    END
 END;
 GO
 

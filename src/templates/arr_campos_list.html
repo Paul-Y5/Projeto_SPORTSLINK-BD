@@ -6,6 +6,10 @@
     <title>Meus Campos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <div class="container mt-5">
@@ -32,144 +36,250 @@
         <table class="table table-striped">
             <thead>
                 <tr>
+                    <th></th>
                     <th>Nome</th>
-                    <th>Dimensões</th>
-                    <th>Descrição</th>
                     <th>Endereço</th>
-                    <th>Coordenadas</th>
                     <th>Dias Disponíveis</th>
                     <th>Ocupado</th>
                     <th>Ações</th>
                 </tr>
-            </thead>
+            </thead>            
             <tbody>
                 {% for campo in campos %}
                 <tr>
-                    <td>{{ campo[1] }}</td>
-                    <td>{{ campo[2] }}x{{ campo[3] }}</td>
-                    <td>{{ campo[4] or '---' }}</td>
-                    <td>{{ campo[5] or '---' }}</td>
-                    <td>({{ campo[6] }}, {{ campo[7] }})</td>
-                    <td>{{ campo[9] }}</td>
+                    <!-- Imagem -->
                     <td>
-                        {% if campo[8] == 1 %} Sim {% else %} Não {% endif %}
+                        {% set imagens = campo[5].split(',') if campo[5] else [] %}
+                        {% if imagens %}
+                        <img src="{{ url_for('static', filename=imagens[0].strip()) }}" alt="Imagem Campo" width="100">
+                        {% else %}
+                        <span>Sem imagem</span>
+                        {% endif %}
                     </td>
+                    
+                    <td>{{ campo[1] }}</td> <!-- Nome -->
+                    <td>{{ campo[2] }}</td> <!-- Endereço -->
+                    <td>{{ campo[4] or '---' }}</td> <!-- Dias disponíveis -->
+                    <td>{{ campo[6] }}</td> <!-- OcupadoStr: Sim / Não -->
+                
+                    <!-- Ações -->
                     <td>
                         <a href="{{ url_for('dashboard.campo_detail', ID=campo[0]) }}" class="btn btn-warning">Detalhes</a>
-                        <form action="{{ url_for('dashboard.arr_campos_list')}}" method="post" style="display:inline;">
+                        <form action="{{ url_for('dashboard.arr_campos_list') }}" method="post" style="display:inline;">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id_campo" value="{{ campo[0] }}">
                             <button type="submit" class="btn btn-danger"
                                 onclick="return confirm('Tem certeza que deseja eliminar este campo?')">Eliminar</button>
-                        </form>                          
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
-                {% if campos|length == 0 %}
-                <tr>
-                    <td colspan="8" class="text-center">Nenhum campo encontrado.</td>
-                </tr>
-                {% endif %}
             </tbody>
         </table>
 
-        <!-- Modal para Adicionar Campo Privado -->
-        <div class="modal fade" id="addPrivateFieldModal" tabindex="-1" aria-labelledby="addPrivateFieldModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
+    <!-- Modal para Adicionar Campo Privado -->
+    <div class="modal fade" id="addPrivateFieldModal" tabindex="-1" aria-labelledby="addPrivateFieldModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('dashboard.arr_campos_list') }}" name="add">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addPrivateFieldModalLabel">Adicionar Campo Privado</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form method="POST" action="{{ url_for('dashboard.arr_campos_list') }}">
-                        <div class="modal-body">
-                            <h3>Localização do Campo</h3>
-                            <!-- Latitude -->
-                            <div class="mb-3">
-                                <label for="fieldLatitude" class="form-label">Latitude</label>
-                                <input type="text" class="form-control" id="fieldLatitude" name="latitude" required>
-                            </div>
-        
-                            <!-- Longitude -->
-                            <div class="mb-3">
-                                <label for="fieldLongitude" class="form-label">Longitude</label>
-                                <input type="text" class="form-control" id="fieldLongitude" name="longitude" required>
-                            </div>
-        
-                            <!-- Endereço -->
-                            <div class="mb-3">
-                                <label for="fieldAddress" class="form-label">Endereço</label>
-                                <input type="text" class="form-control" id="fieldAddress" name="endereco" required>
-                            </div>
-        
-                            <h3>Detalhes do Campo</h3>
-                            <!-- Nome do Campo -->
-                            <div class="mb-3">
-                                <label for="fieldName" class="form-label">Nome do Campo</label>
-                                <input type="text" class="form-control" id="fieldName" name="nome" required>
-                            </div>
-        
-                            <!-- Comprimento -->
-                            <div class="mb-3">
-                                <label for="fieldLength" class="form-label">Comprimento</label>
-                                <input type="number" class="form-control" id="fieldLength" name="comprimento" required>
-                            </div>
-        
-                            <!-- Largura -->
-                            <div class="mb-3">
-                                <label for="fieldWidth" class="form-label">Largura</label>
-                                <input type="number" class="form-control" id="fieldWidth" name="largura" required>
-                            </div>
-        
-                            <!-- Descrição -->
-                            <div class="mb-3">
-                                <label for="fieldDescription" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="fieldDescription" name="descricao" rows="3"></textarea>
-                            </div>
-        
-                            <!-- Preço por Hora -->
-                            <div class="mb-3">
-                                <label for="fieldPrice" class="form-label">Preço por Hora (€)</label>
-                                <input type="number" class="form-control" id="fieldPrice" name="preco" step="0.01" required>
-                            </div>
-        
-                            <h3>Disponibilidade</h3>
-                            <!-- Seleção de Dias -->
-                            <div class="mb-3">
-                                <label class="form-label">Dias Disponíveis e Horários</label>
-        
-                                <!-- Loop para cada dia da semana -->
-                                {% for dia, sigla in siglas_dias %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="day{{ sigla }}" name="dias[]"
-                                        value="{{ dia }}">
-                                    <label class="form-check-label" for="day{{ sigla }}">{{ dia }}</label>
-                                    <div class="row mt-2">
-                                        <div class="col-6">
-                                            <label for="hora_abertura_{{ sigla }}" class="form-label">Hora de Abertura</label>
-                                            <input type="time" class="form-control" id="hora_abertura_{{ sigla }}"
-                                                name="hora_abertura_{{ sigla }}">
+    
+                    <div class="modal-body">
+                        <div class="accordion" id="accordionCampo">
+                            <!-- Dados do Campo -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingDados">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseDados" aria-expanded="true" aria-controls="collapseDados">
+                                        1. Detalhes do Campo
+                                    </button>
+                                </h2>
+                                <div id="collapseDados" class="accordion-collapse collapse show" aria-labelledby="headingDados"
+                                    data-bs-parent="#accordionCampo">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Foto de Perfil</label>
+                                            <input type="file" class="form-control" name="img" accept="image/*">
                                         </div>
-                                        <div class="col-6">
-                                            <label for="hora_fecho_{{ sigla }}" class="form-label">Hora de Fecho</label>
-                                            <input type="time" class="form-control" id="hora_fecho_{{ sigla }}"
-                                                name="hora_fecho_{{ sigla }}">
+                                        <div class="mb-3">
+                                            <label for="fieldName" class="form-label">Nome do Campo</label>
+                                            <input type="text" class="form-control" id="fieldName" name="nome" required>
+                                        </div>
+                                        <div class="mb-3 row">
+                                            <div class="col">
+                                                <label for="fieldLength" class="form-label">Comprimento</label>
+                                                <input type="number" class="form-control" id="fieldLength"
+                                                    name="comprimento" required>
+                                            </div>
+                                            <div class="col">
+                                                <label for="fieldWidth" class="form-label">Largura</label>
+                                                <input type="number" class="form-control" id="fieldWidth" name="largura"
+                                                    required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="desportos" value="Basquetebol" id="basquetebol">
+                                                <label class="form-check-label" for="basquetebol">Basquetebol</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="desportos" value="Futebol" id="futebol">
+                                                <label class="form-check-label" for="futebol">Futebol</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="desportos" value="Futsal" id="futsal">
+                                                <label class="form-check-label" for="futsal">Futsal</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="desportos" value="Ténis" id="tenis">
+                                                <label class="form-check-label" for="tenis">Ténis</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="desportos" value="Voleibol" id="voleibol">
+                                                <label class="form-check-label" for="voleibol">Voleibol</label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="fieldDescription" class="form-label">Descrição</label>
+                                            <textarea class="form-control" id="fieldDescription" name="descricao"
+                                                rows="3"></textarea>
                                         </div>
                                     </div>
                                 </div>
-                                {% endfor %}
                             </div>
+
+                            <!-- Localização -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingLocalizacao">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLocalizacao"
+                                        aria-expanded="false" aria-controls="collapseLocalizacao">
+                                        2. Localização do Campo
+                                    </button>
+                                </h2>
+                                <div id="collapseLocalizacao" class="accordion-collapse collapse" aria-labelledby="headingLocalizacao"
+                                    data-bs-parent="#accordionCampo">
+                                    <div class="accordion-body">
+                                        <label for="mapinput" class="form-label">Selecione a localização no mapa</label>
+                                        <div id="mapinput" style="height: 300px; width: 100%;"></div>
+                                        <input type="hidden" id="latitude" name="latitude" value="40.6405">
+                                        <input type="hidden" id="longitude" name="longitude" value="-8.6538">
+                            
+                                        <label for="fieldAddress" class="form-label mt-3">Endereço</label>
+                                        <input type="text" class="form-control" id="fieldAddress" name="endereco" required>
+                                    </div>
+                                </div>
+                            </div>
+                                
+                            <!-- Disponibilidade -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingDisp">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseDisp" aria-expanded="false" aria-controls="collapseDisp">
+                                        3. Disponibilidade
+                                    </button>
+                                </h2>
+                                <div id="collapseDisp" class="accordion-collapse collapse" aria-labelledby="headingDisp"
+                                    data-bs-parent="#accordionCampo">
+                                    <div class="accordion-body">
+                                        <!-- Preço Geral -->
+                                        <div class="mb-3">
+                                            <label for="fieldPrice" class="form-label">Preço Geral por Hora (€)</label>
+                                            <input type="number" class="form-control" id="fieldPrice" name="preco" step="0.01">
+                                            <small class="form-text text-muted">Se os campos abaixo forem preenchidos, esse valor será ignorado para
+                                                os respetivos dias.</small>
+                                        </div>
+                                        {% for dia, sigla in siglas_dias %}
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input dia-checkbox" type="checkbox" id="day{{ sigla }}" name="dias[]" value="{{ dia }}"
+                                                data-sigla="{{ sigla }}">
+                                            <label class="form-check-label" for="day{{ dia }}">{{ sigla }}</label>
+                                        
+                                            <!-- Detalhes visíveis somente se o checkbox estiver selecionado -->
+                                            <div class="dia-detalhes mt-2" id="detalhes_{{ sigla }}" style="display: none;">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <label for="hora_abertura_{{ sigla }}" class="form-label">Hora de Abertura</label>
+                                                        <input type="time" class="form-control" id="hora_abertura_{{ sigla }}" name="hora_abertura_{{ sigla }}">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label for="hora_fecho_{{ sigla }}" class="form-label">Hora de Fecho</label>
+                                                        <input type="time" class="form-control" id="hora_fecho_{{ sigla }}" name="hora_fecho_{{ sigla }}">
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <label for="preco_dia_{{ sigla }}" class="form-label">Preço por Hora para {{ dia }} (€)</label>
+                                                    <input type="number" class="form-control" id="preco_dia_{{ sigla }}" name="preco_dia_{{ sigla }}"
+                                                        step="0.01" placeholder="Opcional">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>                                        
                         </div>
-        
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button name="action" value="add" type="submit" class="btn btn-primary">Adicionar Campo</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" name="action" value="add" class="btn btn-primary">Adicionar Campo</button>
+                    </div>
+                </form>
             </div>
-        </div>  
-    </div>
-</body>
+        </div>
+            <!-- Script do mapa Leaflet -->
+            <script>
+                let map, marcador;
+                let mapaInicializado = false;
+
+                document.addEventListener("DOMContentLoaded", function () {
+                    const modal = document.getElementById('addPrivateFieldModal');
+
+                    modal.addEventListener('shown.bs.modal', function () {
+                        if (!mapaInicializado) {
+                            map = L.map('mapinput').setView([40.6412, -8.6536], 13);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; OpenStreetMap contributors'
+                            }).addTo(map);
+
+                            map.on('click', function (e) {
+                                const { lat, lng } = e.latlng;
+
+                                if (marcador) {
+                                    marcador.setLatLng([lat, lng]);
+                                } else {
+                                    marcador = L.marker([lat, lng]).addTo(map);
+                                }
+
+                                document.getElementById('latitude').value = lat.toFixed(6);
+                                document.getElementById('longitude').value = lng.toFixed(6);
+                            });
+
+                            mapaInicializado = true;
+                        }
+
+                        // Delay adicional após mostrar o modal
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 300);
+                    });
+
+                    // Corrige tamanho se a secção de localização for expandida depois
+                    const localizacaoCollapse = document.getElementById('collapseLocalizacao');
+                    localizacaoCollapse.addEventListener('shown.bs.collapse', function () {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 200);
+                    });
+                });
+            </script>
+                       
+
+            <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+        </div>
+    </body>
 </html>

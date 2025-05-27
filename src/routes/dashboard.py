@@ -55,6 +55,8 @@ def campo_detail(ID):
     campo, disponibilidade = get_campo_by_id(ID)
     reservas = getReservasByCampo(ID)
 
+    disponibilidade_dict = {item['dia'].lower(): item for item in disponibilidade}
+
     if not campo:
         abort(404)
 
@@ -66,6 +68,7 @@ def campo_detail(ID):
         'campo_details.html',
         campo=campo,
         disponibilidade=disponibilidade,
+        disponibilidade_dict=disponibilidade_dict,
         reservas=reservas,
         siglas_dias=siglas_dias,
         dias_ativos=dias_ativos

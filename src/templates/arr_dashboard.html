@@ -24,12 +24,19 @@
             <li class="list-group-item"><strong>Número de Telemóvel:</strong> {{ user['Num_Tele'] }}</li>
             <li class="list-group-item"><strong>Nacionalidade:</strong> {{ user['Nacionalidade'] }}</li>
             <li class="list-group-item"><strong>Data de Nascimento:</strong> {{ user['Data_Nascimento'] }} ({{ user['Idade'] }} anos)</li>
-            <li class="list-group-item"><strong>Peso:</strong> {{ user['Peso'] or '-' }}</li>
-            <li class="list-group-item"><strong>Altura:</strong> {{ user['Altura'] or '-' }}</li>
+            <li class="list-group-item"><strong>Peso:</strong> {{ user['Peso'] or '-' }} Kg</li>
+            <li class="list-group-item"><strong>Altura:</strong> {{ user['Altura'] or '-' }} cm</li>
             <li class="list-group-item"><strong>IBAN:</strong> {{ user['IBAN'] }}</li>
             <li class="list-group-item"><strong>Desportos Favoritos:</strong> {{ user['Desportos_Favoritos'] or 'Nenhum' }}</li>
             <li class="list-group-item"><strong>Número de campos associados:</strong> {{ user['No_Campos'] }}</li>
-            <li class="list-group-item"><strong>Métodos de Pagamento:</strong> {{ user['Metodos_Pagamento'] }}</li>
+            <li class="list-group-item">
+                <strong>Métodos de Pagamento:</strong>
+                {% set linhas = user['Metodos_Pagamento'].split('\n') %}
+                {% for linha in linhas %}
+                {% set metodo = linha.split(':')[0] %}
+                {{ metodo }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </li>              
             <li class="list-group-item"><strong>Descrição:</strong> {{ user['DescricaoJogador'] or '-' }}</li>
         </ul>
         <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#editModal">
@@ -43,7 +50,9 @@
     <!-- Modal de Edição -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form method="POST" action="{{ url_for('dashboard.update_info') }}" enctype="multipart/form-data" class="modal-content">
+            <form method="POST" action="{{ url_for('dashboard.jog_dashboard') }}" enctype="multipart/form-data"
+                class="modal-content" value="update">
+                <input type="hidden" name="action" value="update">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel">Editar Perfil</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -68,23 +77,113 @@
                     <div class="mb-3">
                         <label>Nacionalidade</label>
                         <select class="form-control" name="nacionalidade" required>
-                            {% set nacionalidades = ["Portugal", "Espanha", "França", "Alemanha", "Itália", "Reino Unido"] %}
+                            {% set nacionalidades = ["Portugal", "Espanha", "França", "Alemanha", "Itália", "Reino Unido"]
+                            %}
                             {% for pais in nacionalidades %}
-                            <option value="{{ pais }}" {% if user[4] == pais %}selected{% endif %}>{{ pais }}</option>
+                            <option value="{{ pais }}" {% if user[4]==pais %}selected{% endif %}>{{ pais }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label>Idade</label>
-                        <input type="number" name="idade" class="form-control" value="{{ idade if idade is not none else '' }}">
-                    </div>                    
-                    <div class="mb-3">
-                        <label>IBAN</label>
-                        <input type="text" name="iban" class="form-control" value="{{ user[6] }}">
+                        <label>Data de Nascimento</label>
+                        <input type="date" name="data_nascimento" class="form-control"
+                            value="{{ user['Data_Nascimento'] }}">
                     </div>
                     <div class="mb-3">
+                        <label>Peso (kg)</label>
+                        <input type="number" step="0.1" name="peso" class="form-control" value="{{ user['Peso'] }}">
+                    </div>
+                    <div class="mb-3">
+                        <label>Altura (cm)</label>
+                        <input type="number" step="0.1" name="altura" class="form-control" value="{{ user['Altura'] }}">
+                    </div>
+                    <div class="mb-3">
+                        <label>Desportos Favoritos</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% set desportos_selecionados = (user['Desportos_Favoritos'] or '').split(',') %}
+    
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="desportos" value="Basquetebol"
+                                    id="basquetebol" {% if 'Basquetebol' in desportos_selecionados %}checked{% endif %}>
+                                <label class="form-check-label" for="basquetebol">Basquetebol</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="desportos" value="Futebol"
+                                    id="futebol" {% if 'Futebol' in desportos_selecionados %}checked{% endif %}>
+                                <label class="form-check-label" for="futebol">Futebol</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="desportos" value="Futsal" id="futsal"
+                                    {% if 'Futsal' in desportos_selecionados %}checked{% endif %}>
+                                <label class="form-check-label" for="futsal">Futsal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="desportos" value="Ténis" id="tenis" {%
+                                    if 'Ténis' in desportos_selecionados %}checked{% endif %}>
+                                <label class="form-check-label" for="tenis">Ténis</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="desportos" value="Voleibol"
+                                    id="voleibol" {% if 'Voleibol' in desportos_selecionados %}checked{% endif %}>
+                                <label class="form-check-label" for="voleibol">Voleibol</label>
+                            </div>
+    
+                            <small class="text-muted">Seleciona todos os desportos que praticas ou gostas.</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>IBAN</label>
+                        <input type="text" name="iban" class="form-control" value="{{ user['IBAN'] }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Métodos de Pagamento</label>
+                    
+                        {% set metodos_disponiveis = {
+                        "MBWay": "MBWay",
+                        "CartaoCredito": "Cartão de Crédito",
+                        "PayPal": "PayPal"
+                        } %}
+                    
+                        {% set mapeamento_nomes = {
+                        "CartaoCredito": "CC",
+                        "MBWay": "MBWay",
+                        "PayPal": "PayPal"
+                        } %}
+                    
+                        {% set detalhes_dict = {} %}
+                        {% if user['Metodos_Pagamento'] %}
+                        {% for linha in user['Metodos_Pagamento'].split('\n') %}
+                        {% set partes = linha.split(':') %}
+                        {% if partes | length == 2 %}
+                        {% set _ = detalhes_dict.update({partes[0].strip(): partes[1].strip()}) %}
+                        {% if user['IBAN'] %}
+                        {% set _ = detalhes_dict.update({'Transferência Bancária': user['IBAN']}) %}
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    
+                        {% for key, label in metodos_disponiveis.items() %}
+                        <div class="form-check">
+                            <input class="form-check-input metodo-checkbox" type="checkbox" name="metodos_pagamento" value="{{ key }}"
+                                id="{{ key }}" {% if mapeamento_nomes[key] in detalhes_dict %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ key }}">{{ label }}</label>
+                        </div>
+                        {% endfor %}
+                    
+                        <div id="pagamento-details"></div>
+                    
+                        <small class="text-muted mt-2">Seleciona os métodos de pagamento disponíveis.</small>
+                    </div>
+                    
+                    <script id="detalhes-json" type="application/json">
+                        {{ detalhes_dict | tojson }}
+                    </script>
+                    
+                    <div class="mb-3">
                         <label>Descrição</label>
-                        <textarea name="descricao" class="form-control">{{ user[8] }}</textarea>
+                        <textarea name="descricao" class="form-control">{{ user['DescricaoJogador'] }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -110,8 +209,9 @@
                         <a href="{{ url_for('dashboard.arr_campos_list') }}" class="btn btn-primary w-100">Meus Campos</a>
                     </li>
                     <li class="list-group-item">
-                        <a href="#" class="btn btn-primary w-100">Histórico de Partidas</a>
-                    </li>
+                        <a href="{{ url_for('dashboard.historic_partidas', ID=user[0]) }}" class="btn btn-primary w-100">Histórico de
+                            Partidas</a>
+                        </li>
                     <li class="list-group-item">
                         <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal"
                             data-bs-target="#deleteModal">
@@ -160,7 +260,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form method="POST" action="{{ url_for('dashboard.delete_account') }}">
+                <form method="POST" action="{{ url_for('dashboard.jog_dashboard') }}">
+                    <input type="hidden" name="action" value="delete">
                     <button type="submit" class="btn btn-danger">Excluir Conta</button>
                 </form>
             </div>

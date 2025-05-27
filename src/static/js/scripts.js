@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const inputLng = document.getElementById('longitude');
 
           if (!inputLat || !inputLng) {
-            console.warn('Inputs latitude/longitude não encontrados ao abrir modal.');
+            console.log('Inputs latitude/longitude não encontrados ao abrir modal.');
             return;
           }
 
@@ -190,39 +190,37 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Função para inicializar o mapa dentro do modal Editar
+let mapEditar; // global
 function inicializarMapaEditar(lat, lng) {
   if (mapEditar) {
-    mapEditar.remove(); // remove mapa antigo antes de criar novo
+    mapEditar.remove(); // Limpa mapa anterior
   }
 
-  // Criar o mapa na div #mapEditar
-  var mapEditar = L.map('mapEditar').setView([lat, lng], 15);
+  mapEditar = L.map("mapupdate").setView([lat, lng], 15);
 
-  // Adicionar tile layer OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: "&copy; OpenStreetMap contributors",
   }).addTo(mapEditar);
 
-  // Criar marcador e permitir movê-lo
-  var marker = L.marker([lat, lng], { draggable: true }).addTo(mapEditar);
+  const marker = L.marker([lat, lng], { draggable: true }).addTo(mapEditar);
 
-  // Atualiza os inputs quando o marcador for movido
-  marker.on('move', function (e) {
-    var pos = e.latlng;
-    document.getElementById('latitude').value = pos.lat.toFixed(6);
-    document.getElementById('longitude').value = pos.lng.toFixed(6);
+  marker.on("move", function (e) {
+    document.getElementById("latitude").value = e.latlng.lat.toFixed(6);
+    document.getElementById("longitude").value = e.latlng.lng.toFixed(6);
   });
 
-  // Também atualiza o marcador ao clicar no mapa
-  mapEditar.on('click', function (e) {
+  mapEditar.on("click", function (e) {
     marker.setLatLng(e.latlng);
-    document.getElementById('latitude').value = e.latlng.lat.toFixed(6);
-    document.getElementById('longitude').value = e.latlng.lng.toFixed(6);
+    document.getElementById("latitude").value = e.latlng.lat.toFixed(6);
+    document.getElementById("longitude").value = e.latlng.lng.toFixed(6);
   });
 
-  return mapEditar;
+  setTimeout(() => {
+    mapEditar.invalidateSize();
+  }, 300);
 }
+
 
 // Evento para inicializar mapa quando modal abrir
 document.addEventListener('DOMContentLoaded', function () {
@@ -272,7 +270,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (cb.checked && !document.getElementById(fieldId)) {
         const field = fields[value];
 
-        if (!field) return; // valor não reconhecido
+        if (!field) {
+          console.warn(
+            `Campo para o método de pagamento "${value}" não foi encontrado.`
+          );
+          return; // valor não reconhecido
+        }
 
         const div = document.createElement("div");
         div.classList.add("mb-3");
@@ -320,5 +323,100 @@ document.addEventListener('DOMContentLoaded', function () {
             detalhesDiv.style.display = checkbox.checked ? 'block' : 'none';
         });
     });
+});
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  const checkboxes = document.querySelectorAll(".metodo-checkbox");
+  const container = document.getElementById("pagamento-details");
+  const jsonScript = document.getElementById("detalhes-json");
+  let detalhesValores = {};
+  if (jsonScript) {
+    try {
+      detalhesValores = JSON.parse(jsonScript.textContent);
+    } catch (e) {
+      console.error("Erro ao analisar JSON de detalhes:", e);
+    }
+  }
+
+  const fields = {
+    MBWay: {
+      label: "Número de Telemóvel (MB Way)",
+      name: "mbway_numero",
+      type: "text",
+    },
+    CC: {
+      label: "Número do Cartão de Crédito",
+      name: "cartao_credito_numero",
+      type: "text",
+    },
+    PayPal: {
+      label: "Email do PayPal",
+      name: "paypal_email",
+      type: "email",
+    },
+  };
+
+  const mapeamentoChaves = {
+    CartaoCredito: "CC",
+    MBWay: "MBWay",
+    PayPal: "PayPal",
+  };
+  
+
+  function toggleField(value, checked) {
+    const fieldId = `field-${value}`;
+    const chaveReal = mapeamentoChaves[value];
+
+    if (checked && !document.getElementById(fieldId)) {
+      const field = fields[value];
+
+      if (!field) {
+        console.warn(`Método de pagamento não reconhecido: "${value}"`);
+        return;
+      }
+      if (!chaveReal) {
+        console.warn(`Chave real não encontrada para o método: "${value}"`);
+        return;
+      }
+
+      const div = document.createElement("div");
+      div.classList.add("mb-3");
+      div.id = fieldId;
+
+      const label = document.createElement("label");
+      label.textContent = field.label;
+      label.setAttribute("for", field.name);
+      label.classList.add("form-label");
+
+      const input = document.createElement("input");
+      input.type = field.type;
+      input.name = `detalhe_${chaveReal}`;
+      input.id = field.name;
+      input.classList.add("form-control");
+      input.required = true;
+
+      if (detalhesValores && detalhesValores[chaveReal]) {
+        input.value = detalhesValores[chaveReal];
+      }
+
+      div.appendChild(label);
+      div.appendChild(input);
+      container.appendChild(div);
+    } else if (!checked) {
+      const existing = document.getElementById(fieldId);
+      if (existing) container.removeChild(existing);
+    }
+  }
+  
+
+  checkboxes.forEach((cb) => {
+    toggleField(cb.value, cb.checked); // Cria ao carregar se marcado
+
+    cb.addEventListener("change", () => {
+      toggleField(cb.value, cb.checked);
+    });
+  });
 });
 

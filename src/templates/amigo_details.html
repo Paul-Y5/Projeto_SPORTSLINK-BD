@@ -1,0 +1,43 @@
+{% extends "base_user.html" %}
+{% block title %}Dashboard Jogador{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="alert-container flash-message">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mt-3">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Perfil do Utilizador -->
+    <div class="card user-info p-4 text-center">
+        <div class="position-relative mt-3 mb-3">
+            <h2 class="text-center">Informações de Amigo</h2>
+            <a href="{{ url_for('dashboard.list_friends', ID=session['user_id']) }}"
+                class="btn btn-secondary position-absolute end-0 top-0">
+                Voltar
+            </a>
+        </div>             
+        <ul class="list-group list-group-flush text-start mt-3">
+            <li class="list-group-item"><strong>Número de Telemóvel:</strong> {{ user['Num_Tele'] }}</li>
+            <li class="list-group-item"><strong>Nacionalidade:</strong> {{ user['Nacionalidade'] }}</li>
+            <li class="list-group-item"><strong>Data de Nascimento:</strong> {{ user['Data_Nascimento'] }} ({{
+                user['Idade'] }} anos)</li>
+            <li class="list-group-item"><strong>Peso:</strong> {{ user['Peso'] or '-' }} kg</li>
+            <li class="list-group-item"><strong>Altura:</strong> {{ user['Altura'] or '-' }} cm</li>
+            <li class="list-group-item"><strong>Desportos Favoritos:</strong> {{ user['Desportos_Favoritos'] or 'Nenhum'
+                }}</li>
+            <li class="list-group-item"><strong>Descrição:</strong> {{ user['DescricaoJogador'] or '-' }}</li>
+        </ul>
+        <li class="list-group-item">
+            <a href="{{ url_for('dashboard.historic_partidas', ID=user['ID_Utilizador']) }}" class="btn btn-primary w-100">Histórico de
+                Partidas</a>
+        </li>
+    </div>
+    {% endblock %}

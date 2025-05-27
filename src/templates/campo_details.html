@@ -19,7 +19,7 @@
 <body>
     <div class="container mt-5">
         <div class="text-center mb-3">
-            <h1 class="mb-4">{{ campo.Nome }}</h1>
+            <h1 class="mb-4">{{ campo.Nome }}</h1><h3 class="text-muted">ID: {{ campo.ID }}</h3>
             <!-- Botões Ações -->
             <div class="text-end">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar</button>
@@ -51,7 +51,7 @@
                 <div class="row g-4 align-items-center">
                     <!-- Imagem do Campo -->
                     <div class="col-md-5 text-center">
-                        <img src="{{ url_for('static', filename=campo.URL if campo.URL else 'img/campo.png') }}"
+                        <img src="{{ url_for('static', filename=campo.URL) }}"
                             alt="Imagem do Campo" class="img-fluid rounded-3 border"
                             style="max-height: 300px; object-fit: cover; width: 100%;">
                     </div>
@@ -59,11 +59,20 @@
                     <!-- Informações do Campo -->
                     <div class="col-md-7">
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Dimensões:</strong> {{ campo.Comprimento }} x {{ campo.Largura
-                                }} m</li>
-                            <li class="list-group-item"><strong>Descrição:</strong> {{ campo.Descricao or '---' }}</li>
+                            <li class="list-group-item"><strong>Dimensões:</strong> {{ campo.Comprimento }} x {{ campo.Largura}} m</li>
                             <li class="list-group-item"><strong>Endereço:</strong> {{ campo.Endereco or '---' }}</li>
-                            <li class="list-group-item"><strong>Preço por hora:</strong> {{ campo.Preco or '---' }} €</li>
+                            <li class="list-group-item"><strong>Desportos Disponíveis:</strong>
+                                {% if campo.Desportos %}
+                                <ul class="list-inline mb-0">
+                                    {% for desporto in campo.Desportos %}
+                                    <li class="list-inline-item">{{ desporto.strip() }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <span class="text-muted">Nenhum desporto disponível</span>
+                                {% endif %}
+                            </li>
+                            <li class="list-group-item"><strong>Descrição:</strong> {{ campo.Descricao or '---' }}</li>
                         </ul>
                     </div>
                 </div>
@@ -78,11 +87,11 @@
             <!-- Disponibilidade -->
             <div class="card-footer bg-light">
                 <h4 class="fw-semibold mb-3">Disponibilidade</h4>
-                {% for item in disponibilidade %}
-                <p class="mb-1"><strong>{{ item.dia }}:</strong></p>
-                <div class="d-flex flex-wrap mb-3">
-                    {% set start = item.hora_abertura[:5] %}
-                    {% set end = item.hora_fecho[:5] %}
+                {% for horario in disponibilidade %}
+                <p class="mb-1"><strong>{{ horario.dia }} [Preço/H]: {{ horario.Preco }} €</strong></p>
+                <div class="d-flex flex-wrap mb-3" style="gap: 0.5rem;">
+                    {% set start = horario.hora_abertura[:5] %}
+                    {% set end = horario.hora_fecho[:5] %}
 
                     {% set hora_inicio = start.split(':')[0]|int %}
                     {% set hora_fim = end.split(':')[0]|int %}
@@ -106,96 +115,144 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
                     <div class="modal-body">
-                        <!-- Formulário de edição -->
-                        <form action="#" method="POST" enctype="multipart/form-data">
-                            <!-- Nome -->
-                            <div class="mb-3">
-                                <label for="nome" class="form-label">Nome</label>
-                                <input type="text" class="form-control" id="nome" name="nome" value="{{ campo.Nome }}" required>
-                            </div>
-                
-                            <!-- Descrição -->
-                            <div class="mb-3">
-                                <label for="descricao" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="descricao" name="descricao" required>{{ campo.Descricao }}</textarea>
-                            </div>
-                
-                            <!-- Comprimento -->
-                            <div class="mb-3">
-                                <label for="comprimento" class="form-label">Comprimento (m)</label>
-                                <input type="number" step="0.01" class="form-control" id="comprimento" name="comprimento"
-                                    value="{{ campo.Comprimento }}">
-                            </div>
-                
-                            <!-- Largura -->
-                            <div class="mb-3">
-                                <label for="largura" class="form-label">Largura (m)</label>
-                                <input type="number" step="0.01" class="form-control" id="largura" name="largura" value="{{ campo.Largura }}">
-                            </div>
-                
-                            <!-- Endereço -->
-                            <div class="mb-3">
-                                <label for="endereco" class="form-label">Endereço</label>
-                                <input type="text" class="form-control" id="endereco" name="endereco" value="{{ campo.Endereco }}">
-                            </div>
-                
-                            <!-- Preço -->
-                            <div class="mb-3">
-                                <label for="preco" class="form-label">Preço por hora (€)</label>
-                                <input type="number" step="0.01" class="form-control" id="preco" name="preco" value="{{ campo.Preco }}">
-                            </div>
-                            
-                            <!-- Seleção de Dias -->
-                            <div class="mb-3">
-                                <label class="form-label">Dias Disponíveis e Horários</label>
-                                {% for dia, sigla in siglas_dias %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="day{{ sigla }}" name="dias[]" value="{{ dia }}"
-                                    {% if dia in campo.dias_disponiveis %}checked{% endif %}>
-                                    <label class="form-check-label" for="day{{ sigla }}">{{ dia }}</label>
-                                    <div class="row mt-2">
-                                        <div class="col-6">
-                                            <label for="hora_abertura_{{ sigla }}" class="form-label">Hora de Abertura</label>
-                                            <input type="time" class="form-control" id="hora_abertura_{{ sigla }}" name="hora_abertura_{{ sigla }}"
-                                            value="{{ campo.horarios[dia].hora_abertura if campo.horarios and dia in campo.horarios else '' }}">
-                                        </div>
-                                        <div class="col-6">
-                                            <label for="hora_fecho_{{ sigla }}" class="form-label">Hora de Fecho</label>
-                                            <input type="time" class="form-control" id="hora_fecho_{{ sigla }}" name="hora_fecho_{{ sigla }}"
-                                            value="{{ campo.horarios[dia].hora_fecho if campo.horarios and dia in campo.horarios else '' }}">
+                        <form action="{{ url_for('dashboard.campo_detail', ID=campo.ID) }}" method="POST" enctype="multipart/form-data">
+                            <div class="accordion" id="accordionCampo">
+                                <!-- Dados do Campo -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingDados">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapseDados" aria-expanded="true" aria-controls="collapseDados">
+                                            1. Detalhes do Campo
+                                        </button>
+                                    </h2>
+                                    <div id="collapseDados" class="accordion-collapse collapse show" aria-labelledby="headingDados"
+                                        data-bs-parent="#accordionCampo">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Foto de Perfil</label>
+                                                <input type="file" class="form-control" name="img" accept="image/*">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="fieldName" class="form-label">Nome do Campo</label>
+                                                <input type="text" class="form-control" id="fieldName" name="nome" value="{{ campo.Nome }}" >
+                                            </div>
+                                            <div class="mb-3 row">
+                                                <div class="col">
+                                                    <label for="fieldLength" class="form-label">Comprimento</label>
+                                                    <input type="number" class="form-control" id="fieldLength" name="comprimento" value="{{ campo.Comprimento }}" >
+                                                </div>
+                                                <div class="col">
+                                                    <label for="fieldWidth" class="form-label">Largura</label>
+                                                    <input type="number" class="form-control" id="fieldWidth" name="largura" value="{{ campo.Largura }}" >
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Basquetebol" id="basquetebol" {%
+                                                        if 'Basquetebol' in campo.Desportos[0].split(',') %}checked{% endif %}>
+                                                    <label class="form-check-label" for="basquetebol">Basquetebol</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Futebol" id="futebol" {% if 'Futebol' in
+                                                        campo.Desportos[0].split(',') %}checked{% endif %}>
+                                                    <label class="form-check-label" for="futebol">Futebol</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Futsal" id="futsal" {% if 'Futsal' in
+                                                        campo.Desportos[0].split(',') %}checked{% endif %}>
+                                                    <label class="form-check-label" for="futsal">Futsal</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Ténis" id="tenis" {% if 'Ténis' in
+                                                        campo.Desportos[0].split(',') %}checked{% endif %}>
+                                                    <label class="form-check-label" for="tenis">Ténis</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Voleibol" id="voleibol" {% if 'Voleibol' in
+                                                        campo.Desportos[0].split(',') %}checked{% endif %}>
+                                                    <label class="form-check-label" for="voleibol">Voleibol</label>
+                                                </div>                                                
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="fieldDescription" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="fieldDescription" name="descricao" rows="3">{{ campo.Descricao }}</textarea>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                {% endfor %}
-                            </div>
-                
-                            <!-- Coordenadas - Mapa para selecionar -->
-                            <div class="mb-3">
-                                <label class="form-label">Localização no Mapa</label>
-                                <div id="mapEditar" style="height: 300px; border: 1px solid #ccc; border-radius: 8px;"></div>
-                            </div>
-                
-                            <!-- Inputs para Latitude e Longitude -->
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label for="latitude" class="form-label">Latitude</label>
-                                    <input type="text" class="form-control" id="latitude" name="latitude" readonly
-                                    value="{{ campo.Latitude|replace(',', '.') }}">
+                                
+                                <!-- Localização -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingLocalizacao">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapseLocalizacao" aria-expanded="false" aria-controls="collapseLocalizacao">
+                                            2. Localização do Campo
+                                        </button>
+                                    </h2>
+                                <div id="collapseLocalizacao" class="accordion-collapse collapse" aria-labelledby="headingLocalizacao"
+                                data-bs-parent="#accordionCampo">
+                                    <div class="accordion-body">
+                                        <label for="mapinput" class="form-label">Selecione a localização no mapa</label>
+                                        <div id="mapupdate" style="height: 300px; width: 100%;"></div>
+                                        <input type="hidden" id="latitude" name="latitude" value="40.6405">
+                                        <input type="hidden" id="longitude" name="longitude" value="-8.6538">
+
+                                        <label for="fieldAddress" class="form-label mt-3">Endereço</label>
+                                        <input type="text" class="form-control" id="fieldAddress" name="endereco" value="{{ campo.Endereco }}" >
+                                    </div>
                                 </div>
-                                <div class="col">
-                                    <label for="longitude" class="form-label">Longitude</label>
-                                    <input type="text" class="form-control" id="longitude" name="longitude" readonly
-                                    value="{{ campo.Longitude|replace(',', '.') }}">
-                                </div>
-                    
-                                <!-- Upload nova imagem -->
-                                <div class="mb-3">
-                                    <label for="imagem" class="form-label">Nova Imagem</label>
-                                    <input type="file" class="form-control" id="imagem" name="imagem">
+                            
+                                <!-- Disponibilidade -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingDisp">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapseDisp" aria-expanded="false" aria-controls="collapseDisp">
+                                            3. Disponibilidade
+                                        </button>
+                                    </h2>
+                                    <div id="collapseDisp" class="accordion-collapse collapse" aria-labelledby="headingDisp"
+                                        data-bs-parent="#accordionCampo">
+                                        <div class="accordion-body">
+                                        
+                                            {% for sigla, dia in siglas_dias %}
+                                            {% set dia_base = dia.replace('-feira', '') %}
+                                            {% set info = disponibilidade_dict.get(dia_base.lower()) %}
+                                        
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input dia-checkbox" type="checkbox" id="day{{ dia }}" name="dias[]" value="{{ dia }}"
+                                                    data-sigla="{{ sigla }}" {% if dia_base in dias_ativos %}checked{% endif %}
+                                                    onclick="toggleDiaDetalhes('{{ dia }}')">
+                                                <label class="form-check-label" for="day{{ dia }}">{{ dia }}</label>
+                                        
+                                                <div class="dia-detalhes mt-2" id="detalhes_{{ dia }}" {% if dia_base in dias_ativos %}style="display: block;"
+                                                    {% else %}style="display: none;" {% endif %}>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <label for="hora_abertura_{{ dia }}" class="form-label">Hora de Abertura</label>
+                                                            <input type="time" class="form-control" id="hora_abertura_{{ dia }}" name="hora_abertura_{{ dia }}"
+                                                                value="{{ info['hora_abertura'] if info }}">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label for="hora_fecho_{{ dia }}" class="form-label">Hora de Fecho</label>
+                                                            <input type="time" class="form-control" id="hora_fecho_{{ dia }}" name="hora_fecho_{{ dia }}"
+                                                                value="{{ info['hora_fecho'] if info }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <label for="preco_dia_{{ dia }}" class="form-label">Preço por Hora para {{ dia }} (€)</label>
+                                                        <input type="number" class="form-control" id="preco_dia_{{ dia }}" name="preco_dia_{{ dia }}"
+                                                            step="0.01" value="{{ info['Preco'] if info }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Botão de envio -->
                             <button type="submit" class="btn btn-primary">Guardar Alterações</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         </form>
                     </div>
                 </div>
@@ -249,17 +306,37 @@
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
     
     <script>
-        // Inicializar mapa principal na div com id "map", passando latitude e longitude como números
+        // Inicializar mapa principal na div com id "map", parassando latitude e longitude como números
         inicializarMapa(
             'map',                                  // id do container do mapa no HTML
             parseFloat("{{ campo.Latitude|replace(',', '.') }}"),  // latitude numérica
             parseFloat("{{ campo.Longitude|replace(',', '.') }}"), // longitude numérica
             13                                      // zoom opcional (ajuste conforme quiser)
         );
+        
+        document.getElementById('collapseLocalizacao').addEventListener('shown.bs.collapse', function () {
+            setTimeout(() => {
+                const lat = parseFloat("{{ campo.Latitude|replace(',', '.') }}") // latitude numérica
+                const lng = parseFloat("{{ campo.Longitude|replace(',', '.') }}") // longitude numérica
+                inicializarMapaEditar(lat, lng);
+            }, 0);
+        });
+
     </script>
-      
-    
-    
+
+    <script>
+        function toggleDiaDetalhes(dia) {
+            const checkbox = document.getElementById(`day${dia}`);
+            const detalhes = document.getElementById(`detalhes_${dia}`);
+
+            if (checkbox.checked) {
+                detalhes.style.display = "block";
+            } else {
+                detalhes.style.display = "none";
+            }
+        }
+    </script>
+
 </body>
 
 </html>

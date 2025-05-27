@@ -17,31 +17,40 @@ BEGIN
 END;
 GO
 
--- Trigger para atualizar o número de campos de um arrendador
+-- Trigger para INSERT com múltiplas linhas
 CREATE TRIGGER trg_UpdateNoCampos_Insert
 ON Campo_Priv
 AFTER INSERT
 AS
 BEGIN
   UPDATE a
-  SET No_Campos = No_Campos + 1
+  SET No_Campos = No_Campos + ins.CountCampos
   FROM Arrendador a
-  JOIN inserted i ON a.ID_Arrendador = i.ID_Arrendador;
+  JOIN (
+    SELECT ID_Arrendador, COUNT(*) AS CountCampos
+    FROM inserted
+    GROUP BY ID_Arrendador
+  ) ins ON a.ID_Arrendador = ins.ID_Arrendador;
 END;
 GO
 
--- Trigger para atualizar o número de campos de um arrendador
+-- Trigger para DELETE com múltiplas linhas
 CREATE TRIGGER trg_UpdateNoCampos_Delete
 ON Campo_Priv
 AFTER DELETE
 AS
 BEGIN
   UPDATE a
-  SET No_Campos = No_Campos - 1
+  SET No_Campos = No_Campos - del.CountCampos
   FROM Arrendador a
-  JOIN deleted d ON a.ID_Arrendador = d.ID_Arrendador;
+  JOIN (
+    SELECT ID_Arrendador, COUNT(*) AS CountCampos
+    FROM deleted
+    GROUP BY ID_Arrendador
+  ) del ON a.ID_Arrendador = del.ID_Arrendador;
 END;
 GO
+
 
 -- Atualiza o número de jogadores após inserção
 CREATE TRIGGER trg_UpdateNoJogadores_Insert

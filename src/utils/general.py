@@ -1,4 +1,7 @@
 # Lógica de dias -> converter para BD as siglas
+from decimal import Decimal, InvalidOperation
+
+
 def get_siglas_dias():
     return {
         "dom" : "Domingo",
@@ -20,3 +23,10 @@ def get_dias_semana():
         "Sexta-feira": 6,
         "Sábado": 7
     }
+
+
+def parse_decimal(value):
+    try:
+        return Decimal(value.replace(",", "."))
+    except (InvalidOperation, AttributeError):
+        return None

@@ -7,6 +7,7 @@
     <title>Meus Amigos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
 <body>
@@ -48,17 +49,19 @@
                 <tr>
                     <td>{{ amigo[0] }}</td>
                     <td>
-                        <img src="{{ url_for('static', filename=(amigo['Imagens_Perfil'].split(',')[0] if user['Imagens_Perfil'] else 'img/icon_def.png')) }}"
+                        <img src="{{ url_for('static', filename=(amigo[3].split(',')[0] if amigo[3] else 'img/icon_def.png')) }}"
                             alt="Imagem de Perfil" class="img-fluid rounded-circle" style="width: 50px; height: 50px; margin: 2%;">
-                    </td>
+                    </td>                      
                     <td>{{ amigo[1] }}</td>
                     <td>{{ amigo[2] or 0.0 }}</td>
                     <td class="text-end">
-                        <a href="#"
-                            class="btn btn-warning">Detalhes</a>
-                        <a href="#"
-                            class="btn btn-danger">Remover Amigo</a>
+                        <a href="{{ url_for('dashboard.list_friends', ID=user_id, action='detail', friend_id=amigo[0]) }}" class="btn btn-warning">Detalhes</a>
+                        <a href="{{ url_for('dashboard.list_friends', ID=user_id, action='delete', friend_id=amigo[0]) }}" button class="btn btn-danger"
+                            onclick="return confirm('Tem a certeza que deseja remover este amigo?');">
+                            Remover Amigo
+                        </a>
                     </td>
+                    
                 </tr>
                 {% endfor %}
                 {% if amigos|length == 0 %}
@@ -78,7 +81,7 @@
                         <h5 class="modal-title" id="addaddFriendModalLabel">Adicionar Amigo</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form method="POST" action="{{ url_for('dashboard.list_friends', ID=user[0]) }}">
+                    <form method="POST" action="{{ url_for('dashboard.list_friends', ID=user_id) }}">
                         <div class="modal-body">
                            
                             <!-- ID do utilizador -->
