@@ -49,7 +49,6 @@ BEGIN
 END;
 GO
 
-
 -- Get Campos
 CREATE PROCEDURE sp_GetCampos
   @ID_Campo INT
@@ -161,15 +160,13 @@ BEGIN
 END;
 GO
 
-
-
 -- CampoPrivado
 CREATE PROCEDURE sp_GetCampoByID
   @ID_Campo INT
 AS
 BEGIN
-  SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
-  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL]
+SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL], STRING_AGG(desp.Nome, ',') as Desportos
   FROM Campo as c
   LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
   JOIN Ponto as p on p.ID = c.ID_Ponto
@@ -178,6 +175,8 @@ BEGIN
   LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
   INNER JOIN Imagem as i on i.ID = IMG.ID_img
   JOIN Dias_semana as di on di.ID = dp.ID_dia
+  LEFT JOIN Desporto_Campo as dC on dc.ID_Campo=c.ID
+  LEFT JOIN  Desporto as desp on desp.ID=dc.ID_Desporto
   group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
   c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL]
   HAVING c.ID = @ID_Campo;
@@ -209,6 +208,36 @@ AS
 BEGIN
   INSERT INTO Disponibilidade(ID_Campo, ID_Dia, Hora_Abertura, Hora_Fecho, Preco)
   VALUES (@ID_Campo, @ID_Dia, @Hora_Abertura, @Hora_Fecho, @Preco);
+END;
+GO
+
+-- Associar Desportos
+CREATE PROCEDURE sp_AssociarDesportoCampo
+  @ID_Campo INT,
+  @ID_Desporto INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM Desporto_Campo 
+    WHERE ID_Campo = @ID_Campo AND ID_Desporto = @ID_Desporto
+  )
+  BEGIN
+    BEGIN TRY
+      INSERT INTO Desporto_Campo (ID_Campo, ID_Desporto)
+      VALUES (@ID_Campo, @ID_Desporto);
+    END TRY
+    BEGIN CATCH
+      DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+      RAISERROR('Erro ao associar desporto ao campo: %s', 16, 1, @ErrorMessage);
+    END CATCH
+  END
+  ELSE
+  BEGIN
+    RAISERROR('Desporto já associado a este campo.', 16, 1);
+  END
 END;
 GO
 

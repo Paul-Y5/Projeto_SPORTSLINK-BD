@@ -99,7 +99,7 @@ CREATE OR ALTER PROCEDURE sp_UpdateUserInfo
   @IBAN VARCHAR(34) = NULL,
   @No_Campos INT = NULL,
   @URL_Imagem VARCHAR(1000) = NULL,
-  @Met_Pagamento VARCHAR(256) = NULL
+  @MetodosPagamento VARCHAR(256) = NULL
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -144,16 +144,11 @@ BEGIN
         No_Campos = ISNULL(@No_Campos, No_Campos)
       WHERE ID_Arrendador = @UserID;
 
-      IF @Met_Pagamento IS NOT NULL
+      IF @MetodosPagamento IS NOT NULL
       BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM Met_Paga_Arrendador 
-          WHERE ID_Arrendador = @UserID AND Met_pagamento = @Met_Pagamento
-        )
-        BEGIN
-          INSERT INTO Met_Paga_Arrendador (ID_Arrendador, Met_pagamento)
-          VALUES (@UserID, @Met_Pagamento);
-        END
+        EXEC sp_UpdateMetodosPagamento
+          @ID_Utilizador = @UserID,
+          @Metodos = @MetodosPagamento;
       END;
     END;
 

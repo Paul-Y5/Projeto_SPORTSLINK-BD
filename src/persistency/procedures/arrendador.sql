@@ -99,32 +99,31 @@ CREATE PROCEDURE sp_GetCamposByUser
   @UserID INT
 AS
 BEGIN
+  SET NOCOUNT ON;
   SELECT 
-    v.ID_Campo AS ID,
-    v.Nome_Campo AS Nome,
-    v.Largura,
-    v.Comprimento,
-    v.Descricao,
-    v.Endereco,
-    v.Latitude,
-    v.Longitude,
+    c.ID,
+    c.Nome,
+    c.Endereco,
     c.Ocupado,
-    v.Dias_Disponiveis,
-    v.Preco,
-    v.Hora_Abertura,
-    v.Hora_Fecho,
-    v.Imagens,
-    CASE WHEN c.Ocupado = 1 THEN 'Sim' ELSE 'Não' END AS OcupadoStr,
-    CASE WHEN cp.ID_Arrendador IS NOT NULL THEN 'Privado' ELSE 'Publico' END AS Tipo
-  FROM vw_CampoPrivDetalhes v
-  JOIN Campo c ON v.ID_Campo = c.ID
-  INNER JOIN Campo_Priv cp ON c.ID = cp.ID_Campo
-  WHERE cp.ID_Arrendador = @UserID;
+    STRING_AGG(d.Nome, ', ') AS Dias,
+    STRING_AGG(I.[URL], ', '),
+    CASE WHEN c.Ocupado = 1 THEN 'Sim' ELSE 'Não' END AS Ocupado
+	FROM Campo as c
+	INNER JOIN Disponibilidade as di on di.ID_Campo=c.ID
+	LEFT JOIN Dias_semana as d on d.ID=di.ID_dia
+	INNER JOIN IMG_Campo as ic on ic.ID_Campo=c.ID
+	LEFT JOIN Imagem as i on i.ID=ic.ID_img
+	LEFT JOIN Campo_Priv as cp on cp.ID_Campo=c.ID
+	where cp.ID_Arrendador = 27
+	GROUP BY c.ID,
+    c.Nome,
+    c.Endereco,
+    c.Ocupado;
 END;
 GO
 
 -- Obter reservas de um campo
-CREATE OR ALTER PROCEDURE sp_GetReservasByCampo
+CREATE PROCEDURE sp_GetReservasByCampo
   @ID_Campo INT
 AS
 BEGIN
@@ -167,6 +166,54 @@ BEGIN
   BEGIN CATCH
     -- Apenas relança o erro para ser tratado na procedure pai
     THROW;
+  END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_UpdateMetodosPagamento
+  @ID_Utilizador INT,
+  @Metodos NVARCHAR(MAX) -- JSON: '[{"Metodo":"paypal","Detalhes":"email"},{"Metodo":"mbway","Detalhes":"91234"}]'
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  BEGIN TRY
+    BEGIN TRANSACTION;
+
+    -- Tabela temporária para carregar os métodos enviados
+    DECLARE @TempMetodos TABLE (
+      Met_pagamento NVARCHAR(256),
+      Detalhes NVARCHAR(500)
+    );
+
+    INSERT INTO @TempMetodos (Met_pagamento, Detalhes)
+    SELECT Metodo, Detalhes
+    FROM OPENJSON(@Metodos)
+    WITH (
+      Metodo NVARCHAR(256) '$.Metodo',
+      Detalhes NVARCHAR(500) '$.Detalhes'
+    );
+
+    -- MERGE para atualizar/inserir os métodos de pagamento
+    MERGE Met_Paga_Arrendador AS Target
+    USING @TempMetodos AS Source
+      ON Target.ID_Arrendador = @ID_Utilizador
+     AND Target.Met_pagamento = Source.Met_pagamento
+    WHEN MATCHED THEN
+      UPDATE SET Detalhes = Source.Detalhes
+    WHEN NOT MATCHED BY TARGET THEN
+      INSERT (ID_Arrendador, Met_pagamento, Detalhes)
+      VALUES (@ID_Utilizador, Source.Met_pagamento, Source.Detalhes)
+      WHEN NOT MATCHED BY SOURCE THEN DELETE;
+
+    COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+    ROLLBACK TRANSACTION;
+    DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+    DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+    DECLARE @ErrorState INT = ERROR_STATE();
+    RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
   END CATCH
 END;
 GO

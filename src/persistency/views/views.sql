@@ -12,6 +12,7 @@ SELECT
   p.Resultado,
   p.Estado,
   p.no_jogadores,
+  ju.ID_Jogador,
   (
     SELECT STRING_AGG(Nome, ', ') 
     FROM (
@@ -23,6 +24,7 @@ SELECT
     ) AS Sub
   ) AS Jogadores
 FROM Partida p
+JOIN Jogador_joga as ju on ju.ID_Partida=p.ID
 LEFT JOIN Campo c ON p.ID_Campo = c.ID;
 GO
 
@@ -97,23 +99,71 @@ SELECT
   j.Altura,
   a.IBAN,
   a.No_Campos,
-  -- Aqui o STRING_AGG agora funciona com dados já distintos
-  (SELECT STRING_AGG(mp.Met_pagamento, ', ') 
-   FROM Metodos_Pagamento_Unicos mp 
-   WHERE mp.ID_Arrendador = u.ID) AS Metodos_Pagamento,
-  (SELECT STRING_AGG(img.URL, ', ') 
-   FROM Imagens_Unicas img 
-   WHERE img.ID_Utilizador = u.ID) AS Imagens_Perfil,
-  (SELECT STRING_AGG(ds.Nome, ', ') 
-   FROM Desportos_Unicos ds 
-   WHERE ds.ID_Jogador = u.ID) AS Desportos_Favoritos,
+
+  -- Métodos de Pagamento com Detalhes (apenas para arrendadores)
+  (
+    SELECT STRING_AGG(mp.Metodo + ': ' + mp.Detalhes, CHAR(10))
+    FROM dbo.fn_GetMetodosPagamentoDetalhes(u.ID) mp
+    WHERE EXISTS (
+        SELECT 1 FROM Arrendador as a2 WHERE a2.ID_Arrendador = u.ID
+    )
+  ) AS Metodos_Pagamento,
+
+  -- Imagens de Perfil
+  (
+    SELECT STRING_AGG(img.URL, ', ') 
+    FROM Imagens_Unicas as img 
+    WHERE img.ID_Utilizador = u.ID
+  ) AS Imagens_Perfil,
+
+  -- Desportos Favoritos
+  (
+    SELECT STRING_AGG(ds.Nome, ', ') 
+    FROM Desportos_Unicos as ds 
+    WHERE ds.ID_Jogador = u.ID
+  ) AS Desportos_Favoritos,
+
+  -- Tipo de Utilizador
   CASE 
     WHEN a.ID_Arrendador IS NOT NULL THEN 'Arrendador'
     ELSE 'Jogador'
   END AS Tipo
+
 FROM Utilizador u
 LEFT JOIN Jogador j ON u.ID = j.ID
 LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador;
+GO
+
+
+CREATE OR ALTER VIEW vw_InfoAmigo AS
+WITH Imagens_Unicas AS (
+    SELECT DISTINCT ip.ID_Utilizador, i.URL
+    FROM IMG_Perfil ip
+    JOIN Imagem i ON ip.ID_img = i.ID
+),
+Desportos_Unicos AS (
+    SELECT DISTINCT dj.ID_Jogador, d.Nome
+    FROM Desporto_Jogador dj
+    JOIN Desporto d ON dj.ID_Desporto = d.ID
+)
+SELECT 
+  u.ID AS ID_Utilizador,
+  u.Nome,
+  u.Nacionalidade,
+  j.Idade,
+  j.Data_Nascimento,
+  j.Descricao AS DescricaoJogador,
+  j.Peso,
+  j.Altura,
+  (SELECT STRING_AGG(ds.Nome, ', ')
+   FROM Desportos_Unicos ds 
+   WHERE ds.ID_Jogador = u.ID) AS Desportos_Favoritos,
+  (SELECT STRING_AGG(img.URL, ', ') 
+   FROM Imagens_Unicas img 
+   WHERE img.ID_Utilizador = u.ID) AS Imagens_Perfil
+FROM Utilizador u
+LEFT JOIN Jogador j ON u.ID = j.ID;
+GO
 
 -- View para obter os detalhes das reservas
 CREATE OR ALTER VIEW vw_ReservasDetalhadas AS

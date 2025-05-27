@@ -120,3 +120,76 @@ GROUP BY
   j.Idade, j.Data_Nascimento, j.Descricao, j.Peso, j.Altura, 
   a.IBAN, a.No_Campos, mpa.Met_pagamento, a.ID_Arrendador;
 GO
+
+SELECT 
+    c.ID,
+    c.Nome,
+    c.Endereco,
+    c.Ocupado,
+    STRING_AGG(d.Nome, ', ') AS Dias,
+    STRING_AGG(I.[URL], ', '),
+    CASE WHEN c.Ocupado = 1 THEN 'Sim' ELSE 'Não' END AS Ocupado
+	FROM Campo as c
+	INNER JOIN Disponibilidade as di on di.ID_Campo=c.ID
+	LEFT JOIN Dias_semana as d on d.ID=di.ID_dia
+	INNER JOIN IMG_Campo as ic on ic.ID_Campo=c.ID
+	LEFT JOIN Imagem as i on i.ID=ic.ID_img
+	LEFT JOIN Campo_Priv as cp on cp.ID_Campo=c.ID
+	where cp.ID_Arrendador = 3
+	GROUP BY c.ID,
+    c.Nome,
+    c.Endereco,
+    c.Ocupado;
+
+
+SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL], STRING_AGG(desp.Nome, ',') as Desportos
+  FROM Campo as c
+  LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
+  JOIN Ponto as p on p.ID = c.ID_Ponto
+  JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+  LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
+  LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
+  INNER JOIN Imagem as i on i.ID = IMG.ID_img
+  JOIN Dias_semana as di on di.ID = dp.ID_dia
+  LEFT JOIN Desporto_Campo as dC on dc.ID_Campo=c.ID
+  LEFT JOIN  Desporto as desp on desp.ID=dc.ID_Desporto
+  group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
+  c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL]
+  HAVING c.ID = 1;
+
+  SELECT * FROM Desporto_Campo
+
+  SELECT 
+  p.ID AS ID_Partida,
+  p.ID_Campo,
+  c.Nome AS Nome_Campo,
+  p.Data_Hora,
+  p.Duracao,
+  p.Resultado,
+  p.Estado,
+  p.no_jogadores,
+  ju.ID_Jogador,
+  (
+    SELECT STRING_AGG(Nome, ', ') 
+    FROM (
+      SELECT DISTINCT u2.Nome
+      FROM Jogador_joga jj2
+      JOIN Jogador j2 ON jj2.ID_Jogador = j2.ID
+      JOIN Utilizador u2 ON j2.ID = u2.ID
+      WHERE jj2.ID_Partida = p.ID
+    ) AS Sub
+  ) AS Jogadores
+FROM Partida p JOIN Jogador_joga as ju on ju.ID_Partida=p.ID
+LEFT JOIN Campo c ON p.ID_Campo = c.ID
+WHERE ju.ID_Jogador=1 AND p.Estado = 'Finalizada'
+GO
+
+
+SELECT 
+      ump.Met_pagamento AS Metodo,
+      ump.Detalhes
+  FROM 
+      Met_Paga_Arrendador AS ump
+  WHERE 
+      ump.ID_Arrendador = 28

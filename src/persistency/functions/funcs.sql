@@ -73,3 +73,17 @@ BEGIN
   RETURN DATEDIFF(MINUTE, @Hora_Inicio, @Hora_Fim);
 END;
 GO
+
+CREATE FUNCTION dbo.fn_GetMetodosPagamentoDetalhes (@UserId INT)
+RETURNS TABLE
+AS
+RETURN
+(
+SELECT 
+      ump.Met_pagamento AS Metodo,
+      ump.Detalhes
+  FROM 
+      Met_Paga_Arrendador AS ump
+  WHERE 
+      ump.ID_Arrendador = @UserId
+);
