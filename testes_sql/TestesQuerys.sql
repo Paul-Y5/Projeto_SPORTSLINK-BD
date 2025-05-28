@@ -193,3 +193,34 @@ SELECT
       Met_Paga_Arrendador AS ump
   WHERE 
       ump.ID_Arrendador = 28
+
+
+SELECT * from Disponibilidade DI
+INNER JOIN Dias_semana AS DIS ON DIS.ID=DI.ID_dia
+where ID_Campo = 6
+
+SELECT * FROM IMG_Campo
+
+SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Desporto_Campo';
+
+
+SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL], STRING_AGG(desp.Nome, ',') as Desportos
+  FROM Campo as c
+  LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
+  JOIN Ponto as p on p.ID = c.ID_Ponto
+  JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+  LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
+  LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
+  INNER JOIN Imagem as i on i.ID = IMG.ID_img
+  JOIN Dias_semana as di on di.ID = dp.ID_dia
+  LEFT JOIN Desporto_Campo as dc on dc.ID_Campo=c.ID
+  LEFT JOIN  Desporto as desp on desp.ID=dc.ID_Desporto
+  group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
+  c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL]
+  HAVING c.ID = 7;
+
+
+  SELECT * FROM Campo JOIN Campo_Pub on ID=ID_Campo
+
+  

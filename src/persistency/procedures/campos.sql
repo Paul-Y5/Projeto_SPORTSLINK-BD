@@ -100,7 +100,8 @@ CREATE PROCEDURE sp_createCampoPub
   @Ocupado BIT,
   @Descricao VARCHAR(2500),
   @Entidade_publica_resp VARCHAR(256),
-  @URL VARCHAR(1000) = NULL
+  @URL VARCHAR(1000) = NULL,
+  @NewID INT OUTPUT -- Adiciona isso
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -108,35 +109,28 @@ BEGIN
   BEGIN TRY
     BEGIN TRANSACTION;
 
-      DECLARE @ID_Campo INT;
+    DECLARE @ID_Campo INT;
 
-      -- Cria o campo base
-      EXEC sp_CreateCampo
-        @Nome = @Nome,
-        @Endereco = @Endereco,
-        @Comprimento = @Comprimento,
-        @Largura = @Largura,
-        @Ocupado = @Ocupado,
-        @Descricao = @Descricao,
-        @Latitude = @Latitude,
-        @Longitude = @Longitude,
-        @ID_Mapa = @ID_Mapa,
-        @URL = @URL,
-        @ID_Campo = @ID_Campo OUTPUT;
+    -- Cria o campo base (inclui imagem, se @URL fornecido)
+    EXEC sp_CreateCampo
+      @Nome = @Nome,
+      @Endereco = @Endereco,
+      @Comprimento = @Comprimento,
+      @Largura = @Largura,
+      @Ocupado = @Ocupado,
+      @Descricao = @Descricao,
+      @Latitude = @Latitude,
+      @Longitude = @Longitude,
+      @ID_Mapa = @ID_Mapa,
+      @URL = @URL,
+      @ID_Campo = @ID_Campo OUTPUT;
 
-      -- Insere na tabela de campos públicos
-      INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp)
-      VALUES (@ID_Campo, @Entidade_publica_resp);
+    -- Insere na tabela de campos públicos
+    INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp)
+    VALUES (@ID_Campo, @Entidade_publica_resp);
 
-      -- Adiciona imagem se fornecida
-      IF @URL IS NOT NULL
-      BEGIN
-        DECLARE @ID_img INT;
-        EXEC sp_CreateImg @URL, @ID_img OUTPUT;
-
-        INSERT INTO IMG_Campo (ID_Campo, ID_img)
-        VALUES (@ID_Campo, @ID_img);
-      END
+    -- Retorna ID final
+    SET @NewID = @ID_Campo;
 
     COMMIT TRANSACTION;
   END TRY

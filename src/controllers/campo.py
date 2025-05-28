@@ -5,8 +5,84 @@ from db import create_connection
 from utils.general import get_siglas_dias, get_dias_semana, parse_decimal
 
 
-def create_CampoPub():
-    ...
+def adicionar_campo_publico():
+    try:
+        nome = request.form['nome']
+        comprimento = float(request.form['comprimento'])
+        largura = float(request.form['largura'])
+        descricao = request.form.get('descricao', '')
+        endereco = request.form['endereco']
+        latitude = float(request.form['latitude'])
+        longitude = float(request.form['longitude'])
+        entidade_publica_resp = request.form['entidade_publica_resp']
+        ocupado = 0  # Campo inicia como disponível
+        desportos_selecionados = request.form.getlist('desportos')
+
+        # Processa imagem (opcional)
+        img_file = request.files.get('img')
+        if img_file and img_file.filename:
+            img_url = f"img/{img_file.filename}"
+            save_path = os.path.join("src", "static", "img", img_file.filename)
+            img_file.save(save_path)
+        else:
+            img_url = None
+
+        # Cria o campo e recupera o ID gerado
+        conn = create_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                DECLARE @NewID INT;
+                EXEC sp_createCampoPub
+                    @Latitude = ?, 
+                    @Longitude = ?, 
+                    @ID_Mapa = ?, 
+                    @Nome = ?, 
+                    @Endereco = ?, 
+                    @Comprimento = ?, 
+                    @Largura = ?, 
+                    @Ocupado = ?, 
+                    @Descricao = ?, 
+                    @Entidade_publica_resp = ?, 
+                    @URL = ?, 
+                    @NewID = @NewID OUTPUT;
+                SELECT @NewID;
+            """, (
+                latitude,
+                longitude,
+                1,
+                nome,
+                endereco,
+                comprimento,
+                largura,
+                ocupado,
+                descricao,
+                entidade_publica_resp,
+                img_url
+            ))
+            id_campo = cursor.fetchone()[0]
+
+            # Associa desportos selecionados
+            desportos_map = {}
+            cursor.execute("SELECT ID, Nome FROM Desporto")
+            desportos_rows = cursor.fetchall()
+            for id_desporto, nome_desporto in desportos_rows:
+                desportos_map[nome_desporto] = id_desporto
+
+            if id_campo:
+                for desporto_nome in desportos_selecionados:
+                    id_desporto = desportos_map.get(desporto_nome)
+                    if id_desporto:
+                        cursor.execute("EXEC sp_AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?;", (id_campo, id_desporto))
+
+            conn.commit()
+
+        flash('Campo público adicionado com sucesso!', 'success')
+        return redirect(url_for('dashboard.jog_dashboard'))
+
+    except Exception as e:
+        flash(f'Ocorreu um erro ao adicionar o campo: {e}', 'danger')
+        return redirect(url_for('dashboard.jog_dashboard'))
+
 
 def editar_campo(ID):
     if "user_id" not in session:

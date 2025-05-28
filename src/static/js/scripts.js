@@ -332,6 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const container = document.getElementById("pagamento-details");
   const jsonScript = document.getElementById("detalhes-json");
   let detalhesValores = {};
+
   if (jsonScript) {
     try {
       detalhesValores = JSON.parse(jsonScript.textContent);
@@ -340,15 +341,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Campos disponíveis para cada método de pagamento, chave usada aqui é a "real"
   const fields = {
-    MBWay: {
-      label: "Número de Telemóvel (MB Way)",
-      name: "mbway_numero",
-      type: "text",
-    },
     CC: {
       label: "Número do Cartão de Crédito",
       name: "cartao_credito_numero",
+      type: "text",
+    },
+    MBWay: {
+      label: "Número de Telemóvel (MB Way)",
+      name: "mbway_numero",
       type: "text",
     },
     PayPal: {
@@ -358,29 +360,30 @@ document.addEventListener("DOMContentLoaded", function () {
     },
   };
 
+  // Mapeamento do valor do checkbox para a chave usada em fields e detalhesValores
   const mapeamentoChaves = {
     CartaoCredito: "CC",
     MBWay: "MBWay",
     PayPal: "PayPal",
   };
-  
 
   function toggleField(value, checked) {
     const fieldId = `field-${value}`;
     const chaveReal = mapeamentoChaves[value];
+    if (!chaveReal) {
+      console.warn(`Chave real não encontrada para o método: "${value}"`);
+      return;
+    }
+
+    const field = fields[chaveReal];
+    if (!field) {
+      console.warn(
+        `Campo para o método de pagamento "${value}" não foi encontrado.`
+      );
+      return;
+    }
 
     if (checked && !document.getElementById(fieldId)) {
-      const field = fields[value];
-
-      if (!field) {
-        console.warn(`Método de pagamento não reconhecido: "${value}"`);
-        return;
-      }
-      if (!chaveReal) {
-        console.warn(`Chave real não encontrada para o método: "${value}"`);
-        return;
-      }
-
       const div = document.createElement("div");
       div.classList.add("mb-3");
       div.id = fieldId;
@@ -397,6 +400,7 @@ document.addEventListener("DOMContentLoaded", function () {
       input.classList.add("form-control");
       input.required = true;
 
+      // Se já existir valor salvo no JSON, preenche o input
       if (detalhesValores && detalhesValores[chaveReal]) {
         input.value = detalhesValores[chaveReal];
       }
@@ -409,14 +413,15 @@ document.addEventListener("DOMContentLoaded", function () {
       if (existing) container.removeChild(existing);
     }
   }
-  
 
+  // Inicializa campos ao carregar (para checkboxes que já estão marcados)
   checkboxes.forEach((cb) => {
-    toggleField(cb.value, cb.checked); // Cria ao carregar se marcado
+    toggleField(cb.value, cb.checked);
 
     cb.addEventListener("change", () => {
       toggleField(cb.value, cb.checked);
     });
   });
 });
+
 

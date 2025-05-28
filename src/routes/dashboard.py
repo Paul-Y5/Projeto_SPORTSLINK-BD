@@ -1,5 +1,5 @@
 from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
-from controllers.campo import adicionar_campo_privado, editar_campo, excluir_campo, get_campo_by_id, getReservasByCampo
+from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, getReservasByCampo
 from controllers.user import add_friend, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
 from utils.decorator_login import login_required
 from utils.decorator_login import login_required
@@ -19,6 +19,9 @@ def jog_dashboard():
             return delete_user_account()
         elif action == "update":
             return update_user_info()
+        elif action == "add_field":
+            print("Adicionando campo")
+            return adicionar_campo_publico()
     if tipo_utilizador == "Arrendador":
         return render_template("arr_dashboard.html", user=user)
     return render_template("jog_dashboard.html", user=user)
@@ -46,7 +49,7 @@ def arr_campos_list():
         return redirect(url_for("dashboard.arr_campos_list"))
 
 
-@dashboard_bp.route("/info_field<ID>", methods=["GET", "POST"])
+@dashboard_bp.route("/info_field", methods=["GET", "POST"])
 @login_required
 def campo_detail(ID):
     if request.method == "POST":
@@ -74,9 +77,9 @@ def campo_detail(ID):
         dias_ativos=dias_ativos
     )
 
-@dashboard_bp.route("/amigos/<int:ID>", methods=["GET", "POST"])
+@dashboard_bp.route("/amigos", methods=["GET", "POST"])
 @login_required
-def list_friends(ID):
+def list_friends():
     if "user_id" not in session:
         return redirect(url_for("index"))
 
@@ -94,7 +97,7 @@ def list_friends(ID):
 
     return add_friend()
 
-@dashboard_bp.route("/historico<int:ID>", methods=["GET"])
+@dashboard_bp.route("/historico", methods=["GET"])
 @login_required
 def historic_partidas(ID):
     if "user_id" not in session:
