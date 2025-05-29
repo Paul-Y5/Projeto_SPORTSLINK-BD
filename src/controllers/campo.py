@@ -18,14 +18,14 @@ def adicionar_campo_publico():
         ocupado = 0  # Campo inicia como disponível
         desportos_selecionados = request.form.getlist('desportos')
 
-        # Processa imagem (opcional)
+        # Processa imagem
         img_file = request.files.get('img')
         if img_file and img_file.filename:
             img_url = f"img/{img_file.filename}"
             save_path = os.path.join("src", "static", "img", img_file.filename)
             img_file.save(save_path)
         else:
-            img_url = None
+            img_url = 'img/campo.png'  # Imagem padrão se não for fornecida
 
         # Cria o campo e recupera o ID gerado
         conn = create_connection()
@@ -195,7 +195,6 @@ def editar_campo(ID):
     return redirect(url_for('dashboard.campo_detail', ID=ID))
 
 
-
 def excluir_campo():
     if "user_id" not in session:
         return redirect(url_for("index"))
@@ -216,6 +215,7 @@ def excluir_campo():
         flash(f"Erro ao excluir campo: {str(e)}", "danger")
 
     return redirect(url_for("dashboard.arr_campos_list"))
+
 
 def adicionar_campo_privado():
     user_id = session.get("user_id")
@@ -345,8 +345,9 @@ def get_campo_by_id(campo_id):
             "Latitude": first_row[5],
             "Longitude": first_row[6],
             "Descricao": first_row[7],
-            "URL": first_row[12],
-            "Desportos": list(set([row[13] for row in campo_infos if row[13]]))  # remove duplicados
+            "ID_Arrendador": first_row[8],
+            "URL": first_row[13],
+            "Desportos": list(set([row[14] for row in campo_infos if row[14]]))  # remove duplicados
         }
 
         # Executa a segunda stored procedure (disponibilidade)
@@ -365,6 +366,9 @@ def get_campo_by_id(campo_id):
             }
             for row in disponibilidade_rows
         ]
+
+        if not disponibilidade:
+            disponibilidade = []
 
         return campo_dict, disponibilidade
 
@@ -395,27 +399,35 @@ def getReservasByCampo(ID):
         print(f"Erro ao obter reservas: {e}")
         return None
 
-def get_campos():
+from flask import request, session, redirect, url_for
+
+def get_campos(tipo):
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("auth.login"))
 
+    # Obter os parâmetros
+    pesquisa = request.args.get("pesquisa")
+    order_by = request.args.get("order_by", "Nome")
+    order_dir = request.args.get("order_dir", "ASC").upper()
+    user_lat = request.args.get("user_lat", type=float)
+    user_lon = request.args.get("user_lon", type=float)
+
+    print(f"Obtendo campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}")
+
+    if order_dir not in ("ASC", "DESC"):
+        order_dir = "ASC"
+
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetCampos ? ", (user_id,))
+            cursor.execute(
+                "EXEC sp_GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?",
+                (None, user_id, tipo, pesquisa, order_by, order_dir, user_lat, user_lon)
+            )
             campos = cursor.fetchall()
-        return campos
-    except Exception as e:
-        print(f"Erro ao obter campos: {e}")
-        return None
-    
-def get_All_campos(field_order, field_direction, field_search, field_type):
-    try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetAllCampos ?, ?, ?, ?", (field_order, field_direction, field_search, field_type))
-            campos = cursor.fetchall()
+
+        #print(f"Campos obtidos: {campos}")
         return campos
     except Exception as e:
         print(f"Erro ao obter campos: {e}")

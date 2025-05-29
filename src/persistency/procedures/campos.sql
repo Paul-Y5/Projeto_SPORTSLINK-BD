@@ -49,25 +49,71 @@ BEGIN
 END;
 GO
 
--- Get Campos
-CREATE PROCEDURE sp_GetCampos
-  @ID_Campo INT
+
+-- Procedure para obter campos com filtros e ordenação
+CREATE OR ALTER PROCEDURE sp_GetCampos
+    @ID_Campo INT = NULL,
+    @ID_Arrendador INT = NULL,
+    @Tipo VARCHAR(10) = NULL,
+    @Pesquisa NVARCHAR(100) = NULL,
+    @OrderBy NVARCHAR(50) = 'Nome',
+    @OrderDir VARCHAR(4) = 'ASC',
+    @UserLat FLOAT = NULL,
+    @UserLon FLOAT = NULL
 AS
 BEGIN
-  SELECT i.[URL], c.Nome AS Nome_Campo, c.Largura, c.Comprimento, c.Endereco, c.Ocupado,
-      STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis,
-      CASE WHEN c.Ocupado = 1 THEN 'Sim' ELSE 'Não' END AS Ocupado,
-	    CASE WHEN cp.ID_Campo IS NOT NULL THEN 'Privado' ELSE 'Publico' END AS Tipo
-    FROM Campo AS c
-    JOIN Ponto AS p ON c.ID_Ponto = p.ID
-    LEFT JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
-    JOIN Disponibilidade AS d ON c.ID = d.ID_Campo
-    JOIN Dias_semana AS di ON d.ID_Dia = di.ID
-	LEFT JOIN IMG_Campo AS IMG on IMG.ID_Campo = c.ID
-	INNER JOIN Imagem as i on i.ID = IMG.ID_img
-    GROUP BY i.[URL], c.Nome, c.Largura, c.Comprimento, c.Endereco, c.Ocupado, cp.ID_Campo;
+    SET NOCOUNT ON;
+
+    DECLARE @SQL NVARCHAR(MAX);
+    DECLARE @EffectiveOrderBy NVARCHAR(50);
+
+    -- Determina o campo de ordenação efetivo
+    SET @EffectiveOrderBy = 
+        CASE 
+            WHEN @OrderBy = 'Distance' AND @UserLat IS NOT NULL AND @UserLon IS NOT NULL THEN 'Distance'
+            ELSE COALESCE(@OrderBy, 'Nome')
+        END;
+
+    SET @SQL = '
+        SELECT *, 
+               dbo.fn_CalculateDistance(@UserLat, @UserLon, vw.LATITUDE, vw.LONGITUDE) AS Distance
+        FROM vw_CamposDisponiveis AS vw
+        WHERE 1 = 1' +
+        -- Filtro por ID específico
+        CASE 
+            WHEN @ID_Campo IS NOT NULL THEN ' AND vw.ID = @ID_Campo'
+            ELSE '' 
+        END +
+        -- Filtro por tipo de campo
+        CASE 
+            WHEN @Tipo IS NOT NULL THEN ' AND vw.Tipo = @Tipo'
+            ELSE '' 
+        END +
+        -- Filtro por pesquisa em Nome, Endereço, Dias_Disponiveis, Desportos, NOME_ARRENDADOR
+        CASE 
+            WHEN @Pesquisa IS NOT NULL THEN 
+                ' AND (vw.Nome LIKE ''%'' + @Pesquisa + ''%'' OR vw.Endereco LIKE ''%'' + @Pesquisa + ''%'' 
+                       OR vw.Dias_Disponiveis LIKE ''%'' + @Pesquisa + ''%'' OR vw.Desportos LIKE ''%'' + @Pesquisa + ''%''
+                       OR vw.NOME_ARRENDADOR LIKE ''%'' + @Pesquisa + ''%'' )'
+            ELSE '' 
+        END +
+        -- Excluir campos privados do próprio arrendador
+        CASE 
+            WHEN @ID_Arrendador IS NOT NULL THEN 
+                ' AND (vw.Tipo = ''Publico'' OR (vw.Tipo = ''Privado'' AND vw.ID_Arrendador <> @ID_Arrendador))'
+            ELSE '' 
+        END +
+        ' ORDER BY ' + QUOTENAME(@EffectiveOrderBy) + ' ' + 
+            CASE WHEN @OrderDir = 'DESC' THEN 'DESC' ELSE 'ASC' END + ';';
+
+    -- Executa a SQL montada dinamicamente com os parâmetros
+    EXEC sp_executesql 
+        @SQL,
+        N'@ID_Campo INT, @ID_Arrendador INT, @Tipo VARCHAR(10), @Pesquisa NVARCHAR(100), @OrderBy NVARCHAR(50), @OrderDir VARCHAR(4), @UserLat FLOAT, @UserLon FLOAT',
+        @ID_Campo, @ID_Arrendador, @Tipo, @Pesquisa, @OrderBy, @OrderDir, @UserLat, @UserLon;
 END;
 GO
+
 
 CREATE PROCEDURE sp_DeleteCampo
   @ID INT
@@ -75,6 +121,7 @@ AS
 BEGIN
   SET NOCOUNT ON;
   -- Atualização feita por trigger
+
   -- Apagar o campo
   DELETE FROM Campo WHERE ID = @ID;
 END
@@ -146,28 +193,30 @@ BEGIN
 END;
 GO
 
--- CampoPrivado
-CREATE PROCEDURE sp_GetCampoByID
+-- CampoPrivado / CampoPub
+CREATE OR ALTER PROCEDURE sp_GetCampoByID
   @ID_Campo INT
 AS
 BEGIN
-SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, 
-  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL], STRING_AGG(desp.Nome, ',') as Desportos
+SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, U.ID as ID_Arrendador,
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL], STRING_AGG(desp.Nome, ',') as Desportos, cpub.Entidade_publica_resp
   FROM Campo as c
   LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
   JOIN Ponto as p on p.ID = c.ID_Ponto
-  JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+  LEFT JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+  LEFT JOIN Campo_Pub as cpub on cpub.ID_Campo=c.ID
   LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
   LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
-  INNER JOIN Imagem as i on i.ID = IMG.ID_img
-  JOIN Dias_semana as di on di.ID = dp.ID_dia
+  JOIN Imagem as i on i.ID = IMG.ID_img
+  LEFT JOIN Dias_semana as di on di.ID = dp.ID_dia
   LEFT JOIN Desporto_Campo as dc on dc.ID_Campo=c.ID
   LEFT JOIN  Desporto as desp on desp.ID=dc.ID_Desporto
   group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
-  c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL]
+  c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL], U.ID, cpub.Entidade_publica_resp
   HAVING c.ID = @ID_Campo;
 END;
 GO
+
 
 CREATE PROCEDURE sp_GetDisponibilidadePorCampo
   @ID_Campo INT
@@ -300,4 +349,5 @@ BEGIN
   END CATCH
 END;
 GO
+
 

@@ -221,6 +221,64 @@ SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitu
   HAVING c.ID = 7;
 
 
-  SELECT * FROM Campo JOIN Campo_Pub on ID=ID_Campo
+SELECT * FROM Campo JOIN Campo_Pub on ID=ID_Campo
 
-  
+
+SELECT 
+    c.ID, 
+    i.[URL], 
+    c.Nome, 
+    c.Largura, 
+    c.Comprimento, 
+    c.Endereco, 
+    p.Latitude, 
+    p.Longitude,
+    dias.Dias_Disponiveis, 
+    desportos.Desportos,
+	part_agg.Partidas_Ativas,
+    -- Agrega os IDs das partidas com estado Aguardando ou Decorrer
+    part_agg.Partidas_Ativas,
+    CASE 
+        WHEN c.Ocupado = 1 THEN 'Sim' 
+        ELSE 'Não' 
+    END AS Ocupado,
+    CASE 
+        WHEN cp.ID_Campo IS NOT NULL THEN 'Privado' 
+        ELSE 'Publico' 
+    END AS Tipo
+FROM Campo AS c
+JOIN Ponto AS p ON c.ID_Ponto = p.ID
+LEFT JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
+LEFT JOIN (
+    SELECT 
+        d.ID_Campo, 
+        STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis
+    FROM Disponibilidade AS d
+    JOIN Dias_semana AS di ON d.ID_Dia = di.ID
+    GROUP BY d.ID_Campo
+) AS dias ON dias.ID_Campo = c.ID
+LEFT JOIN (
+    SELECT 
+        dc.ID_Campo, 
+        STRING_AGG(desp.Nome, ', ') AS Desportos
+    FROM Desporto_Campo AS dc
+    JOIN Desporto AS desp ON desp.ID = dc.ID_Desporto
+    GROUP BY dc.ID_Campo
+) AS desportos ON desportos.ID_Campo = c.ID
+LEFT JOIN IMG_Campo AS img ON img.ID_Campo = c.ID
+LEFT JOIN Imagem AS i ON i.ID = img.ID_Img
+
+-- Subconsulta que agrega os IDs das partidas por campo filtrando o estado
+LEFT JOIN (
+    SELECT 
+        ID_Campo, 
+        STRING_AGG(CAST(ID AS VARCHAR), ',') AS Partidas_Ativas
+    FROM Partida
+    WHERE Estado IN ('Aguardando', 'Decorrer')
+    GROUP BY ID_Campo
+) AS part_agg ON part_agg.ID_Campo = c.ID
+
+GROUP BY
+    c.ID, i.URL, c.Nome, c.Largura, c.Comprimento, c.Endereco, 
+    p.Latitude, p.Longitude, dias.Dias_Disponiveis, desportos.Desportos, 
+    c.Ocupado, cp.ID_Campo, part_agg.Partidas_Ativas;

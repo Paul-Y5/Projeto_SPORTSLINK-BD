@@ -250,6 +250,7 @@ def remove_friend(friend_id):
     except Exception as e:
         flash(f"Erro ao remover amigo: {str(e)}", "danger")
 
+
 def get_InfoFriend():
     friend_id = request.args.get("friend_id")
     if not friend_id:
@@ -269,6 +270,7 @@ def get_InfoFriend():
         flash(f"Erro ao carregar informações do amigo. [{e}]", "danger")
         return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
 
+
 def getHistoricPartidas(user_id):
     try:
         with create_connection() as conn:
@@ -278,6 +280,18 @@ def getHistoricPartidas(user_id):
         return partidas
     except Exception as e:
         flash("Erro ao carregar o histórico de partidas.", "danger")
+        return []
+    
+
+def get_reservas(user_id):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_GetReservasByUser ?", (user_id,))
+            reservas = cursor.fetchall()
+        return reservas
+    except Exception as e:
+        flash(f"Erro ao carregar reservas: {str(e)}", "danger")
         return []
     
 # Auxiiares
@@ -291,4 +305,16 @@ def is_arrendador(user_id):
     except Exception as e:
         print(f"Erro ao verificar se o usuário é arrendador: {e}")
         return False
+    
+def cancelar_reserva(reserva_id):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_DeleteReserva ?", (reserva_id,))
+            conn.commit()
+        flash("Reserva cancelada com sucesso!", "success")
+        return redirect(url_for("dashboard.jog_dashboard"))
+    except Exception as e:
+        flash(f"Erro ao cancelar reserva: {str(e)}", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
     

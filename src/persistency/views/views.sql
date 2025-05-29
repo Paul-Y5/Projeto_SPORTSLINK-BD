@@ -169,25 +169,22 @@ GO
 CREATE OR ALTER VIEW vw_ReservasDetalhadas AS
 SELECT
   r.ID,
+  u.ID AS ID_Utilizador,
   r.ID_Campo,
   c.Nome AS Nome_Campo,
   r.ID_Jogador,
   u.Nome AS Nome_Jogador,
-  u.Nacionalidade,
-  u.Num_Tele,
   r.[Data],
   r.Hora_Inicio,
   r.Hora_Fim,
   r.Total_Pagamento,
   r.Estado,
-  r.Descricao,
-  di.Preco,
-  di.ID_Dia
+  r.Descricao
 FROM Reserva r
 JOIN Campo c ON r.ID_Campo = c.ID
 JOIN Jogador j ON r.ID_Jogador = j.ID
 JOIN Utilizador u ON j.ID = u.ID
-JOIN Disponibilidade di ON r.ID_Campo = di.ID_Campo
+LEFT JOIN Disponibilidade di ON r.ID_Campo = di.ID_Campo
   AND di.ID_Dia = DATEPART(WEEKDAY, r.[Data]);
 GO
 
@@ -196,4 +193,60 @@ CREATE VIEW vw_ReservasFuturas AS
 SELECT *
 FROM vw_ReservasDetalhadas
 WHERE [Data] >= CAST(GETDATE() AS DATE);
+GO
+
+-- View para ver campos disponíveis
+CREATE OR ALTER VIEW vw_CamposDisponiveis AS
+SELECT 
+    c.ID, 
+    i.[URL], 
+    c.Nome, 
+    c.Largura, 
+    c.Comprimento, 
+    c.Endereco, 
+    p.Latitude, 
+    p.Longitude,
+    dias.Dias_Disponiveis, 
+    desportos.Desportos,
+    part_agg.Partidas_Ativas,
+	  cp.ID_Arrendador,
+    u.Nome AS Nome_Arrendador,
+    CASE 
+        WHEN c.Ocupado = 1 THEN 'Sim' 
+        ELSE 'Não' 
+    END AS Ocupado,
+    CASE 
+        WHEN cp.ID_Campo IS NOT NULL THEN 'Privado' 
+        ELSE 'Publico' 
+    END AS Tipo
+FROM Campo AS c
+JOIN Ponto AS p ON c.ID_Ponto = p.ID
+LEFT JOIN Campo_Priv AS cp ON c.ID = cp.ID_Campo
+LEFT JOIN Utilizador AS u ON u.ID = cp.ID_Arrendador
+LEFT JOIN (
+    SELECT 
+        d.ID_Campo, 
+        STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis
+    FROM Disponibilidade AS d
+    JOIN Dias_semana AS di ON d.ID_Dia = di.ID
+    GROUP BY d.ID_Campo
+) AS dias ON dias.ID_Campo = c.ID
+LEFT JOIN (
+    SELECT 
+        dc.ID_Campo, 
+        STRING_AGG(desp.Nome, ', ') AS Desportos
+    FROM Desporto_Campo AS dc
+    JOIN Desporto AS desp ON desp.ID = dc.ID_Desporto
+    GROUP BY dc.ID_Campo
+) AS desportos ON desportos.ID_Campo = c.ID
+LEFT JOIN IMG_Campo AS img ON img.ID_Campo = c.ID
+LEFT JOIN Imagem AS i ON i.ID = img.ID_Img
+LEFT JOIN (
+    SELECT 
+        ID_Campo, 
+        STRING_AGG(CAST(ID AS VARCHAR), ',') AS Partidas_Ativas
+    FROM Partida
+    WHERE Estado IN ('Aguardando', 'Decorrer')
+    GROUP BY ID_Campo
+) AS part_agg ON part_agg.ID_Campo = c.ID;
 GO

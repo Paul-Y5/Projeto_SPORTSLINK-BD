@@ -19,10 +19,7 @@
     <div class="card user-info p-4 text-center">
         <div class="position-relative mt-3 mb-3">
             <h2 class="text-center">Informações de Amigo</h2>
-            <a href="{{ url_for('dashboard.list_friends', ID=session['user_id']) }}"
-                class="btn btn-secondary position-absolute end-0 top-0">
-                Voltar
-            </a>
+            <a href="#" class="btn btn-secondary" onclick="window.history.back(); return false;">Voltar</a>
         </div>             
         <ul class="list-group list-group-flush text-start mt-3">
             <li class="list-group-item"><strong>Número de Telemóvel:</strong> {{ user['Num_Tele'] }}</li>

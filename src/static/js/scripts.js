@@ -24,11 +24,14 @@ function toggleFormLoading(form, show) {
 
 // Fechar mensagens flash automaticamente
 function closeFlashMessages() {
-  document.querySelectorAll(".flash-message").forEach((msg) => {
-    setTimeout(() => {
-      msg.style.display = "none";
-    }, 5000);
-  });
+  const messages = document.querySelectorAll(".flash-message");
+  if (messages.length > 0) {
+    messages.forEach((msg) => {
+      setTimeout(() => {
+        if (msg) msg.style.display = "none";
+      }, 5000);
+    });
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -88,11 +91,14 @@ function toggleFormLoading(form, show) {
 
 // Fechar mensagens flash automaticamente
 function closeFlashMessages() {
-  document.querySelectorAll(".flash-message").forEach((msg) => {
-    setTimeout(() => {
-      msg.style.display = "none";
-    }, 5000);
-  });
+  const messages = document.querySelectorAll(".flash-message");
+  if (messages.length > 0) {
+    messages.forEach((msg) => {
+      setTimeout(() => {
+        if (msg) msg.style.display = "none";
+      }, 5000);
+    });
+  }
 }
 
 // Função para inicializar mapa principal em qualquer página, com verificação do container
@@ -424,4 +430,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-
+const collapseLocalizacao = document.getElementById('collapseLocalizacao');
+if (collapseLocalizacao) {
+  collapseLocalizacao.addEventListener('shown.bs.collapse', function () {
+    // seu código aqui
+  });
+}

@@ -38,11 +38,11 @@ END;
 GO
 
 -- Obter reservas por jogador
-CREATE PROCEDURE sp_GetReservasByJogador
-  @ID_Jogador INT
+CREATE PROCEDURE sp_GetReservasByUser
+  @ID_Utilizador INT
 AS
 BEGIN
-  SELECT * FROM Reserva WHERE ID_Jogador = @ID_Jogador;
+  SELECT * FROM vw_ReservasDetalhadas WHERE ID_Utilizador = @ID_Utilizador;
 END;
 GO
 

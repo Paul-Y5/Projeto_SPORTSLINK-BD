@@ -21,12 +21,6 @@ def index():
    
     return render_template("index.html")
 
-# Middleware para armazenar a URL anterior
-@app.before_request
-def store_last_url():
-    if request.endpoint not in ('static',):
-        session['previous_url'] = request.referrer
-
 # Ponto de entrada principal
 if __name__ == "__main__":
     app.run(debug=True)

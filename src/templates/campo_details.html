@@ -12,21 +12,20 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>      
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
     <div class="container mt-5">
         <div class="text-center mb-3">
-            <h1 class="mb-4">{{ campo.Nome }}</h1><h3 class="text-muted">ID: {{ campo.ID }}</h3>
+            <h1 class="mb-4">{{ campo.Nome }}</h1>
+            <h3 class="text-muted">ID: {{ campo.ID }}</h3>
             <!-- Botões Ações -->
             <div class="text-end">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar</button>
                 <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalReservas">Reservas</button>
-                <a href="{{ url_for('dashboard.arr_campos_list') }}" class="btn btn-secondary">Voltar</a>
+                <a href="#" class="btn btn-secondary" onclick="window.history.back(); return false;">Voltar</a>
             </div>
-
         </div>
 
         <!-- Flash Messages -->
@@ -42,7 +41,7 @@
         {% endif %}
         {% endwith %}
 
-    <!-- Informações do Campo -->
+        <!-- Informações do Campo -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white rounded-top-4">
                 <h2 class="mb-0">Detalhes do Campo</h2>
@@ -51,15 +50,16 @@
                 <div class="row g-4 align-items-center">
                     <!-- Imagem do Campo -->
                     <div class="col-md-5 text-center">
-                        <img src="{{ url_for('static', filename=campo.URL) }}"
-                            alt="Imagem do Campo" class="img-fluid rounded-3 border"
+                        <img src="{{ url_for('static', filename=campo.URL) }}" alt="Imagem do Campo"
+                            class="img-fluid rounded-3 border"
                             style="max-height: 300px; object-fit: cover; width: 100%;">
                     </div>
 
                     <!-- Informações do Campo -->
                     <div class="col-md-7">
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Dimensões:</strong> {{ campo.Comprimento }} x {{ campo.Largura}} m</li>
+                            <li class="list-group-item"><strong>Dimensões:</strong> {{ campo.Comprimento }} x {{
+                                campo.Largura}} m</li>
                             <li class="list-group-item"><strong>Endereço:</strong> {{ campo.Endereco or '---' }}</li>
                             <li class="list-group-item"><strong>Desportos Disponíveis:</strong>
                                 {% if campo.Desportos %}
@@ -115,18 +115,20 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
                     <div class="modal-body">
-                        <form action="{{ url_for('dashboard.campo_detail', ID=campo.ID) }}" method="POST" enctype="multipart/form-data">
+                        <form action="{{ url_for('dashboard.campo_detail', ID=campo.ID) }}" method="POST"
+                            enctype="multipart/form-data">
                             <div class="accordion" id="accordionCampo">
                                 <!-- Dados do Campo -->
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="headingDados">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapseDados" aria-expanded="true" aria-controls="collapseDados">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseDados"
+                                            aria-expanded="true" aria-controls="collapseDados">
                                             1. Detalhes do Campo
                                         </button>
                                     </h2>
-                                    <div id="collapseDados" class="accordion-collapse collapse show" aria-labelledby="headingDados"
-                                        data-bs-parent="#accordionCampo">
+                                    <div id="collapseDados" class="accordion-collapse collapse show"
+                                        aria-labelledby="headingDados" data-bs-parent="#accordionCampo">
                                         <div class="accordion-body">
                                             <div class="mb-3">
                                                 <label class="form-label">Foto de Perfil</label>
@@ -134,113 +136,136 @@
                                             </div>
                                             <div class="mb-3">
                                                 <label for="fieldName" class="form-label">Nome do Campo</label>
-                                                <input type="text" class="form-control" id="fieldName" name="nome" value="{{ campo.Nome }}" >
+                                                <input type="text" class="form-control" id="fieldName" name="nome"
+                                                    value="{{ campo.Nome }}">
                                             </div>
                                             <div class="mb-3 row">
                                                 <div class="col">
                                                     <label for="fieldLength" class="form-label">Comprimento</label>
-                                                    <input type="number" class="form-control" id="fieldLength" name="comprimento" value="{{ campo.Comprimento }}" >
+                                                    <input type="number" class="form-control" id="fieldLength"
+                                                        name="comprimento" value="{{ campo.Comprimento }}">
                                                 </div>
                                                 <div class="col">
                                                     <label for="fieldWidth" class="form-label">Largura</label>
-                                                    <input type="number" class="form-control" id="fieldWidth" name="largura" value="{{ campo.Largura }}" >
+                                                    <input type="number" class="form-control" id="fieldWidth"
+                                                        name="largura" value="{{ campo.Largura }}">
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Basquetebol" id="basquetebol" {%
-                                                        if 'Basquetebol' in campo.Desportos[0].split(',') %}checked{% endif %}>
-                                                    <label class="form-check-label" for="basquetebol">Basquetebol</label>
+                                                    <input class="form-check-input" type="checkbox" name="desportos"
+                                                        value="Basquetebol" id="basquetebol" {% if 'Basquetebol' in
+                                                        campo.Desportos[0].split(',') %}checked{% endif %}>
+                                                    <label class="form-check-label"
+                                                        for="basquetebol">Basquetebol</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Futebol" id="futebol" {% if 'Futebol' in
+                                                    <input class="form-check-input" type="checkbox" name="desportos"
+                                                        value="Futebol" id="futebol" {% if 'Futebol' in
                                                         campo.Desportos[0].split(',') %}checked{% endif %}>
                                                     <label class="form-check-label" for="futebol">Futebol</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Futsal" id="futsal" {% if 'Futsal' in
+                                                    <input class="form-check-input" type="checkbox" name="desportos"
+                                                        value="Futsal" id="futsal" {% if 'Futsal' in
                                                         campo.Desportos[0].split(',') %}checked{% endif %}>
                                                     <label class="form-check-label" for="futsal">Futsal</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Ténis" id="tenis" {% if 'Ténis' in
+                                                    <input class="form-check-input" type="checkbox" name="desportos"
+                                                        value="Ténis" id="tenis" {% if 'Ténis' in
                                                         campo.Desportos[0].split(',') %}checked{% endif %}>
                                                     <label class="form-check-label" for="tenis">Ténis</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="desportos" value="Voleibol" id="voleibol" {% if 'Voleibol' in
+                                                    <input class="form-check-input" type="checkbox" name="desportos"
+                                                        value="Voleibol" id="voleibol" {% if 'Voleibol' in
                                                         campo.Desportos[0].split(',') %}checked{% endif %}>
                                                     <label class="form-check-label" for="voleibol">Voleibol</label>
-                                                </div>                                                
+                                                </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label for="fieldDescription" class="form-label">Descrição</label>
-                                                <textarea class="form-control" id="fieldDescription" name="descricao" rows="3">{{ campo.Descricao }}</textarea>
+                                                <textarea class="form-control" id="fieldDescription" name="descricao"
+                                                    rows="3">{{ campo.Descricao }}</textarea>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Localização -->
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="headingLocalizacao">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapseLocalizacao" aria-expanded="false" aria-controls="collapseLocalizacao">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseLocalizacao"
+                                            aria-expanded="false" aria-controls="collapseLocalizacao">
                                             2. Localização do Campo
                                         </button>
                                     </h2>
-                                <div id="collapseLocalizacao" class="accordion-collapse collapse" aria-labelledby="headingLocalizacao"
-                                data-bs-parent="#accordionCampo">
-                                    <div class="accordion-body">
-                                        <label for="mapinput" class="form-label">Selecione a localização no mapa</label>
-                                        <div id="mapupdate" style="height: 300px; width: 100%;"></div>
-                                        <input type="hidden" id="latitude" name="latitude" value="40.6405">
-                                        <input type="hidden" id="longitude" name="longitude" value="-8.6538">
+                                    <div id="collapseLocalizacao" class="accordion-collapse collapse"
+                                        aria-labelledby="headingLocalizacao" data-bs-parent="#accordionCampo">
+                                        <div class="accordion-body">
+                                            <label for="mapinput" class="form-label">Selecione a localização no
+                                                mapa</label>
+                                            <div id="mapupdate" style="height: 300px; width: 100%;"></div>
+                                            <input type="hidden" id="latitude" name="latitude"
+                                                value="{{ campo.Latitude }}">
+                                            <input type="hidden" id="longitude" name="longitude"
+                                                value="{{ campo.Longitude }}">
 
-                                        <label for="fieldAddress" class="form-label mt-3">Endereço</label>
-                                        <input type="text" class="form-control" id="fieldAddress" name="endereco" value="{{ campo.Endereco }}" >
+                                            <label for="fieldAddress" class="form-label mt-3">Endereço</label>
+                                            <input type="text" class="form-control" id="fieldAddress" name="endereco"
+                                                value="{{ campo.Endereco }}">
+                                        </div>
                                     </div>
                                 </div>
-                            
+
                                 <!-- Disponibilidade -->
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="headingDisp">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapseDisp" aria-expanded="false" aria-controls="collapseDisp">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseDisp"
+                                            aria-expanded="false" aria-controls="collapseDisp">
                                             3. Disponibilidade
                                         </button>
                                     </h2>
-                                    <div id="collapseDisp" class="accordion-collapse collapse" aria-labelledby="headingDisp"
-                                        data-bs-parent="#accordionCampo">
+                                    <div id="collapseDisp" class="accordion-collapse collapse"
+                                        aria-labelledby="headingDisp" data-bs-parent="#accordionCampo">
                                         <div class="accordion-body">
-                                        
                                             {% for sigla, dia in siglas_dias %}
                                             {% set dia_base = dia.replace('-feira', '') %}
                                             {% set info = disponibilidade_dict.get(dia_base.lower()) %}
-                                        
                                             <div class="form-check mb-3">
-                                                <input class="form-check-input dia-checkbox" type="checkbox" id="day{{ dia }}" name="dias[]" value="{{ dia }}"
-                                                    data-sigla="{{ sigla }}" {% if dia_base in dias_ativos %}checked{% endif %}
-                                                    onclick="toggleDiaDetalhes('{{ dia }}')">
+                                                <input class="form-check-input dia-checkbox" type="checkbox"
+                                                    id="day{{ dia }}" name="dias[]" value="{{ dia }}"
+                                                    data-sigla="{{ sigla }}" {% if dia_base in dias_ativos %}checked{%
+                                                    endif %} onclick="toggleDiaDetalhes('{{ dia }}')">
                                                 <label class="form-check-label" for="day{{ dia }}">{{ dia }}</label>
-                                        
-                                                <div class="dia-detalhes mt-2" id="detalhes_{{ dia }}" {% if dia_base in dias_ativos %}style="display: block;"
-                                                    {% else %}style="display: none;" {% endif %}>
+                                                <div class="dia-detalhes mt-2" id="detalhes_{{ dia }}" {% if dia_base in
+                                                    dias_ativos %}style="display: block;" {% else
+                                                    %}style="display: none;" {% endif %}>
                                                     <div class="row">
                                                         <div class="col-6">
-                                                            <label for="hora_abertura_{{ dia }}" class="form-label">Hora de Abertura</label>
-                                                            <input type="time" class="form-control" id="hora_abertura_{{ dia }}" name="hora_abertura_{{ dia }}"
+                                                            <label for="hora_abertura_{{ dia }}" class="form-label">Hora
+                                                                de Abertura</label>
+                                                            <input type="time" class="form-control"
+                                                                id="hora_abertura_{{ dia }}"
+                                                                name="hora_abertura_{{ dia }}"
                                                                 value="{{ info['hora_abertura'] if info }}">
                                                         </div>
                                                         <div class="col-6">
-                                                            <label for="hora_fecho_{{ dia }}" class="form-label">Hora de Fecho</label>
-                                                            <input type="time" class="form-control" id="hora_fecho_{{ dia }}" name="hora_fecho_{{ dia }}"
+                                                            <label for="hora_fecho_{{ dia }}" class="form-label">Hora de
+                                                                Fecho</label>
+                                                            <input type="time" class="form-control"
+                                                                id="hora_fecho_{{ dia }}" name="hora_fecho_{{ dia }}"
                                                                 value="{{ info['hora_fecho'] if info }}">
                                                         </div>
                                                     </div>
                                                     <div class="mt-2">
-                                                        <label for="preco_dia_{{ dia }}" class="form-label">Preço por Hora para {{ dia }} (€)</label>
-                                                        <input type="number" class="form-control" id="preco_dia_{{ dia }}" name="preco_dia_{{ dia }}"
+                                                        <label for="preco_dia_{{ dia }}" class="form-label">Preço por
+                                                            Hora para {{ dia }} (€)</label>
+                                                        <input type="number" class="form-control"
+                                                            id="preco_dia_{{ dia }}" name="preco_dia_{{ dia }}"
                                                             step="0.01" value="{{ info['Preco'] if info }}">
                                                     </div>
                                                 </div>
@@ -253,16 +278,18 @@
                             <!-- Botão de envio -->
                             <div class="text-end mt-4">
                                 <button type="submit" class="btn btn-primary">Guardar Alterações</button>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-secondary"
+                                    data-bs-dismiss="modal">Cancelar</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-  
+
         <!-- Modal Reservas -->
-        <div class="modal fade" id="modalReservas" tabindex="-1" aria-labelledby="modalReservasLabel" aria-hidden="true">
+        <div class="modal fade" id="modalReservas" tabindex="-1" aria-labelledby="modalReservasLabel"
+            aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -293,7 +320,7 @@
                                     <td>{{ reserva.Descricao }}</td>
                                 </tr>
                                 {% endfor %}
-                            </tbody>                            
+                            </tbody>
                         </table>
                         {% else %}
                         <p>Não há reservas para este campo.</p>
@@ -303,40 +330,73 @@
             </div>
         </div>
 
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-    
-    <script>
-        // Inicializar mapa principal na div com id "map", parassando latitude e longitude como números
-        inicializarMapa(
-            'map',                                  // id do container do mapa no HTML
-            parseFloat("{{ campo.Latitude|replace(',', '.') }}"),  // latitude numérica
-            parseFloat("{{ campo.Longitude|replace(',', '.') }}"), // longitude numérica
-            13                                      // zoom opcional (ajuste conforme quiser)
-        );
-        
-        document.getElementById('collapseLocalizacao').addEventListener('shown.bs.collapse', function () {
-            setTimeout(() => {
-                const lat = parseFloat("{{ campo.Latitude|replace(',', '.') }}") // latitude numérica
-                const lng = parseFloat("{{ campo.Longitude|replace(',', '.') }}") // longitude numérica
-                inicializarMapaEditar(lat, lng);
-            }, 0);
-        });
+        <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 
-    </script>
+        <script>
+            // Função para inicializar o mapa principal (somente visualização)
+            function inicializarMapa(id, lat, lng, zoom = 13) {
+                const map = L.map(id).setView([lat, lng], zoom);
 
-    <script>
-        function toggleDiaDetalhes(dia) {
-            const checkbox = document.getElementById(`day${dia}`);
-            const detalhes = document.getElementById(`detalhes_${dia}`);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                }).addTo(map);
 
-            if (checkbox.checked) {
-                detalhes.style.display = "block";
-            } else {
-                detalhes.style.display = "none";
+                L.marker([lat, lng]).addTo(map);
             }
-        }
-    </script>
 
+            // Função para inicializar o mapa no modal de edição (com marcador arrastável)
+            function inicializarMapaEditar(lat, lng) {
+                const map = L.map('mapupdate').setView([lat, lng], 13);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                }).addTo(map);
+
+                // Adiciona um marcador arrastável
+                const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+                // Atualiza os campos de latitude e longitude quando o marcador é movido
+                marker.on('dragend', function (e) {
+                    const position = marker.getLatLng();
+                    document.getElementById('latitude').value = position.lat.toFixed(6);
+                    document.getElementById('longitude').value = position.lng.toFixed(6);
+                });
+
+                // Centraliza o mapa ao abrir
+                map.invalidateSize();
+            }
+
+            // Inicializar o mapa principal
+            inicializarMapa(
+                'map',
+                parseFloat("{{ campo.Latitude|replace(',', '.') }}"),
+                parseFloat("{{ campo.Longitude|replace(',', '.') }}"),
+                13
+            );
+
+            // Inicializar o mapa no modal de edição quando o accordion for aberto
+            document.getElementById('collapseLocalizacao').addEventListener('shown.bs.collapse', function () {
+                setTimeout(() => {
+                    const lat = parseFloat("{{ campo.Latitude|replace(',', '.') }}");
+                    const lng = parseFloat("{{ campo.Longitude|replace(',', '.') }}");
+                    inicializarMapaEditar(lat, lng);
+                }, 0);
+            });
+
+            // Função para toggling de detalhes de dias
+            function toggleDiaDetalhes(dia) {
+                const checkbox = document.getElementById(`day${dia}`);
+                const detalhes = document.getElementById(`detalhes_${dia}`);
+
+                if (checkbox.checked) {
+                    detalhes.style.display = "block";
+                } else {
+                    detalhes.style.display = "none";
+                }
+            }
+        </script>
 </body>
 
 </html>

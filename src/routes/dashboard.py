@@ -1,7 +1,6 @@
 from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
-from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, getReservasByCampo
-from controllers.user import add_friend, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
-from utils.decorator_login import login_required
+from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, get_campos, getReservasByCampo
+from controllers.user import add_friend, cancelar_reserva, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
 from utils.decorator_login import login_required
 from utils.general import get_siglas_dias
 
@@ -13,6 +12,9 @@ def jog_dashboard():
     user_id = session["user_id"]
     user = get_user_info(user_id)
     tipo_utilizador = session.get("tipo_utilizador", "Jogador")
+    reservas = get_reservas(user_id)
+    
+    action = request.args.get("action")
     if request.method == "POST":
         action = request.form.get("action")
         if action == "delete":
@@ -20,11 +22,20 @@ def jog_dashboard():
         elif action == "update":
             return update_user_info()
         elif action == "add_field":
-            print("Adicionando campo")
             return adicionar_campo_publico()
+        elif action == "cancel_reserva":
+            reserva_id = request.form.get("reserva_id")
+            if reserva_id:
+                cancelar_reserva(reserva_id)
+            else:
+                print("Reserva ID não fornecido para cancelamento.")
+    
+    if action == "view_fields":
+        return ver_campos()
+    
     if tipo_utilizador == "Arrendador":
-        return render_template("arr_dashboard.html", user=user)
-    return render_template("jog_dashboard.html", user=user)
+        return render_template("arr_dashboard.html", user=user, reservas=reservas)
+    return render_template("jog_dashboard.html", user=user, reservas=reservas)
 
 
 @dashboard_bp.route("/arrendador", methods=["GET", "POST"])
@@ -47,15 +58,34 @@ def arr_campos_list():
     else:
         flash("Ação inválida.", "danger")
         return redirect(url_for("dashboard.arr_campos_list"))
+    
+@dashboard_bp.route("/campos", methods=["GET"])
+@login_required
+def ver_campos():
+    tipo = request.args.get("tipo")
+    if tipo not in ["Publico", "Privado"]:
+        flash("Tipo de campo inválido.", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
+
+    campos = get_campos(tipo)
+    print(tipo)
+    if campos is None:
+        flash("Erro ao carregar os campos.", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
+
+    return render_template("list_campos.html", campos=campos, tipo=tipo)
 
 
-@dashboard_bp.route("/info_field", methods=["GET", "POST"])
+@dashboard_bp.route("/info_field/<int:ID>", methods=["GET", "POST"])
 @login_required
 def campo_detail(ID):
     if request.method == "POST":
         editar_campo(ID)
 
     campo, disponibilidade = get_campo_by_id(ID)
+    if not campo:
+        print("Campo não encontrado")
+
     reservas = getReservasByCampo(ID)
 
     disponibilidade_dict = {item['dia'].lower(): item for item in disponibilidade}
@@ -63,12 +93,22 @@ def campo_detail(ID):
     if not campo:
         abort(404)
 
-    # Essas variáveis são locais e passadas ao template via render_template
+    print(f"Campo encontrado: {campo}")
+
+    if campo["ID_Arrendador"] == session["user_id"]:
+        #print("Campo é do arrendador")
+        template = 'campo_details.html'
+    else:
+        #print("Campo não é do arrendador")
+        template = 'campo_details2.html'
+
+
+    # Estas variáveis são locais e passadas ao template via render_template
     siglas_dias = get_siglas_dias().items()
     dias_ativos = [d['dia'] for d in disponibilidade]
 
     return render_template(
-        'campo_details.html',
+        template,
         campo=campo,
         disponibilidade=disponibilidade,
         disponibilidade_dict=disponibilidade_dict,
@@ -97,12 +137,10 @@ def list_friends():
 
     return add_friend()
 
-@dashboard_bp.route("/historico", methods=["GET"])
+
+@dashboard_bp.route("/historico/<int:ID>", methods=["GET"])
 @login_required
 def historic_partidas(ID):
-    if "user_id" not in session:
-        return redirect(url_for("index"))
-
     user_id = session["user_id"]
     try:
         HistoricPartidas = getHistoricPartidas(ID)
@@ -112,7 +150,3 @@ def historic_partidas(ID):
         flash(f"Erro ao carregar o histórico de partidas{e}.", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
 
-
-
-
-    

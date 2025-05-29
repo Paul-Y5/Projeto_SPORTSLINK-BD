@@ -87,3 +87,30 @@ SELECT
   WHERE 
       ump.ID_Arrendador = @UserId
 );
+
+-- Cálculo da distância entre dois pontos geográficos (latitude e longitude)
+CREATE FUNCTION dbo.fn_CalculateDistance
+(
+    @lat1 FLOAT,
+    @lon1 FLOAT,
+    @lat2 FLOAT,
+    @lon2 FLOAT
+)
+RETURNS FLOAT
+AS
+BEGIN
+    DECLARE @r FLOAT = 6371; -- Raio da Terra em km
+    DECLARE @phi1 FLOAT = RADIANS(@lat1);
+    DECLARE @phi2 FLOAT = RADIANS(@lat2);
+    DECLARE @deltaPhi FLOAT = RADIANS(@lat2 - @lat1);
+    DECLARE @deltaLambda FLOAT = RADIANS(@lon2 - @lon1);
+    
+    DECLARE @a FLOAT = SIN(@deltaPhi / 2) * SIN(@deltaPhi / 2) +
+                       COS(@phi1) * COS(@phi2) *
+                       SIN(@deltaLambda / 2) * SIN(@deltaLambda / 2);
+    DECLARE @c FLOAT = 2 * ATN2(SQRT(@a), SQRT(1 - @a));
+    DECLARE @d FLOAT = @r * @c;
+    
+    RETURN @d;
+END;
+GO

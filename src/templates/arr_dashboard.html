@@ -225,16 +225,17 @@
             <div class="col-md-6">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
-                        <a href="#" class="btn btn-primary w-100">Agendar Partida
-                            Privada</a>
+                        <a href="{{ url_for('dashboard.jog_dashboard') }}?action=view_fields&tipo=Privado" class="btn btn-primary w-100">
+                            Agendar Partida Privada
+                        </a>                        
                     </li>
                     <li class="list-group-item">
-                        <a href="#" class="btn btn-primary w-100">Partida
-                            Pública</a>
+                        <a href="{{ url_for('dashboard.jog_dashboard') }}?action=view_fields&tipo=Publico" class="btn btn-primary w-100">
+                            Partida Pública
+                        </a>                        
                     </li>
                     <li class="list-group-item">
-                        <a href="#" class="btn btn-primary w-100">Minhas
-                            Reservas</a>
+                        <a href="#" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reservasModal">Minhas Reservas</a>                       
                     </li>
                     <li class="list-group-item">
                         <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addPublicFieldModal">
@@ -385,20 +386,73 @@
     </div>
 </div>
 
+<!-- Modal para listar reservas -->
+<div class="modal fade" id="reservasModal" tabindex="-1" aria-labelledby="reservasModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reservasModalLabel">Minhas Reservas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if reservas %}
+                <div class="accordion" id="reservasAccordion">
+                    {% for reserva in reservas %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ reserva.ID }}">
+                            <button class="accordion-button collapse" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse{{ reserva.ID }}" aria-expanded="false"
+                                aria-controls="collapse{{ reserva.ID }}">
+                                Reserva #{{ reserva.ID }} - {{ reserva.Nome_Campo }} - {{ reserva.Data }}
+                            </button>
+                        </h2>
+                        <div id="collapse{{ reserva.ID }}" class="accordion-collapse collapse"
+                            aria-labelledby="heading{{ reserva.ID }}" data-bs-parent="#reservasAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Hora Início:</strong> {{ reserva.Hora_Inicio }}</p>
+                                <p><strong>Hora Fim:</strong> {{ reserva.Hora_Fim }}</p>
+                                <p><strong>Total Pagamento:</strong> {{ "%.2f" | format(reserva.Total_Pagamento) }} €
+                                </p>
+                                <p><strong>Estado:</strong> {{ reserva.Estado }}</p>
+                                <p><strong>Descrição:</strong> {{ reserva.Descricao if reserva.Descricao else 'Sem
+                                    descrição' }}</p>
+                                <a href="{{ url_for('dashboard.jog_dashboard', reserva_id=reserva.ID) }}"
+                                    class="btn btn-danger btn-sm" name="action" value="cancel_reserva">Cancelar</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center">Nenhuma reserva encontrada.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    let map, marcador;
+    let map = null;
+    let marcador = null;
     let mapaInicializado = false;
 
     document.addEventListener("DOMContentLoaded", function () {
         const modal = document.getElementById('addPublicFieldModal');
+        const accordionItem = document.getElementById('collapseLocalizacao');
 
-        modal.addEventListener('shown.bs.modal', function () {
+        // Quando a parte do acordeão de localização for expandida
+        accordionItem.addEventListener('shown.bs.collapse', function () {
             if (!mapaInicializado) {
+                // Inicializa o mapa
                 map = L.map('mapinput').setView([40.6412, -8.6536], 13);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
+                // Evento de clique no mapa
                 map.on('click', function (e) {
                     const { lat, lng } = e.latlng;
 
@@ -413,16 +467,28 @@
                 });
 
                 mapaInicializado = true;
+
+                // Garante que o mapa renderize corretamente
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 200);
             }
+        });
 
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 500);
+        // Ao fechar o modal, limpa o mapa para reutilizar corretamente
+        modal.addEventListener('hidden.bs.modal', function () {
+            if (map) {
+                map.remove();  // Remove o mapa
+                map = null;
+                marcador = null;
+                mapaInicializado = false;
 
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 1000);
+                // Limpa os valores de latitude/longitude
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+            }
         });
     });
 </script>
+
 {% endblock %}
