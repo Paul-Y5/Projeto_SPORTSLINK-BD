@@ -1,36 +1,63 @@
 -- Criar uma nova partida
-CREATE PROCEDURE sp_CreatePartida
-  @ID_Campo INT,
-  @Data_Hora DATETIME,
-  @Duracao INT,
-  @Resultado VARCHAR(50),
-  @Estado VARCHAR(50) = 'Aguardando'
+CREATE OR ALTER PROCEDURE sp_CreatePartida
+    @ID_Campo INT,
+    @Data_Hora DATETIME,
+    @Duracao INT,
+    @Desporto VARCHAR(50),
+    @ID_Jogador INT
 AS
 BEGIN
-  INSERT INTO Partida (ID_Campo, no_jogadores, Data_Hora, Duracao, Resultado, Estado)
-  VALUES (@ID_Campo, 0, @Data_Hora, @Duracao, @Resultado, @Estado);
+    SET NOCOUNT ON;
+    DECLARE @ID_Partida INT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO Partida (ID_Campo, no_jogadores, Data_Hora, Duracao, Estado)
+        VALUES (@ID_Campo, 0, @Data_Hora, @Duracao, 'Aguardando');
+
+        SET @ID_Partida = SCOPE_IDENTITY();
+
+        IF @ID_Jogador IS NOT NULL
+        BEGIN
+            EXECUTE sp_AddJogadorToPartida 
+                @ID_Partida = @ID_Partida,
+                @ID_Jogador = @ID_Jogador;
+        END
+        ELSE
+        BEGIN
+            RAISERROR ('ID do jogador não fornecido.', 16, 1);
+        END
+
+        COMMIT TRANSACTION;
+        SELECT @ID_Partida AS PartidaID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
 END;
 GO
 
--- Obter os detalhes de uma partida
-CREATE PROCEDURE sp_GetPartida
-  @ID INT
+
+CREATE OR ALTER PROCEDURE sp_GetPartidas
 AS
 BEGIN
-  SELECT 
-    p.ID,
-    p.ID_Campo,
-    p.no_jogadores,
-    p.Data_Hora,
-    p.Duracao,
-    p.Resultado,
-    p.Estado,
-    c.Nome AS Nome_Campo
-  FROM Partida p
-  LEFT JOIN Campo c ON p.ID_Campo = c.ID
-  WHERE p.ID = @ID;
+    SET NOCOUNT ON;
+
+    SELECT *
+    FROM vw_PartidaDetalhes
+    WHERE Estado = 'Andamento' 
+       OR Estado = 'Aguardando';
 END;
 GO
+
 
 -- Atualizar uma partida existente
 CREATE PROCEDURE sp_UpdatePartida
@@ -65,29 +92,97 @@ GO
 
 -- Adicionar um jogador a uma partida
 CREATE PROCEDURE sp_AddJogadorToPartida
-  @ID_Partida INT,
-  @ID_Jogador INT
+    @ID_Partida INT,
+    @ID_Jogador INT
 AS
 BEGIN
-  -- Verifica se a partida está finalizada
-  IF EXISTS (
-    SELECT 1 FROM Partida
-    WHERE ID = @ID_Partida AND Estado = 'Finalizada'
-  )
-  BEGIN
-    RAISERROR('Não é possível adicionar jogadores a uma partida finalizada.', 16, 1);
-    RETURN;
-  END;
+    SET NOCOUNT ON;
+    DECLARE @Estado VARCHAR(50);
+    DECLARE @MaxJogadores INT;
+    DECLARE @NoJogadoresAtual INT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Get the current state, max_jogadores, and no_jogadores from Partida
+        SELECT @Estado = Estado, @NoJogadoresAtual = no_jogadores
+        FROM Partida
+        WHERE ID = @ID_Partida;
+
+        -- Check if the partida exists
+        IF @Estado IS NULL
+        BEGIN
+            RAISERROR('Partida não encontrada.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Check if the partida is finalized
+        IF @Estado = 'Finalizada'
+        BEGIN
+            RAISERROR('Não é possível adicionar jogadores a uma partida finalizada.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Check if the player exists
+        IF NOT EXISTS (
+            SELECT 1 FROM Jogador
+            WHERE ID = @ID_Jogador
+        )
+        BEGIN
+            RAISERROR('Jogador não encontrado.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Check if the player is already in the partida
+        IF EXISTS (
+            SELECT 1 FROM Jogador_joga
+            WHERE ID_Partida = @ID_Partida AND ID_Jogador = @ID_Jogador
+        )
+        BEGIN
+            RAISERROR('O jogador já está nesta partida.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Check if the maximum number of players has been reached
+        IF @MaxJogadores IS NOT NULL AND @NoJogadoresAtual >= @MaxJogadores
+        BEGIN
+            RAISERROR('A partida já atingiu o número máximo de jogadores.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Insert the player into the Jogador_joga table
+        INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
+        VALUES (@ID_Partida, @ID_Jogador);
+
+        -- Update the no_jogadores count in the Partida table
+        UPDATE Partida
+        SET no_jogadores = no_jogadores + 1
+        WHERE ID = @ID_Partida;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END;
+GO
 
   -- Adiciona o jogador
   INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
   VALUES (@ID_Partida, @ID_Jogador);
 
-  -- Atualiza o número de jogadores na partida
-  UPDATE Partida
-  SET no_jogadores = (
-    SELECT COUNT(*) FROM Jogador_joga WHERE ID_Partida = @ID_Partida
-  )
   WHERE ID = @ID_Partida;
 END;
 GO
