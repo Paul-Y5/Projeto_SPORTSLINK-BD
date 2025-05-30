@@ -1,6 +1,12 @@
 USE SPORTSLINK;
 GO
 
+-- Inserir Imagens
+-- ========================================
+INSERT INTO Imagem (URL) VALUES
+('img\campo.png'), 
+('img\icon_def.png');
+
 -- ========================================
 -- 1. Inserir Utilizadores
 -- ========================================
@@ -44,12 +50,6 @@ INSERT INTO Arrendador (ID_Arrendador, IBAN, No_Campos)
 SELECT ID, 'PT500002012345678900' + RIGHT('00' + CAST(ID AS VARCHAR), 2), 3
 FROM Utilizador
 WHERE Nome IN ('Carlos Dias', 'António Rocha', 'Rita Nunes');
-
--- ========================================
--- 4. Imagens
--- ========================================
-INSERT INTO Imagem ([URL]) VALUES
-('.\src\static\img\campo.png'), ('.\src\static\img\icon_def.png');
 
 -- ========================================
 -- 5. Imagem Perfil
@@ -153,11 +153,11 @@ SELECT p.ID, j.ID FROM Partida p, Jogador j WHERE p.ID <= 2 AND j.ID <= 3;
 -- 16. Reservas
 -- ========================================
 INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao)
-SELECT 1, ID, '2025-05-15', '14:00', '15:30', 25.00, 'Confirmada', 'Treino semanal'
+SELECT 1, ID, '2025-05-31', '14:00', '15:00', 50.00, 'Confirmada', 'Treino semanal'
 FROM Jogador WHERE ID <= 3;
 
 INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao)
-SELECT 2, ID, '2025-05-16', '10:00', '11:30', 20.00, 'Confirmada', 'Partida de futsal'
+SELECT 2, ID, '2025-06-01', '10:00', '11:00', 60.00, 'Confirmada', 'Partida de futsal'
 FROM Jogador WHERE ID <= 3;
 
 -- ========================================

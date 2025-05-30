@@ -248,10 +248,10 @@ CREATE TABLE Jogador_Amizade (
   FOREIGN KEY (ID_J2) REFERENCES Jogador(ID) ON DELETE NO ACTION
 );
 
-ALTER TABLE Met_Paga_Arrendador (
+CREATE TABLE Met_Paga_Arrendador (
   ID_Arrendador      INT,
   Met_pagamento      VARCHAR(50) CHECK (Met_pagamento IN ('MBWay', 'PayPal', 'CC', 'Transferência Bancária')),
-  Detalhes           NVARCHAR(5000),
+  Detalhes           NVARCHAR(4000),
 
   PRIMARY KEY (ID_Arrendador, Met_pagamento),
   FOREIGN KEY (ID_Arrendador) REFERENCES Arrendador(ID_Arrendador) ON DELETE CASCADE

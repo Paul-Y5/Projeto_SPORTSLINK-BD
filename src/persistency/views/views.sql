@@ -1,35 +1,6 @@
 USE SPORTSLINK;
 GO
 
-CREATE OR ALTER VIEW vw_PartidaDetalhes AS
-SELECT 
-	p.ID AS ID_Partida,
-	p.ID_Campo,
-	c.Nome_Campo,
-	c.Comprimento,
-	c.Largura,
-	c.Latitude,
-	c.Longitude,
-	c.Descricao,
-	p.Data_Hora,
-	p.Duracao,
-	p.Resultado,
-	p.Estado,
-	p.no_jogadores,
-  (
-    SELECT STRING_AGG(
-      'ID: ' + CAST(ISNULL(u.ID, 0) AS VARCHAR) + ', Nome: ' + ISNULL(u.Nome, 'Desconhecido'),
-      CHAR(10)
-    )
-
-    FROM Jogador_joga jj
-    LEFT JOIN Utilizador u ON u.ID = jj.ID_Jogador
-    WHERE jj.ID_Partida = p.ID
-  ) AS Jogadores
-FROM Partida p
-LEFT JOIN vw_CampoPublico as c ON p.ID_Campo = c.ID_Campo
-WHERE p.ID_Campo = c.ID_Campo
-GO
 
 -- View para Campo Publico
 CREATE OR ALTER VIEW vw_CampoPublico AS
@@ -130,7 +101,7 @@ GO
 
 
 -- View para obter os detalhes de um utilizador (Arrendador ou Jogador)
-ALTER VIEW vw_InfoUtilizador AS
+CREATE VIEW vw_InfoUtilizador AS
 WITH Metodos_Pagamento_Unicos AS (
     SELECT DISTINCT ID_Arrendador, Met_pagamento
     FROM Met_Paga_Arrendador
@@ -309,4 +280,35 @@ LEFT JOIN (
     WHERE Estado IN ('Aguardando', 'Decorrer')
     GROUP BY ID_Campo
 ) AS part_agg ON part_agg.ID_Campo = c.ID;
+GO
+
+
+CREATE OR ALTER VIEW vw_PartidaDetalhes AS
+SELECT 
+	p.ID AS ID_Partida,
+	p.ID_Campo,
+	c.Nome_Campo,
+	c.Comprimento,
+	c.Largura,
+	c.Latitude,
+	c.Longitude,
+	c.Descricao,
+	p.Data_Hora,
+	p.Duracao,
+	p.Resultado,
+	p.Estado,
+	p.no_jogadores,
+  (
+    SELECT STRING_AGG(
+      'ID: ' + CAST(ISNULL(u.ID, 0) AS VARCHAR) + ', Nome: ' + ISNULL(u.Nome, 'Desconhecido'),
+      CHAR(10)
+    )
+
+    FROM Jogador_joga jj
+    LEFT JOIN Utilizador u ON u.ID = jj.ID_Jogador
+    WHERE jj.ID_Partida = p.ID
+  ) AS Jogadores
+FROM Partida p
+LEFT JOIN vw_CampoPublico as c ON p.ID_Campo = c.ID_Campo
+WHERE p.ID_Campo = c.ID_Campo
 GO

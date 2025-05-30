@@ -87,6 +87,7 @@ SELECT
   WHERE 
       ump.ID_Arrendador = @UserId
 );
+GO
 
 -- Cálculo da distância entre dois pontos geográficos (latitude e longitude)
 CREATE FUNCTION dbo.fn_CalculateDistance
@@ -114,3 +115,13 @@ BEGIN
     RETURN @d;
 END;
 GO
+
+CREATE FUNCTION dbo.fn_TotalPagamento (@Hora_inicio DATETIME, @Hora_fim DATETIME, @Preco DECIMAL(10,2))
+RETURNS DECIMAL(10,2)
+AS
+BEGIN
+    DECLARE @TotalMin INT = DATEDIFF(MINUTE, @Hora_inicio, @Hora_fim);
+    DECLARE @Total FLOAT = (@TotalMin / 60.0) * @Preco; -- Preço por hora
+
+    RETURN @Total;
+END;
