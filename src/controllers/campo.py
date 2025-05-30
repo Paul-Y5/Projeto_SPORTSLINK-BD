@@ -16,7 +16,7 @@ def adicionar_campo_publico():
         longitude = float(request.form['longitude'])
         entidade_publica_resp = request.form['entidade_publica_resp']
         ocupado = 0  # Campo inicia como disponível
-        desportos_selecionados = request.form.getlist('desportos')
+        desportos_selecionados = request.form.getlist('desportos[]')
 
         # Processa imagem
         img_file = request.files.get('img')

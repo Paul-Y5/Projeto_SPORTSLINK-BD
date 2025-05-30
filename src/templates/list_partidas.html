@@ -20,21 +20,18 @@
                         <strong>Data e Hora:</strong> {{ partida.Data_Hora }}<br>
                         <strong>Duração:</strong> {{ partida.Duracao }} minutos<br>
                         <strong>Estado:</strong> {{ partida.Estado }}<br>
-                        <strong>Jogadores:</strong> {{ partida.no_jogadores }}<br>
+                        <strong>Numero de Jogadores:</strong> {{ partida.no_jogadores }}<br>
                     </p>
 
                     <p>
                         <strong>Detalhes do Campo:</strong><br>
                         Latitude: {{ partida.Latitude }} / Longitude: {{ partida.Longitude }}<br>
                         Dimensões: {{ partida.Comprimento }}m x {{ partida.Largura }}m<br>
-                        Preço: €{{ partida.Preco }}<br>
-                        Horário: {{ partida.Hora_Abertura }} - {{ partida.Hora_Fecho }}<br>
-                        Dias Disponíveis: {{ partida.Dias_Disponiveis }}<br>
                     </p>
 
                     <p>
                         <strong>Jogadores:</strong><br>
-                    <pre>{{ partida.Detalhes_Jogadores }}</pre>
+                        {{ partida.Detalhes_Jogadores }}
                     </p>
 
                     {% if partida.Imagens_Campo %}

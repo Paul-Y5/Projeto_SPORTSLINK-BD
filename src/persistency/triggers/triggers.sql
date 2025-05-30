@@ -1,3 +1,6 @@
+USE SPORTSLINK;
+GO
+
 -- Trigger para calcular a idade do jogador
 CREATE TRIGGER trg_CalculaIdade
 ON Jogador
@@ -63,26 +66,6 @@ BEGIN
 END;
 GO
 
-
--- Trigger para calcular o total a pagar na reserva
-CREATE TRIGGER trg_CalcularTotalPagar
-ON Reserva
-AFTER INSERT, UPDATE
-AS
-BEGIN
-  SET NOCOUNT ON;
-
-  UPDATE R
-  SET Total_Pagar = 
-      ROUND(
-        DATEDIFF(MINUTE, I.Hora_Inicio, I.Hora_Fim) / 60.0 * C.Preco_Hora,
-        2
-      )
-  FROM Reserva R
-  INNER JOIN inserted I ON R.ID = I.ID
-  INNER JOIN Campo C ON I.ID_Campo = C.ID;
-END;
-GO
 
 -- Trigger para INSERT com múltiplas linhas
 CREATE TRIGGER trg_UpdateNoCampos_Insert

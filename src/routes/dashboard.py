@@ -69,6 +69,7 @@ def ver_campos():
         return redirect(url_for("dashboard.jog_dashboard"))
 
     campos = get_campos(tipo)
+    print(f"Campos obtidos: {campos}")
     print(tipo)
     if campos is None:
         flash("Erro ao carregar os campos.", "danger")
@@ -172,10 +173,7 @@ def start_partida(campo_id):
         try:
             partida_id = create_partida(campo_id)
             flash("Partida iniciada com sucesso!", "success")
-            return redirect(url_for("dashboard.campo_detail", ID=campo_id))  # Adjust to correct route
+            return render_template("partida_details.html", partida_id=partida_id)
         except Exception as e:
             flash(f"Erro ao iniciar partida: {str(e)}", "danger")
-            return redirect(url_for("dashboard.campo_detail", ID=campo_id))
-
-    # GET method: Render the campo detail page with the modal open (handled by JS)
-    return redirect(url_for("dashboard.campo_detail", ID=campo_id))
+            return redirect(url_for("dashboard.jog_dashboard"))

@@ -776,8 +776,9 @@ CREATE PROCEDURE sp_GetHistoricPartidas
   @UserID INT
 AS
 BEGIN
-  SELECT * from vw_PartidaDetalhes as v
-  WHERE v.ID_Jogador = @UserID AND v.Estado = 'Finalizada';
+  Select * from Jogador_joga as jj
+  LEFT JOIN Partida as p on p.ID=jj.ID_Jogador
+  WHERE jj.ID_Jogador = @UserID AND p.Estado = 'Finalizada';
 END;
 Go
 
@@ -933,7 +934,7 @@ BEGIN
 END;
 GO
 
--- CampoPub / CampoPriv
+-- CampoPub
 CREATE PROCEDURE sp_createCampoPub
   @Latitude DECIMAL(9,6),
   @Longitude DECIMAL(9,6),
@@ -1137,7 +1138,7 @@ BEGIN
 	INNER JOIN IMG_Campo as ic on ic.ID_Campo=c.ID
 	LEFT JOIN Imagem as i on i.ID=ic.ID_img
 	LEFT JOIN Campo_Priv as cp on cp.ID_Campo=c.ID
-	where cp.ID_Arrendador = 27
+	where cp.ID_Arrendador = @UserID
 	GROUP BY c.ID,
     c.Nome,
     c.Endereco,
@@ -1145,26 +1146,6 @@ BEGIN
 END;
 GO
 
--- Obter reservas de um campo
-CREATE PROCEDURE sp_GetReservasByCampo
-  @ID_Campo INT
-AS
-BEGIN
-  SET NOCOUNT ON;
-
-  SELECT 
-    Nome_Jogador AS Nome, 
-    Nacionalidade, 
-    Num_Tele, 
-    [Data],
-    Hora_Inicio,
-    Descricao,
-    Preco, 
-    dbo.fn_CalculaHorasFormatado(Hora_Inicio, Hora_Fim) AS Duracao_Horas
-  FROM vw_ReservasDetalhadas
-  WHERE ID_Campo = @ID_Campo;
-END;
-GO
 
 CREATE OR ALTER PROCEDURE sp_CreateMetodosPagamento
   @ID_Utilizador INT,

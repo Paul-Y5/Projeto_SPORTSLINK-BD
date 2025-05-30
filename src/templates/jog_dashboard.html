@@ -1,7 +1,7 @@
 {% extends "base_user.html" %}
 {% block title %}Dashboard Jogador{% endblock %}
 {% block content %}
-< class="container mt-4">
+<div class="container mt-4">
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -131,6 +131,7 @@
             </form>
         </div>
     </div>
+</div>
 
 <!-- Actions -->
 <div class="card user-info p-4 mt-4">

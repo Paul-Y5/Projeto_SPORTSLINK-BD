@@ -186,6 +186,7 @@ def list_campos_arrendador():
             cursor = conn.cursor()
             cursor.execute("EXEC sp_GetCamposByUser ?", (user_id,))
             campos = cursor.fetchall()
+
         return render_template(
             "arr_campos_list.html",
             user_id=user_id,

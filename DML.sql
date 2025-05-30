@@ -4,8 +4,8 @@ GO
 -- Inserir Imagens
 -- ========================================
 INSERT INTO Imagem (URL) VALUES
-('img\campo.png'), 
-('img\icon_def.png');
+('img/campo.png'), 
+('img/icon_def.png');
 
 -- ========================================
 -- 1. Inserir Utilizadores
