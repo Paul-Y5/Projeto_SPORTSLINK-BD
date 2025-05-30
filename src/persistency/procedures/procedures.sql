@@ -546,7 +546,6 @@ BEGIN
 END;
 GO
 
-
 -- Atualizar uma partida existente
 CREATE PROCEDURE sp_UpdatePartida
   @ID INT,
@@ -666,15 +665,6 @@ BEGIN
     END CATCH
 END;
 GO
-
-  -- Adiciona o jogador
-  INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
-  VALUES (@ID_Partida, @ID_Jogador);
-
-  WHERE ID = @ID_Partida;
-END;
-GO
-
 
 -- Remover um jogador de uma partida
 CREATE PROCEDURE sp_RemoveJogadorFromPartida
@@ -1224,3 +1214,43 @@ END;
 GO
 
 
+-- Obter detalhes de uma partida específica
+CREATE OR ALTER PROCEDURE sp_ObterPartida
+    @ID_Partida INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        p.ID AS ID_Partida,
+        p.ID_Campo,
+        c.Nome AS Nome_Campo,
+        c.Endereco,
+        p.Data_Hora,
+        p.Duracao,
+        p.Estado,
+        p.no_jogadores,
+        po.Latitude,
+        po.Longitude,
+        c.Comprimento,
+        c.Largura,
+        p.Resultado,
+        i.[URL] AS Imagem_Campo,
+        10 AS Max_Jogadores,
+        (SELECT STRING_AGG(u.Nome, ', ') FROM Jogador_joga jj
+         JOIN Jogador j ON jj.ID_Jogador = j.ID
+         JOIN Utilizador u ON j.ID = u.ID
+         WHERE jj.ID_Partida = p.ID) AS Participantes,
+        (SELECT TOP 1 d.Nome FROM Desporto_Campo dc 
+         JOIN Desporto d ON dc.ID_Desporto = d.ID 
+         WHERE dc.ID_Campo = p.ID_Campo) AS Desporto
+    FROM 
+        Partida p
+        INNER JOIN Campo c ON p.ID_Campo = c.ID
+		INNER JOIN Ponto po on po.ID=c.ID_Ponto
+        LEFT JOIN IMG_Campo ic ON c.ID = ic.ID_Campo
+        LEFT JOIN Imagem i ON ic.ID_img = i.ID
+    WHERE 
+        p.ID = @ID_Partida
+END
+GO
