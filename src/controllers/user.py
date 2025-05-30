@@ -291,7 +291,19 @@ def get_reservas(user_id):
             reservas = cursor.fetchall()
         return reservas
     except Exception as e:
-        flash(f"Erro ao carregar reservas: {str(e)}", "danger")
+        flash(f"Erro ao obter reservas: {str(e)}", "danger")
+        return []
+    
+def get_Partidas_Abertas():
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_GetPartidas")
+            partidas = cursor.fetchall()
+        print(f"Partidas abertas: {partidas}")
+        return partidas
+    except Exception as e:
+        flash(f"Erro ao carregar partidas abertas: {str(e)}", "danger")
         return []
     
 # Auxiiares

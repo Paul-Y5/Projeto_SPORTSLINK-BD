@@ -51,7 +51,6 @@ BEGIN
 END;
 GO
 
-
 -- Atualiza o número de jogadores após inserção
 CREATE TRIGGER trg_UpdateNoJogadores_Insert
 ON Jogador_joga
@@ -79,5 +78,54 @@ BEGIN
   )
   FROM Partida p
   JOIN deleted d ON p.ID = d.ID_Partida;
+END;
+GO
+
+-- Atualiza o número de jogadores após atualização
+CREATE TRIGGER trg_UpdateCampoOcupadoOnPartidaInsert
+ON Partida
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @CurrentTime DATETIME = GETDATE();  -- Current time: 03:42 AM WEST, May 30, 2025
+
+    -- Update Campo.Ocupado based on newly inserted Partida
+    UPDATE c
+    SET c.Ocupado = 1
+    FROM Campo c
+    INNER JOIN inserted i ON c.ID = i.ID_Campo
+    WHERE i.Data_Hora <= @CurrentTime
+        AND DATEADD(MINUTE, i.Duracao, i.Data_Hora) > @CurrentTime
+        AND i.Estado IN ('Aguardando', 'Andamento');  -- Only consider active matches
+END;
+GO
+
+CREATE TRIGGER trg_UpdateCampoOcupadoOnPartidaUpdate
+ON Partida
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @CurrentTime DATETIME = GETDATE();  -- Current time: 03:42 AM WEST, May 30, 2025
+
+    -- Reset Ocupado status for Campos where the match has ended or been finalized
+    UPDATE c
+    SET c.Ocupado = 0
+    FROM Campo c
+    INNER JOIN inserted i ON c.ID = i.ID_Campo
+    WHERE i.Estado = 'Finalizada'  -- Match has ended
+        OR DATEADD(MINUTE, i.Duracao, i.Data_Hora) <= @CurrentTime;  -- Match duration has passed
+
+    -- Set Ocupado status for Campos where a match is still ongoing after update
+    UPDATE c
+    SET c.Ocupado = 1
+    FROM Campo c
+    INNER JOIN inserted i ON c.ID = i.ID_Campo
+    WHERE i.Data_Hora <= @CurrentTime
+        AND DATEADD(MINUTE, i.Duracao, i.Data_Hora) > @CurrentTime
+        AND i.Estado IN ('Aguardando', 'Andamento');
 END;
 GO

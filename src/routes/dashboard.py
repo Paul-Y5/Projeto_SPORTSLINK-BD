@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
 from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, get_campos, getReservasByCampo
-from controllers.user import add_friend, cancelar_reserva, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
+from controllers.partidas import create_partida, get_Partida
+from controllers.user import add_friend, cancelar_reserva, delete_user_account, get_InfoFriend, get_Partidas_Abertas, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
 from utils.decorator_login import login_required
 from utils.general import get_siglas_dias
 
@@ -27,11 +28,12 @@ def jog_dashboard():
             reserva_id = request.form.get("reserva_id")
             if reserva_id:
                 cancelar_reserva(reserva_id)
+                flash("Reserva cancelada com sucesso!", "success")
             else:
-                print("Reserva ID não fornecido para cancelamento.")
+                flash("Reserva ID não fornecido para cancelamento.", "danger")
     
     if action == "view_fields":
-        return ver_campos()
+        return redirect(url_for("dashboard.ver_campos", tipo="Publico"))  # Example redirect
     
     if tipo_utilizador == "Arrendador":
         return render_template("arr_dashboard.html", user=user, reservas=reservas)
@@ -138,6 +140,20 @@ def list_friends():
     return add_friend()
 
 
+@dashboard_bp.route("/list_partidas", methods=["GET"])
+@login_required
+def list_partidas():
+    try:
+        partidas = get_Partidas_Abertas()
+        if not partidas:
+            flash("Nenhuma partida encontrada.", "info")
+            return render_template("list_partidas.html", partidas=[])
+        return render_template("list_partidas.html", partidas=partidas)
+    except Exception as e:
+        flash(f"Erro ao carregar partidas: {e}", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
+
+
 @dashboard_bp.route("/historico/<int:ID>", methods=["GET"])
 @login_required
 def historic_partidas(ID):
@@ -149,4 +165,29 @@ def historic_partidas(ID):
     except Exception as e:
         flash(f"Erro ao carregar o histórico de partidas{e}.", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
+    
+@dashboard_bp.route("/start_partida/<int:campo_id>", methods=["GET", "POST"])
+@login_required
+def start_partida(campo_id):
+    if request.method == "POST":
+        try:
+            partida_id = create_partida(campo_id)
+            flash("Partida iniciada com sucesso!", "success")
+            return render_template("partida_details.html", partida_id=partida_id, campo_id=campo_id)
+        except Exception as e:
+            flash(f"Erro ao iniciar partida: {str(e)}", "danger")
+            return redirect(url_for("dashboard.campo_detail", ID=campo_id))
 
+    # GET method: Render the campo detail page with the modal open (handled by JS)
+    return redirect(url_for("dashboard.campo_detail", ID=campo_id))
+
+
+@dashboard_bp.route("/agendar_reserva/<int:campo_id>", methods=["POST"])
+@login_required
+def agendar_reserva(campo_id):
+    data = request.form.get("data")
+    hora_inicio = request.form.get("hora_inicio")
+    hora_fim = request.form.get("hora_fim")
+    # Add logic to call sp_CreateReserva with user_id, calculate Total_Pagamento, etc.
+    flash("Reserva agendada com sucesso!", "success")
+    return redirect(url_for("dashboard.campo_detail", ID=campo_id))

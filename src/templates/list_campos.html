@@ -1,0 +1,176 @@
+{% extends "base_index.html" %}
+
+{% block title %}Campos Disponíveis{% endblock %}
+
+{% block content %}
+<!-- Botão para voltar ao dashboard -->
+<div class="mb-3">
+    <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+    </a>
+</div>
+
+<div class="mb-4">
+    <form method="get" action="{{ url_for('dashboard.ver_campos') }}" class="row g-3 align-items-center">
+        <input type="hidden" id="user_lat" name="user_lat">
+        <input type="hidden" id="user_lon" name="user_lon">
+        <div class="col-md-3">
+            <input type="text" class="form-control" name="pesquisa" placeholder="Pesquisar por nome ou endereço"
+            value="{{ request.args.get('pesquisa', '') }}">
+        </div>
+        <div class="col-md-2">
+            <select name="order_by" class="form-select">
+                <option value="Distance" {% if request.args.get('order_by')=='Distance' %}selected{% endif %}>Distância</option>   
+                <option value="Nome" {% if request.args.get('order_by')=='Nome' %}selected{% endif %}>Nome</option>
+                <option value="Largura" {% if request.args.get('order_by')=='Largura' %}selected{% endif %}>Largura</option>
+                <option value="Comprimento" {% if request.args.get('order_by')=='Comprimento' %}selected{% endif %}>Comprimento</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="order_dir" class="form-select">
+                <option value="ASC" {% if request.args.get('order_dir', 'ASC' )=='ASC' %}selected{% endif %}>Ascendente
+                </option>
+                <option value="DESC" {% if request.args.get('order_dir')=='DESC' %}selected{% endif %}>Descendente
+                </option>
+            </select>
+        </div>
+        <div class="col-md-2" style="display: none;">
+            <input type="hidden" name="tipo" value="{{ request.args.get('tipo', '') }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabs para Lista e Mapa -->
+<ul class="nav nav-tabs mb-3" id="viewTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="lista-tab" data-bs-toggle="tab" data-bs-target="#lista" type="button"
+            role="tab" aria-controls="lista" aria-selected="true">Lista de Campos</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="mapa-tab" data-bs-toggle="tab" data-bs-target="#mapa" type="button" role="tab"
+            aria-controls="mapa" aria-selected="false">Mapa</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="viewTabsContent" style="min-height: 400px;">
+    <!-- Lista -->
+    <div class="tab-pane fade show active" id="lista" role="tabpanel" aria-labelledby="lista-tab">
+        {% if campos %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for campo in campos %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{  url_for('static', filename=campo.URL) }}"
+                        class="card-img-top" alt="{{ campo.Nome }}" style="height: 180px; object-fit: cover;">
+
+                    <div class="card-header d-flex justify-content-between">
+                        <span>{{ campo.Nome }}</span>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <p class="card-text">{{ campo.Endereco }}</p>
+                        <div class="card-text">
+                            <small class="text-muted">
+                                Largura: {{ campo.Largura }} m | Comprimento: {{ campo.Comprimento }} m |
+                                Ocupado: {% if campo.Ocupado == 'Sim' %}<span class="text-danger">Sim</span>{% else %}<span class="text-success">Não</span>{% endif %}
+                            </small>
+                        </div>
+                        <div class="card-text">
+                            <small class="text-muted">
+                                Desportos: {{ campo.Desportos if campo.Desportos else 'Nenhum' }} |
+                            </small>
+                        </div>
+                        <a href="{{ url_for('dashboard.campo_detail', ID=campo.ID) }}" class="btn btn-primary mt-auto">Detalhes</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">Nenhum campo encontrado.</div>
+        {% endif %}
+    </div>
+
+    <!-- Mapa -->
+    <div class="tab-pane fade" id="mapa" role="tabpanel" aria-labelledby="mapa-tab">
+        <div id="map" style="width: 100%; height: 400px;"></div>
+    </div>
+</div>
+
+<script>
+    var map;
+    var markers = [];
+
+    function initMap() {
+        if (map) return;
+
+        // Inicializa o mapa com um ponto padrão, caso a geolocalização não funcione
+        map = L.map('map').setView([39.5, -8.0], 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Tenta obter a localização do utilizador
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                document.getElementById('user_lat').value = userLat;
+                document.getElementById('user_lon').value = userLng;
+                // Center the map and add user marker, as before
+                map.setView([userLat, userLng], 16);
+                L.marker([userLat, userLng]).addTo(map)
+                    .bindPopup('Você está aqui!')
+                    .openPopup();
+            }, function (error) {
+                console.error('Erro ao obter localização do usuário:', error);
+            });
+        } else {
+            console.warn('Geolocalização não é suportada pelo navegador.');
+        }
+
+        // Adiciona os marcadores dos campos
+        {% for campo in campos %}
+            {% if campo.Latitude is not none and campo.Longitude is not none %}
+                var marker = L.marker([{{ campo.Latitude }}, {{ campo.Longitude }} ]).addTo(map);
+                marker.bindPopup(
+                    '<strong>{{ campo.Nome | tojson | safe }}</strong><br>' +
+                    '{{ campo.Endereco | tojson | safe }}<br><br>' +
+                    '<a href="{{ url_for('dashboard.campo_detail', ID=campo.ID) }}" class="btn btn-sm btn-primary">Detalhes</a>'
+                );
+                markers.push(marker);
+            {% endif %}
+        {% endfor %}
+
+
+        // Ajusta o mapa para incluir todos os marcadores
+        if (markers.length > 0) {
+            var group = L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.2));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initMap();
+    });
+
+    // Detectar quando a tab do mapa é ativada para refrescar a visualização
+    document.getElementById('mapa-tab').addEventListener('shown.bs.tab', function (e) {
+        if (map) {
+            setTimeout(() => {
+                map.invalidateSize();
+                
+                // Se temos marcadores, ajuste o zoom para mostrá-los
+                if (markers.length > 0) {
+                    var group = L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.2));
+                }
+            }, 100);
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,34 +1,81 @@
 USE SPORTSLINK;
 GO
 
--- View para obter os detalhes de uma partida
 CREATE OR ALTER VIEW vw_PartidaDetalhes AS
 SELECT 
-  p.ID AS ID_Partida,
-  p.ID_Campo,
-  c.Nome AS Nome_Campo,
-  p.Data_Hora,
-  p.Duracao,
-  p.Resultado,
-  p.Estado,
-  p.no_jogadores,
-  ju.ID_Jogador,
+	p.ID AS ID_Partida,
+	p.ID_Campo,
+	c.Nome_Campo,
+	c.Comprimento,
+	c.Largura,
+	c.Latitude,
+	c.Longitude,
+	c.Descricao,
+	p.Data_Hora,
+	p.Duracao,
+	p.Resultado,
+	p.Estado,
+	p.no_jogadores,
   (
-    SELECT STRING_AGG(Nome, ', ') 
-    FROM (
-      SELECT DISTINCT u2.Nome
-      FROM Jogador_joga jj2
-      JOIN Jogador j2 ON jj2.ID_Jogador = j2.ID
-      JOIN Utilizador u2 ON j2.ID = u2.ID
-      WHERE jj2.ID_Partida = p.ID
-    ) AS Sub
+    SELECT STRING_AGG(
+      'ID: ' + CAST(ISNULL(u.ID, 0) AS VARCHAR) + ', Nome: ' + ISNULL(u.Nome, 'Desconhecido'),
+      CHAR(10)
+    )
+
+    FROM Jogador_joga jj
+    LEFT JOIN Utilizador u ON u.ID = jj.ID_Jogador
+    WHERE jj.ID_Partida = p.ID
   ) AS Jogadores
 FROM Partida p
-JOIN Jogador_joga as ju on ju.ID_Partida=p.ID
-LEFT JOIN Campo c ON p.ID_Campo = c.ID;
+LEFT JOIN vw_CampoPublico as c ON p.ID_Campo = c.ID_Campo
+WHERE p.ID_Campo = c.ID_Campo
 GO
 
--- View para obter os detalhes de um campo
+-- View para Campo Publico
+CREATE OR ALTER VIEW vw_CampoPublico AS
+SELECT 
+  c.ID AS ID_Campo,
+  c.Nome AS Nome_Campo,
+  c.Comprimento,
+  c.Largura,
+  c.Endereco,
+  p.Latitude,
+  p.Longitude,
+  c.Descricao,
+
+  -- Desportos com DISTINCT
+  des.Desportos,
+
+  -- Imagens com DISTINCT
+  img.Imagens
+
+FROM Campo c
+LEFT JOIN Campo_Pub cp ON c.ID = cp.ID_Campo
+JOIN Ponto p ON p.ID = c.ID_Ponto
+
+CROSS APPLY (
+  SELECT STRING_AGG(d.Nome, ', ') AS Desportos
+  FROM (
+    SELECT DISTINCT d.Nome
+    FROM Desporto_Campo dc
+    JOIN Desporto d ON d.ID = dc.ID_Desporto
+    WHERE dc.ID_Campo = c.ID
+  ) AS d
+) des
+
+CROSS APPLY (
+  SELECT STRING_AGG(img.URL, ', ') AS Imagens
+  FROM (
+    SELECT DISTINCT img.URL
+    FROM IMG_Campo ic
+    JOIN Imagem img ON img.ID = ic.ID_img
+    WHERE ic.ID_Campo = c.ID
+  ) AS img
+) img
+WHERE c.ID=cp.ID_Campo
+GO
+
+-- View para obter os detalhes de um campo, incluindo disponibilidade e imagens
 CREATE OR ALTER VIEW vw_CampoPrivDetalhes AS
 SELECT 
   c.ID AS ID_Campo,
@@ -39,31 +86,43 @@ SELECT
   p.Latitude,
   p.Longitude,
   c.Descricao,
-  
-  -- Subquery agregada para Dias Disponíveis
-  (SELECT STRING_AGG(DISTINCT di.Nome, ', ')
-   FROM Disponibilidade dp2
-   JOIN Dias_semana di ON dp2.ID_Dia = di.ID
-   WHERE dp2.ID_Campo = c.ID) AS Dias_Disponiveis,
 
-  -- Assume que o campo tem sempre uma linha de disponibilidade
+  -- Dias Disponíveis (sem DISTINCT no STRING_AGG)
+  (
+    SELECT STRING_AGG(Nome, ', ')
+    FROM (
+      SELECT DISTINCT di.Nome
+      FROM Disponibilidade dp2
+      JOIN Dias_semana di ON dp2.ID_Dia = di.ID
+      WHERE dp2.ID_Campo = c.ID
+    ) AS Dias_Distintos
+  ) AS Dias_Disponiveis,
+
+  -- Preço
   (SELECT TOP 1 dp.Preco
    FROM Disponibilidade dp
    WHERE dp.ID_Campo = c.ID) AS Preco,
 
+  -- Hora Abertura
   (SELECT TOP 1 dp.Hora_Abertura
    FROM Disponibilidade dp
    WHERE dp.ID_Campo = c.ID) AS Hora_Abertura,
 
+  -- Hora Fecho
   (SELECT TOP 1 dp.Hora_Fecho
    FROM Disponibilidade dp
    WHERE dp.ID_Campo = c.ID) AS Hora_Fecho,
 
-  -- Subquery de imagens agregadas
-  (SELECT STRING_AGG(DISTINCT img.URL, ', ')
-   FROM IMG_Campo ic
-   JOIN Imagem img ON img.ID = ic.ID_img
-   WHERE ic.ID_Campo = c.ID) AS Imagens
+  -- Imagens (sem DISTINCT no STRING_AGG)
+  (
+    SELECT STRING_AGG(URL, ', ')
+    FROM (
+      SELECT DISTINCT img.URL
+      FROM IMG_Campo ic
+      JOIN Imagem img ON img.ID = ic.ID_img
+      WHERE ic.ID_Campo = c.ID
+    ) AS Imagens_Distintas
+  ) AS Imagens
 
 FROM Campo c
 LEFT JOIN Ponto p ON c.ID_Ponto = p.ID;
@@ -135,6 +194,7 @@ LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador;
 GO
 
 
+-- View para obter informações detalhadas de um utilizador, incluindo desportos favoritos e imagens de perfil
 CREATE OR ALTER VIEW vw_InfoAmigo AS
 WITH Imagens_Unicas AS (
     SELECT DISTINCT ip.ID_Utilizador, i.URL

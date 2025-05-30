@@ -230,9 +230,9 @@
                         </a>                        
                     </li>
                     <li class="list-group-item">
-                        <a href="{{ url_for('dashboard.jog_dashboard') }}?action=view_fields&tipo=Publico" class="btn btn-primary w-100">
+                        <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#tipoPartidaModal">
                             Partida Pública
-                        </a>                        
+                        </button>                 
                     </li>
                     <li class="list-group-item">
                         <a href="#" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reservasModal">Minhas Reservas</a>                       
@@ -397,31 +397,31 @@
             <div class="modal-body">
                 {% if reservas %}
                 <div class="accordion" id="reservasAccordion">
-                    {% for reserva in reservas %}
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading{{ reserva.ID }}">
-                            <button class="accordion-button collapse" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapse{{ reserva.ID }}" aria-expanded="false"
-                                aria-controls="collapse{{ reserva.ID }}">
-                                Reserva #{{ reserva.ID }} - {{ reserva.Nome_Campo }} - {{ reserva.Data }}
-                            </button>
-                        </h2>
-                        <div id="collapse{{ reserva.ID }}" class="accordion-collapse collapse"
-                            aria-labelledby="heading{{ reserva.ID }}" data-bs-parent="#reservasAccordion">
-                            <div class="accordion-body">
-                                <p><strong>Hora Início:</strong> {{ reserva.Hora_Inicio }}</p>
-                                <p><strong>Hora Fim:</strong> {{ reserva.Hora_Fim }}</p>
-                                <p><strong>Total Pagamento:</strong> {{ "%.2f" | format(reserva.Total_Pagamento) }} €
-                                </p>
-                                <p><strong>Estado:</strong> {{ reserva.Estado }}</p>
-                                <p><strong>Descrição:</strong> {{ reserva.Descricao if reserva.Descricao else 'Sem
-                                    descrição' }}</p>
-                                <a href="{{ url_for('dashboard.jog_dashboard', reserva_id=reserva.ID) }}"
-                                    class="btn btn-danger btn-sm" name="action" value="cancel_reserva">Cancelar</a>
+                    <div class="accordion" id="reservasAccordion">
+                        {% for reserva in reservas %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ reserva.ID }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapse{{ reserva.ID }}" aria-expanded="false"
+                                    aria-controls="collapse{{ reserva.ID }}">
+                                    Reserva #{{ reserva.ID }} - {{ reserva.Nome_Campo }} - {{ reserva.Data }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ reserva.ID }}" class="accordion-collapse collapse" aria-labelledby="heading{{ reserva.ID }}"
+                                data-bs-parent="#reservasAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Hora Início:</strong> {{ reserva.Hora_Inicio }}</p>
+                                    <p><strong>Hora Fim:</strong> {{ reserva.Hora_Fim }}</p>
+                                    <p><strong>Total Pagamento:</strong> {{ "%.2f" | format(reserva.Total_Pagamento) }} €</p>
+                                    <p><strong>Estado:</strong> {{ reserva.Estado }}</p>
+                                    <p><strong>Descrição:</strong> {{ reserva.Descricao if reserva.Descricao else 'Sem descrição' }}</p>
+                                    <a href="{{ url_for('dashboard.jog_dashboard', reserva_id=reserva.ID) }}" class="btn btn-danger btn-sm"
+                                        name="action" value="cancel_reserva">Cancelar</a>
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}              
                     </div>
-                    {% endfor %}
                 </div>
                 {% else %}
                 <p class="text-center">Nenhuma reserva encontrada.</p>
@@ -429,6 +429,28 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para escolha do tipo de partida -->
+<div class="modal fade" id="tipoPartidaModal" tabindex="-1" aria-labelledby="tipoPartidaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tipoPartidaModalLabel">Escolher Tipo de Partida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('dashboard.list_partidas') }}" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Encontrar Partida
+                    </a>
+                    <a href="{{ url_for('dashboard.jog_dashboard') }}?action=view_fields&tipo=Publico" class="btn btn-success">
+                        <i class="fas fa-play"></i> Começar Partida
+                    </a>
+                </div>
             </div>
         </div>
     </div>

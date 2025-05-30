@@ -51,7 +51,7 @@ CREATE PROCEDURE sp_GetReservasByCampo
   @ID_Campo INT
 AS
 BEGIN
-  SELECT * FROM Reserva WHERE ID_Campo = @ID_Campo;
+  SELECT * FROM vw_ReservasDetalhadas WHERE ID_Campo = @ID_Campo;
 END;
 GO
 
