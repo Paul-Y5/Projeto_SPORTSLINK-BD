@@ -28,12 +28,11 @@ def jog_dashboard():
             reserva_id = request.form.get("reserva_id")
             if reserva_id:
                 cancelar_reserva(reserva_id)
-                flash("Reserva cancelada com sucesso!", "success")
             else:
-                flash("Reserva ID não fornecido para cancelamento.", "danger")
+                print("Reserva ID não fornecido para cancelamento.")
     
     if action == "view_fields":
-        return redirect(url_for("dashboard.ver_campos", tipo="Publico"))  # Example redirect
+        return ver_campos()
     
     if tipo_utilizador == "Arrendador":
         return render_template("arr_dashboard.html", user=user, reservas=reservas)
@@ -173,21 +172,10 @@ def start_partida(campo_id):
         try:
             partida_id = create_partida(campo_id)
             flash("Partida iniciada com sucesso!", "success")
-            return render_template("partida_details.html", partida_id=partida_id, campo_id=campo_id)
+            return redirect(url_for("dashboard.campo_detail", ID=campo_id))  # Adjust to correct route
         except Exception as e:
             flash(f"Erro ao iniciar partida: {str(e)}", "danger")
             return redirect(url_for("dashboard.campo_detail", ID=campo_id))
 
     # GET method: Render the campo detail page with the modal open (handled by JS)
-    return redirect(url_for("dashboard.campo_detail", ID=campo_id))
-
-
-@dashboard_bp.route("/agendar_reserva/<int:campo_id>", methods=["POST"])
-@login_required
-def agendar_reserva(campo_id):
-    data = request.form.get("data")
-    hora_inicio = request.form.get("hora_inicio")
-    hora_fim = request.form.get("hora_fim")
-    # Add logic to call sp_CreateReserva with user_id, calculate Total_Pagamento, etc.
-    flash("Reserva agendada com sucesso!", "success")
     return redirect(url_for("dashboard.campo_detail", ID=campo_id))
