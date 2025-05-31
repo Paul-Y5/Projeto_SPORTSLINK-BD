@@ -560,16 +560,42 @@ BEGIN
 END;
 GO
 
-
+-- Obter todas as partidas com detalhes com filtros e ordenação
 CREATE OR ALTER PROCEDURE sp_GetPartidas
+    @NomeCampo NVARCHAR(100) = NULL,
+    @Distancia DECIMAL(10, 2) = NULL,
+    @Latitude DECIMAL(9, 6) = NULL,
+    @Longitude DECIMAL(9, 6) = NULL,
+    @OrderBy NVARCHAR(50) = 'DataHora', -- Coluna padrão para ordenação
+    @OrderDirection NVARCHAR(4) = 'ASC' -- Direção padrão
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    WITH PartidasComDistancia AS (
+        SELECT *,
+               dbo.fn_CalculateDistance(@Latitude, @Longitude, Latitude, Longitude) AS DistanciaCalculada
+        FROM vw_PartidaDetalhes
+        WHERE (Estado = 'Andamento' OR Estado = 'Aguardando')
+        AND (@NomeCampo IS NULL OR Nome_Campo LIKE '%' + @NomeCampo + '%')
+        AND (@Distancia IS NULL OR dbo.fn_CalculateDistance(@Latitude, @Longitude, Latitude, Longitude) <= @Distancia)
+    )
     SELECT *
-    FROM vw_PartidaDetalhes
-    WHERE Estado = 'Andamento' 
-       OR Estado = 'Aguardando';
+    FROM PartidasComDistancia
+    ORDER BY 
+        CASE 
+            WHEN @OrderBy = 'DataHora' AND @OrderDirection = 'ASC' THEN Data_Hora 
+            WHEN @OrderBy = 'DataHora' AND @OrderDirection = 'DESC' THEN Data_Hora 
+            WHEN @OrderBy = 'NumJogadores' AND @OrderDirection = 'ASC' THEN no_jogadores 
+            WHEN @OrderBy = 'NumJogadores' AND @OrderDirection = 'DESC' THEN no_jogadores 
+            WHEN @OrderBy = 'Distancia' AND @OrderDirection = 'ASC' THEN DistanciaCalculada 
+            WHEN @OrderBy = 'Distancia' AND @OrderDirection = 'DESC' THEN DistanciaCalculada 
+        END ASC,
+        CASE 
+            WHEN @OrderBy = 'DataHora' AND @OrderDirection = 'DESC' THEN Data_Hora 
+            WHEN @OrderBy = 'NumJogadores' AND @OrderDirection = 'DESC' THEN no_jogadores 
+            WHEN @OrderBy = 'Distancia' AND @OrderDirection = 'DESC' THEN DistanciaCalculada 
+        END DESC;
 END;
 GO
 

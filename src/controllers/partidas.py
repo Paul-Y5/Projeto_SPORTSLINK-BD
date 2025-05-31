@@ -70,19 +70,19 @@ def get_Partida(id_partida):
             partida = {
                 "ID": partida[0],
                 "CampoID": partida[1],
-                "DataHora": partida[2],
-                "Duracao": partida[3],
-                "Desporto": partida[4],
-                "CriadorID": partida[5],
-                "CampoNome": partida[6],
+                "Campo": partida[2],
+                "Comprimento": partida[3],
+                "Largura": partida[4],
+                "Latitude": partida[5],
+                "Longitude": partida[6],
                 "CampoLocalizacao": partida[7],
-                "CampoTipo": partida[8],
-                "CampoPreco": partida[9],
-                "CampoCapacidade": partida[10],
-                "CampoDescricao": partida[11],
-                "CampoImagemURL": partida[12],
-                "CriadorNome": partida[13],
-                "CriadorNacionalidade": partida[14],
+                "CampoDescricao": partida[8],
+                "DataHora": partida[9],
+                "Duracao": partida[10],
+                "Resultado": partida[11],
+                "Estado": partida[12],
+                "NoJogadors": partida[13],
+                "CampoImagemURL": partida[14],
                 "Jogadores": partida[15],
                 "MaxJogadores": partida[16],
             }
@@ -97,11 +97,14 @@ def get_Partida(id_partida):
         flash(f"Erro ao obter partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
 
-def get_Partidas_Abertas():
+
+# Com Filtros de Nome e ordenação por DataHora, Distancia, ou Número de Jogadores
+def get_Partidas_Abertas(nome_campo=None, distancia=None, latitude=None, longitude=None, order_by='DataHora', order_direction='ASC'):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetPartidas")
+            cursor.execute("EXEC sp_GetPartidas @NomeCampo=?, @Distancia=?, @Latitude=?, @Longitude=?, @OrderBy=?, @OrderDirection=?",
+                           (nome_campo, distancia, latitude, longitude, order_by, order_direction))
             partidas = cursor.fetchall()
             for partida in partidas:
                 ids_jogadores = partida[15].split(",") if partida[15] else []
@@ -118,33 +121,27 @@ def get_Partidas_Abertas():
                             "Nacionalidade": jogador[4]
                         })
                 partida[15] = jogadores
-
-                partida = {
-                    "ID": partida[0],
-                    "CampoID": partida[1],
-                    "DataHora": partida[2],
-                    "Duracao": partida[3],
-                    "Desporto": partida[4],
-                    "CriadorID": partida[5],
-                    "CampoNome": partida[6],
-                    "CampoLocalizacao": partida[7],
-                    "CampoTipo": partida[8],
-                    "CampoPreco": partida[9],
-                    "CampoCapacidade": partida[10],
-                    "CampoDescricao": partida[11],
-                    "CampoImagemURL": partida[12],
-                    "CriadorNome": partida[13],
-                    "CriadorNacionalidade": partida[14],
-                    "Jogadores": partida[15],
-                    "MaxJogadores": partida[16],
-                }
-            partidas = [dict(zip([column[0] for column in cursor.description], partida)) for partida in partidas]
-            print(partidas)
+            partidas = [{
+                "ID": partida[0],
+                "CampoID": partida[1],
+                "Campo": partida[2],
+                "DataHora": partida[9],
+                "Duracao": partida[10],
+                "Comprimento": partida[3],
+                "Largura": partida[4],
+                "Desporto": partida[5] if len(partida) > 5 else 'Não especificado',
+                "Resultado": partida[11],
+                "Estado": partida[12],
+                "CampoLocalizacao": partida[7],
+                "CampoDescricao": partida[8],
+                "CampoImagemURL": partida[14],
+                "Jogadores": partida[15],
+                "MaxJogadores": partida[16]
+            } for partida in partidas]
         return partidas
     except Exception as e:
         flash(f"Erro ao carregar partidas abertas: {str(e)}", "danger")
         return []
-    
 
 def entrar_Partida(id_partida):
     user_id = session.get("user_id")

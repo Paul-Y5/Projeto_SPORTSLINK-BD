@@ -415,8 +415,11 @@
                                     <p><strong>Total Pagamento:</strong> {{ "%.2f" | format(reserva.Total_Pagamento) }} €</p>
                                     <p><strong>Estado:</strong> {{ reserva.Estado }}</p>
                                     <p><strong>Descrição:</strong> {{ reserva.Descricao if reserva.Descricao else 'Sem descrição' }}</p>
-                                    <a href="{{ url_for('dashboard.jog_dashboard', reserva_id=reserva.ID) }}" class="btn btn-danger btn-sm"
-                                        name="action" value="cancel_reserva">Cancelar</a>
+                                    <form action="{{ url_for('dashboard.jog_dashboard') }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="cancel_reserva">
+                                        <input type="hidden" name="reserva_id" value="{{ reserva.ID }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>                             
+                                    </form>
                                 </div>
                             </div>
                         </div>

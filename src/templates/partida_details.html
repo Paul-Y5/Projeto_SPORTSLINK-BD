@@ -33,13 +33,19 @@
             <div class="card-body">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
-                        <strong>Campo:</strong> {{ partida.CampoNome or 'Não especificado' }}
+                        <strong>Campo:</strong> {{ partida.Campo or 'Não especificado' }}
                     </li>
+                    {% if partida.CampoImagemURL %}
+                    <div class="mb-3">
+                        <img src="{{ url_for('static', filename=partida.CampoImagemURL) }}" alt="Imagem do Campo" class="img-fluid rounded"
+                            style="max-height: 150px;">
+                    </div>
+                    {% endif %}
                     <li class="list-group-item">
                         <strong>Endereço:</strong> {{ partida.CampoLocalizacao or 'Não especificado' }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Data e Hora:</strong> {{ partida.DataHora.strftime('%Y-%m-%d %H:%M') if partida.DataHora
+                        <strong>Data e Hora:</strong> {{ partida.DataHora if partida.DataHora
                         else 'Não especificado' }}
                     </li>
                     <li class="list-group-item">
@@ -51,14 +57,6 @@
                     </li>
                     <li class="list-group-item">
                         <strong>Descrição:</strong> {{ partida.CampoDescricao or 'Sem descrição' }}
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Imagem:</strong>
-                        {% if partida.CampoImagemURL %}
-                        <img src="{{ partida.CampoImagemURL }}" alt="Imagem do Campo" style="max-width: 200px;">
-                        {% else %}
-                        Não disponível
-                        {% endif %}
                     </li>
                 </ul>
             </div>
@@ -74,7 +72,9 @@
                 <ul class="list-group">
                     {% for jogador in partida.Jogadores %}
                     <li class="list-group-item">
-                        <strong>{{ jogador.Nome }}</strong> (ID: {{ jogador.ID }})
+                        <a href="{{ url_for('dashboard.list_friends', ID=session['user_id'], action='detail', friend_id={{
+                            jogador.ID }}) }}"
+                            class="btn btn-warning">[#{{jogador.ID }}] {{ jogador.Nome }}</a>
                         <br>
                         <small>Nacionalidade: {{ jogador.Nacionalidade or 'Não fornecida' }}</small>
                     </li>

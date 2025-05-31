@@ -49,7 +49,7 @@
                 <tr>
                     <td>{{ amigo[0] }}</td>
                     <td>
-                        <img src="{{ url_for('static', filename=(amigo[3].split(',')[0] if amigo[3] else 'img/icon_def.png')) }}"
+                        <img src="{{ url_for('static', filename=(amigo[3].split(',')[0]) }}"
                             alt="Imagem de Perfil" class="img-fluid rounded-circle" style="width: 50px; height: 50px; margin: 2%;">
                     </td>                      
                     <td>{{ amigo[1] }}</td>

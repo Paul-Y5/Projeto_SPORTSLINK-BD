@@ -4,65 +4,116 @@
 <div class="container mt-5">
     <h2 class="mb-4">Lista de Partidas</h2>
     <div class="text-end mb-3">
-        <a href="#" class="btn btn-secondary" onclick="window.history.back(); return false;">Voltar</a>
+        <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+        </a>
     </div>
 
+    <!-- Barra de Pesquisa e Ordenação -->
+    <form method="POST" action="{{ url_for('dashboard.list_partidas') }}" class="mb-4" id="filterForm">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="nome_campo" placeholder="Pesquisar por nome do campo"
+                    value="{{ request.form.get('nome_campo', '') }}">
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" name="distancia">
+                    <option value="">Sem limite</option>
+                    <option value="5" {% if request.form.get('distancia')=='5' %}selected{% endif %}>5 km</option>
+                    <option value="10" {% if request.form.get('distancia')=='10' %}selected{% endif %}>10 km</option>
+                    <option value="20" {% if request.form.get('distancia')=='20' %}selected{% endif %}>20 km</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" name="order_by">
+                    <option value="DataHora" {% if request.form.get('order_by', 'DataHora' )=='DataHora' %}selected{%
+                        endif %}>Data</option>
+                    <option value="NumJogadores" {% if request.form.get('order_by', 'DataHora' )=='NumJogadores'
+                        %}selected{% endif %}>Nº Jogadores</option>
+                    <option value="Distancia" {% if request.form.get('order_by', 'DataHora' )=='Distancia' %}selected{%
+                        endif %}>Distância</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" name="order_direction">
+                    <option value="ASC" {% if request.form.get('order_direction', 'ASC' )=='ASC' %}selected{% endif %}>
+                        Asc</option>
+                    <option value="DESC" {% if request.form.get('order_direction', 'DESC' )=='DESC' %}selected{% endif
+                        %}>Desc</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Pesquisar</button>
+            </div>
+            <!-- Campos ocultos para latitude e longitude -->
+            <input type="hidden" id="user_lat" name="user_lat" value="">
+            <input type="hidden" id="user_lon" name="user_lon" value="">
+        </div>
+    </form>
+
     {% if partidas %}
-    <div class="row row-cols-1 row-cols-md-2 g-4">
+    <div class="row row-cols-1 row-cols-md-1 g-4">
         {% for partida in partidas %}
-        <div class="col">
+        <div class="col mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <h5 class="card-title">Partida #{{ partida["ID"] }}</h5>
-                    <p class="card-text">
-                        <strong>Campo:</strong> {{ partida.CampoNome or 'Não especificado' }}<br>
-                        <strong>Endereço:</strong> {{ partida.CampoLocalizacao or 'Não especificado' }}<br>
-                        <strong>Data e Hora:</strong> {{ partida.DataHora.strftime('%Y-%m-%d %H:%M') if partida.DataHora
-                        else 'Não especificado' }}<br>
-                        <strong>Duração:</strong> {{ partida.Duracao or '0' }} minutos<br>
-                        <strong>Desporto:</strong> {{ partida.Desporto or 'Não especificado' }}<br>
-                        <strong>Criador:</strong> {{ partida.CriadorNome }} (Nacionalidade: {{
-                        partida.CriadorNacionalidade or 'Não fornecida' }})<br>
-                        <strong>Capacidade do Campo:</strong> {{ partida.CampoCapacidade or 'Desconhecida' }}<br>
-                        <strong>Número de Jogadores:</strong> {{ partida.Jogadores|length }} / {{ partida.MaxJogadores
-                        or '10' }}<br>
-                    </p>
-
-                    <p>
-                        <strong>Detalhes do Campo:</strong><br>
-                        Tipo: {{ partida.CampoTipo or 'Não especificado' }}<br>
-                        Preço: {{ partida.CampoPreco or 'Não especificado' }}<br>
-                        Descrição: {{ partida.CampoDescricao or 'Sem descrição' }}<br>
-                    </p>
-
-                    <p>
-                        <strong>Jogadores:</strong><br>
-                        {% if partida.Jogadores %}
-                        {% for jogador in partida.Jogadores %}
-                        <span class="badge bg-secondary mb-1">
-                            <a href="{{ url_for('dashboard.jogador_detail', ID=jogador.ID) }}" class="text-white">[#{{
-                                jogador.ID }}] {{ jogador.Nome }}</a>
-                            <small class="text-muted"> (Nacionalidade: {{ jogador.Nacionalidade or 'Não fornecida'
-                                }})</small>
-                        </span>
-                        {% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                        {% else %}
-                        <span class="text-muted">Nenhum jogador inscrito.</span>
+                    <div class="row d-flex align-items-center">
+                        <!-- Coluna para a Imagem -->
+                        {% if partida.CampoImagemURL %}
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <img src="{{ url_for('static', filename=partida.CampoImagemURL) }}" alt="Imagem do Campo"
+                                class="img-fluid rounded" style="max-height: 150px; max-width: 100%;">
+                        </div>
                         {% endif %}
-                    </p>
+                        <!-- Coluna para os Detalhes -->
+                        <div class="{% if partida.CampoImagemURL %}col-md-8{% else %}col-12{% endif %}">
+                            <p class="card-text">
+                                <strong>Campo:</strong> {{ partida.Campo or 'Não especificado' }}<br>
+                                <strong>Endereço:</strong> {{ partida.CampoLocalizacao or 'Não especificado' }}<br>
+                                <strong>Data e Hora:</strong> {{ partida.DataHora if partida.DataHora else 'Não
+                                especificado' }}<br>
+                                <strong>Duração:</strong> {{ partida.Duracao or '0' }} minutos<br>
+                                <strong>Número de Jogadores:</strong> {{ partida.Jogadores|length }} / {{
+                                partida.MaxJogadores or '10' }}<br>
+                            </p>
 
-                    {% if partida.CampoImagemURL %}
-                    <div class="mb-3">
-                        <img src="{{ partida.CampoImagemURL }}" alt="Imagem do Campo" class="img-fluid rounded"
-                            style="max-height: 150px;">
+                            <p>
+                                <strong>Detalhes do Campo:</strong><br>
+                                Tamanho: {{ partida.Largura }} m x {{ partida.Comprimento }} m<br>
+                                Descrição: {{ partida.CampoDescricao or 'Sem descrição' }}<br>
+                            </p>
+
+                            <p>
+                                <strong>Jogadores:</strong><br>
+                                {% if partida.Jogadores %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for jogador in partida.Jogadores %}
+                                <span class="badge bg-secondary">
+                                    [#{{ jogador.ID }}] {{ jogador.Nome }}
+                                    <small class="text-muted">(Nacionalidade: {{ jogador.Nacionalidade or 'Não
+                                        fornecida' }})</small>
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Nenhum jogador inscrito.</span>
+                            {% endif %}
+                            </p>
+
+                            <form action="{{ url_for('dashboard.list_partidas') }}" method="POST" class="d-inline">
+                                <input type="hidden" name="action" value="entrar_partida">
+                                <input type="hidden" name="partida_id" value="{{ partida.ID }}">
+                                <input type="hidden" name="nome_campo" value="{{ request.form.get('nome_campo', '') }}">
+                                <input type="hidden" name="distancia" value="{{ request.form.get('distancia', '') }}">
+                                <input type="hidden" name="order_by" value="{{ request.form.get('order_by', 'DataHora') }}">
+                                <input type="hidden" name="order_direction" value="{{ request.form.get('order_direction', 'ASC') }}">
+                                <input type="hidden" name="user_lat" value="{{ request.form.get('user_lat', '') }}">
+                                <input type="hidden" name="user_lon" value="{{ request.form.get('user_lon', '') }}">
+                                <button type="submit" class="btn btn-success">Entrar na Partida</button>
+                            </form>
+                        </div>
                     </div>
-                    {% endif %}
-
-                    <form action="{{ url_for('dashboard.list_partidas') }}" method="POST" class="d-inline">
-                        <input type="hidden" name="partida_id" value="{{ partida.ID }}">
-                        <button type="submit" class="btn btn-success">Entrar na Partida</button>
-                    </form>
                 </div>
             </div>
         </div>
@@ -72,4 +123,28 @@
     <div class="alert alert-info mt-4">Nenhuma partida disponível no momento.</div>
     {% endif %}
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Tenta obter a localização do utilizador
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                // Preenche os campos ocultos no formulário
+                document.getElementById('user_lat').value = userLat;
+                document.getElementById('user_lon').value = userLng;
+            }, function (error) {
+                console.error('Erro ao obter localização do usuário:', error);
+                // Define valores padrão ou desativa o filtro de distância
+                document.getElementById('user_lat').value = '';
+                document.getElementById('user_lon').value = '';
+            });
+        } else {
+            console.warn('Geolocalização não é suportada pelo navegador.');
+            document.getElementById('user_lat').value = '';
+            document.getElementById('user_lon').value = '';
+        }
+    });
+</script>
 {% endblock %}

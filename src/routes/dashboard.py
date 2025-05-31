@@ -25,9 +25,17 @@ def jog_dashboard():
         elif action == "add_field":
             return adicionar_campo_publico()
         elif action == "cancel_reserva":
-            reserva_id = request.form.get("reserva_id")
+            reserva_id = request.form.get("reserva_id", type=int)
             if reserva_id:
-                cancelar_reserva(reserva_id)
+                result = cancelar_reserva(reserva_id)
+                if result:
+                    flash("Reserva cancelada com sucesso.", "success")
+                else:
+                    flash("Erro ao cancelar a reserva.", "danger")
+                return redirect(url_for("dashboard.jog_dashboard"))
+            else:
+                flash("ID da reserva não fornecido.", "danger")
+                return redirect(url_for("dashboard.jog_dashboard"))
     
     if action == "view_fields":
         return ver_campos()
@@ -106,9 +114,7 @@ def campo_detail(ID):
     else:
         if request.method == "POST":
             action = request.form.get("action")
-            if action == "cancelar_reserva":
-                cancelar_reserva(request.form.get("reserva_id"))
-            elif action == "agendar_reserva":
+            if action == "agendar_reserva":
                 return agendar_reserva(ID)
         #print("Campo não é do arrendador")
         template = 'campo_details2.html'
@@ -149,9 +155,19 @@ def list_friends():
 def list_partidas():
     try:
         if request.method == "POST":
-            partida_id = request.form.get("partida_id")
-            entrar_Partida(partida_id)
-        partidas = get_Partidas_Abertas()
+            action = request.form.get("action")
+            if action == "entrar_partida":
+                partida_id = request.form.get("partida_id")
+                entrar_Partida(partida_id)
+        
+        nome_campo = request.form.get('nome_campo')
+        distancia = request.form.get('distancia', type=float) if request.form.get('distancia') else None
+        latitude = request.form.get('user_lat', type=float) if request.form.get('user_lat') else None
+        longitude = request.form.get('user_lon', type=float) if request.form.get('user_lon') else None
+        order_by = request.form.get('order_by', 'DataHora')
+        order_direction = request.form.get('order_direction', 'ASC')
+
+        partidas = get_Partidas_Abertas(nome_campo, distancia, latitude, longitude, order_by, order_direction)
         if not partidas:
             flash("Nenhuma partida encontrada.", "info")
             return render_template("list_partidas.html", partidas=[])

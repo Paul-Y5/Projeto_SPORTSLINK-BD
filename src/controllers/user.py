@@ -331,11 +331,9 @@ def cancelar_reserva(reserva_id):
             cursor = conn.cursor()
             cursor.execute("EXEC sp_DeleteReserva ?", (reserva_id,))
             conn.commit()
-        flash("Reserva cancelada com sucesso!", "success")
-        return redirect(url_for("dashboard.jog_dashboard"))
+        return True
     except Exception as e:
-        flash(f"Erro ao cancelar reserva: {str(e)}", "danger")
-        return redirect(url_for("dashboard.jog_dashboard"))
+        return False
     
     
 # Auxiiares
