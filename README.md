@@ -1,4 +1,19 @@
 # Projeto_SPORTSLINK-BD
+
+# Para executar a BD:
+
+## Ordem de carregamento de ficheiros para a BD:
+- DDL
+- MDL
+- Indices
+- Triggers
+- UDF
+- Views
+- Procedures
+### Para executar: python app.py (dentro da pasta src)
+### Ou correr na BD que se encotra no IETTA
+
+---
 # 🏅 Aplicação de Agendamento de Partidas e Arrendamento de Campos Esportivos  
 
 ## 📌 Introdução  

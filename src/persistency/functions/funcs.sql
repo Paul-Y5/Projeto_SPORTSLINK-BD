@@ -125,6 +125,7 @@ BEGIN
 
     RETURN @Total;
 END;
+GO
 
 CREATE OR ALTER FUNCTION udf_GetMaxJogadores
     (@ID_Campo INT)

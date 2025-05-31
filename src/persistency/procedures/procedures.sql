@@ -474,10 +474,10 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
+  DECLARE @ID_Campo INT;
+
   BEGIN TRY
     BEGIN TRANSACTION;
-
-    DECLARE @ID_Campo INT;
 
     EXEC sp_CreateCampo
       @Nome, 

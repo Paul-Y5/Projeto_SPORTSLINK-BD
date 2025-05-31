@@ -1,202 +1,42 @@
 USE SPORTSLINK;
 GO
 
+BEGIN TRANSACTION;
+
+-- Apagar os dados existentes (comentado para evitar perda de dados, apenas descomentar se necessário)
+-- ========================================
+-- TRUNCATE TABLE Utilizador;
+-- TRUNCATE TABLE Imagem;
+-- TRUNCATE TABLE Mapa;
+-- TRUNCATE TABLE Ponto;
+-- TRUNCATE TABLE Campo;
+-- TRUNCATE TABLE Campo_Priv;
+-- TRUNCATE TABLE Campo_Pub;
+-- TRUNCATE TABLE Dias_semana;
+-- TRUNCATE TABLE Disponibilidade;
+-- TRUNCATE TABLE Desporto;
+-- TRUNCATE TABLE Desporto_Campo;
+-- TRUNCATE TABLE Desporto_Jogador;
+-- TRUNCATE TABLE Partida;
+-- TRUNCATE TABLE Jogador_joga;
+-- TRUNCATE TABLE Reserva;
+-- TRUNCATE TABLE Rating;
+-- TRUNCATE TABLE Rating_Campo;
+-- TRUNCATE TABLE Rating_Jogador;
+-- TRUNCATE TABLE Jogador_Amizade;
+-- TRUNCATE TABLE Met_Paga_Arrendador;
+-- TRUNCATE TABLE Chat_Live;
+-- TRUNCATE TABLE IMG_Perfil;
+-- TRUNCATE TABLE IMG_Campo;
+
 -- Inserir Imagens
 -- ========================================
 INSERT INTO Imagem (URL) VALUES
-('img/campo.png'), 
+('img/campo.png'),
 ('img/icon_def.png');
 
 -- ========================================
--- 1. Inserir Utilizadores
--- ========================================
-INSERT INTO Utilizador (Nome, Email, Num_Tele, [Password], Nacionalidade) VALUES
-('João Silva', 'joao@gmail.com', '912345678', 'pass123', 'Portugal'),
-('Maria Costa', 'maria@gmail.com', '913333333', 'maria123', 'Brasil'),
-('Carlos Dias', 'carlos@gmail.com', '914444444', 'carlos321', 'Portugal'),
-('Ana Lima', 'ana@gmail.com', '915555555', 'ana456', 'Espanha'),
-('Pedro Alves', 'pedro@gmail.com', '916666666', 'pedro789', 'Angola'),
-('António Rocha', 'arocha@gmail.com', '917777777', 'luis000', 'Portugal'),
-('Rita Nunes', 'rita@gmail.com', '918888888', 'rita987', 'Brasil'),
-('Paulo Ferreira', 'pf@gmail.com', '919999999', 'tiago123', 'Portugal');
-
--- ========================================
--- 2. Jogadores
--- ========================================
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -25, GETDATE()), 25, 'Jogador ativo e competitivo.', 75.0, 1.80
-FROM Utilizador
-WHERE Nome IN ('João Silva', 'Pedro Alves', 'Carlos Dias');
-
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -30, GETDATE()), 30, 'Jogadora experiente.', 80.0, 1.85
-FROM Utilizador
-WHERE Nome IN ('Maria Costa', 'Ana Lima');
-
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -22, GETDATE()), 22, 'Jogador amador.', 70.0, 1.75
-FROM Utilizador
-WHERE Nome IN ('António Rocha');
-
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -28, GETDATE()), 28, 'Jogador de futsal.', 78.0, 1.82
-FROM Utilizador
-WHERE Nome IN ('Paulo Ferreira', 'Rita Nunes');
-
--- ========================================
--- 3. Arrendadores
--- ========================================
-INSERT INTO Arrendador (ID_Arrendador, IBAN, No_Campos)
-SELECT ID, 'PT500002012345678900' + RIGHT('00' + CAST(ID AS VARCHAR), 2), 3
-FROM Utilizador
-WHERE Nome IN ('Carlos Dias', 'António Rocha', 'Rita Nunes');
-
--- ========================================
--- 5. Imagem Perfil
--- ========================================
-INSERT INTO IMG_Perfil (ID_Utilizador, ID_img)
-SELECT u.ID, i.ID
-FROM Utilizador u
-JOIN Imagem i ON i.URL = 'img/icon_def.png'
-
--- ========================================
--- 6. Mapa + Pontos
--- ========================================
-
-INSERT INTO Mapa DEFAULT VALUES;
-DECLARE @MapaID INT = SCOPE_IDENTITY();
-
-INSERT INTO Ponto (ID_Mapa, Latitude, Longitude) VALUES
-(@MapaID, 38.7200, -9.1400),
-(@MapaID, 38.7201, -9.1405),
-(@MapaID, 38.7202, -9.1410),
-(@MapaID, 38.7203, -9.1415);
-
-
--- ========================================
--- 7. Campos
--- ========================================
-INSERT INTO Campo (ID_Ponto, ID_Mapa, Nome, Endereco, Comprimento, Largura, ocupado, Descricao)
-VALUES
-(1, @MapaID, 'Campo Central', 'Lisboa', 100.0, 60.0, 0, 'Futebol oficial'),
-(2, @MapaID, 'Campo Bairro', 'Lisboa', 80.0, 50.0, 1, 'Futsal amador'),
-(3, @MapaID, 'basketball court Sol', 'Porto', 50.0, 30.0, 0, 'Voleibol e ténis'),
-(4, @MapaID, 'Arena Norte', 'Porto', 90.0, 55.0, 1, 'Campo multiusos');
-
--- ========================================
--- 8. Campos Privados / Públicos
--- ========================================
-DECLARE @Arr1 INT = (SELECT ID_Arrendador FROM Arrendador WHERE ID_Arrendador = (SELECT ID FROM Utilizador WHERE Nome = 'Carlos Dias'));
-DECLARE @Arr2 INT = (SELECT ID_Arrendador FROM Arrendador WHERE ID_Arrendador = (SELECT ID FROM Utilizador WHERE Nome = 'António Rocha'));
-
-INSERT INTO Campo_Priv (ID_Campo, ID_Arrendador) VALUES
-(1, @Arr1), (3, @Arr1), (4, @Arr2);
-
-INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp) VALUES
-(2, 'Câmara Lisboa');
-
--- ========================================
--- 9. Dias da Semana
--- ========================================
-INSERT INTO Dias_semana (ID, Nome) VALUES
-(1, 'Domingo'), (2, 'Segunda'), (3, 'Terça'), (4, 'Quarta'),
-(5, 'Quinta'), (6, 'Sexta'), (7, 'Sábado');
-
--- ========================================
--- 10. Disponibilidades
--- ========================================
-INSERT INTO Disponibilidade (ID_Campo, ID_dia, Preco, Hora_abertura, Hora_fecho)
-VALUES
-(1, 2, 25.00, '08:00', '17:00'),
-(1, 4, 30.00, '09:00', '18:00'),
-(3, 3, 20.00, '10:00', '19:00'),
-(4, 5, 35.00, '12:00', '20:00');
-
--- ========================================
--- 11. Desportos
--- ========================================
-INSERT INTO Desporto (Nome) VALUES
-('Futebol'), ('Futsal'), ('Voleibol'), ('Ténis'), ('Basquetebol');
-
--- ========================================
--- 12. Desporto x Campo
--- ========================================
-INSERT INTO Desporto_Campo (ID_Desporto, ID_Campo) VALUES
-(1, 1), (2, 2), (3, 3), (4, 3), (5, 4);
-
--- ========================================
--- 13. Desporto x Jogador
--- ========================================
-INSERT INTO Desporto_Jogador (ID_Jogador, ID_Desporto)
-SELECT ID, 1 FROM Jogador
-UNION
-SELECT ID, 2 FROM Jogador WHERE ID % 2 = 0
-UNION
-SELECT ID, 3 FROM Jogador WHERE ID % 2 <> 0;
-
--- ========================================
--- 14. Partidas
--- ========================================
-INSERT INTO Partida (ID_Campo, no_jogadores, Data_Hora, Duracao, Resultado, Estado)
-VALUES
-(1, 10, '2025-05-11 15:00', 90, '3-2', 'Finalizada'),
-(2, 8, '2025-05-12 18:00', 60, '1-1', 'Finalizada'),
-(3, 6, '2025-05-13 16:00', 60, NULL, 'Aguardando');
-
--- ========================================
--- 15. Jogadores nas Partidas
--- ========================================
-INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
-SELECT p.ID, j.ID FROM Partida p, Jogador j WHERE p.ID <= 2 AND j.ID <= 3;
-
--- ========================================
--- 16. Reservas
--- ========================================
-INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao)
-SELECT 1, ID, '2025-05-31', '14:00', '15:00', 50.00, 'Confirmada', 'Treino semanal'
-FROM Jogador WHERE ID <= 3;
-
-INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao)
-SELECT 2, ID, '2025-06-01', '10:00', '11:00', 60.00, 'Confirmada', 'Partida de futsal'
-FROM Jogador WHERE ID <= 3;
-
--- ========================================
--- 17. Ratings
--- ========================================
-INSERT INTO Rating (ID_Avaliador, Data_Hora, Comentario, Avaliacao)
-SELECT ID, GETDATE(), 'Muito bom!', 5 FROM Jogador WHERE ID <= 3;
-
-INSERT INTO Rating_Campo (ID_Campo, ID_Avaliador) VALUES
-(1, 1), (2, 2), (3, 3);
-
-INSERT INTO Rating_Jogador (ID_Jogador, ID_Avaliador) VALUES
-(2, 1), (3, 2), (1, 3);
-
--- ========================================
--- 18. Amizades
--- ========================================
-INSERT INTO Jogador_Amizade (ID_J1, ID_J2) VALUES
-(1, 2), (1, 3), (2, 3), (4, 5);
-
--- ========================================
--- 19. Métodos Pagamento Arrendador
--- ========================================
-INSERT INTO Met_Paga_Arrendador (ID_Arrendador, Met_pagamento) VALUES
-(@Arr1, 'MBWay'), (@Arr1, 'PayPal'), (@Arr2, 'Transferência Bancária');
-
--- ========================================
--- 20. Chat Live
--- ========================================
-INSERT INTO Chat_Live (ID_Partida, Titulo) VALUES
-(1, 'Futebol Domingo'), (2, 'Treino Futsal'), (3, 'Voleibol Girls');
-
--- ========================================
--- 21. Imagens Campos
--- ========================================
-INSERT INTO IMG_Campo (ID_Campo, ID_img)
-VALUES (1, 1), (2, 1), (3, 1), (4, 1);
--- ========================================
--- 1. Inserir Utilizadores
+-- 1. Inserir Utilizadores (with encryption)
 -- ========================================
 INSERT INTO Utilizador (Nome, Email, Num_Tele, [Password], Nacionalidade) VALUES
 ('João Silva', 'joao@gmail.com', '912345678', EncryptByPassPhrase('SportsLink2025', 'pass123'), 'Portugal'),
@@ -237,7 +77,7 @@ WHERE Nome IN ('Paulo Ferreira', 'Rita Nunes');
 -- 3. Arrendadores
 -- ========================================
 INSERT INTO Arrendador (ID_Arrendador, IBAN, No_Campos)
-SELECT ID, 'PT500002012345678900' + RIGHT('00' + CAST(ID AS VARCHAR), 2), 0 -- No_Campos será atualizado por trigger
+SELECT ID, 'PT500002012345678900' + RIGHT('00' + CAST(ID AS VARCHAR), 2), 0
 FROM Utilizador
 WHERE Nome IN ('Carlos Dias', 'António Rocha', 'Rita Nunes', 'Sofia Mendes');
 
@@ -247,47 +87,42 @@ WHERE Nome IN ('Carlos Dias', 'António Rocha', 'Rita Nunes', 'Sofia Mendes');
 INSERT INTO IMG_Perfil (ID_Utilizador, ID_img)
 SELECT u.ID, i.ID
 FROM Utilizador u
-JOIN Imagem i ON i.URL = 'img/icon_def.png'
-WHERE u.Nome IN ('João Silva', 'Maria Costa', 'Carlos Dias', 'Ana Lima', 'Pedro Alves');
-
-INSERT INTO IMG_Perfil (ID_Utilizador, ID_img)
-SELECT u.ID, i.ID
-FROM Utilizador u
-JOIN Imagem i ON i.URL = 'img/icon_alt.png'
-WHERE u.Nome IN ('António Rocha', 'Rita Nunes', 'Paulo Ferreira', 'Sofia Mendes', 'Lucas Souza');
+JOIN Imagem i ON i.URL = 'img/icon_def.png';
 
 -- ========================================
 -- 5. Mapa + Pontos
 -- ========================================
-INSERT INTO Mapa DEFAULT VALUES;
-DECLARE @MapaID INT = SCOPE_IDENTITY();
+-- Inserir ID 1 manualmente
+SET IDENTITY_INSERT Mapa ON;
+INSERT INTO Mapa (ID) VALUES (1);
+SET IDENTITY_INSERT Mapa OFF;
 
 INSERT INTO Ponto (ID_Mapa, Latitude, Longitude) VALUES
-(@MapaID, 38.7200, -9.1400), -- Lisboa
-(@MapaID, 38.7201, -9.1405), -- Lisboa
-(@MapaID, 38.7202, -9.1410), -- Porto
-(@MapaID, 38.7203, -9.1415), -- Porto
-(@MapaID, 38.7204, -9.1420), -- Lisboa
-(@MapaID, 38.7205, -9.1425), -- Lisboa
-(@MapaID, 38.7206, -9.1430), -- Faro
-(@MapaID, 38.7207, -9.1435), -- Faro
-(@MapaID, 38.7208, -9.1440), -- Coimbra
-(@MapaID, 38.7209, -9.1445); -- Coimbra
+(1, 38.7200, -9.1400), -- Lisboa
+(1, 38.7201, -9.1405), -- Lisboa
+(1, 38.7202, -9.1410), -- Porto
+(1, 38.7203, -9.1415), -- Porto
+(1, 38.7204, -9.1420), -- Lisboa
+(1, 38.7205, -9.1425), -- Lisboa
+(1, 38.7206, -9.1430), -- Faro
+(1, 38.7207, -9.1435), -- Faro
+(1, 38.7208, -9.1440), -- Coimbra
+(1, 38.7209, -9.1445); -- Coimbra
 
 -- ========================================
 -- 6. Campos
 -- ========================================
 INSERT INTO Campo (ID_Ponto, ID_Mapa, Nome, Endereco, Comprimento, Largura, ocupado, Descricao) VALUES
-(1, @MapaID, 'Campo Central', 'Rua Central 123, Lisboa', 100.0, 60.0, 0, 'Campo oficial para futebol'),
-(2, @MapaID, 'Campo Bairro', 'Av. Bairro Novo, Lisboa', 80.0, 50.0, 1, 'Futsal amador'),
-(3, @MapaID, 'basketball court Sol', 'Praça do Sol, Porto', 50.0, 30.0, 0, 'Voleibol e ténis'),
-(4, @MapaID, 'Arena Norte', 'Rua Norte 45, Porto', 90.0, 55.0, 1, 'Campo multiusos'),
-(5, @MapaID, 'Estádio Lisboa', 'Estrada Principal, Lisboa', 105.0, 68.0, 0, 'Estádio profissional de futebol'),
-(6, @MapaID, 'Parque Desportivo', 'Parque Verde, Lisboa', 60.0, 40.0, 0, 'Basquete e futsal'),
-(7, @MapaID, 'Campo Faro', 'Rua do Mar, Faro', 90.0, 50.0, 1, 'Campo de futebol ao ar livre'),
-(8, @MapaID, 'basketball court Faro', 'Av. da Praia, Faro', 40.0, 20.0, 0, 'Ténis e voleibol'),
-(9, @MapaID, 'Arena Coimbra', 'Rua Central, Coimbra', 95.0, 55.0, 0, 'Campo multiusos'),
-(10, @MapaID, 'Parque Coimbra', 'Parque da Cidade, Coimbra', 70.0, 45.0, 1, 'Futsal e basquete');
+(1, 1, 'Campo Central', 'Rua Central 123, Lisboa', 100.0, 60.0, 0, 'Campo oficial para futebol'),
+(2, 1, 'Campo Bairro', 'Av. Bairro Novo, Lisboa', 80.0, 50.0, 1, 'Futsal amador'),
+(3, 1, 'basketball court Sol', 'Praça do Sol, Porto', 50.0, 30.0, 0, 'Voleibol e ténis'),
+(4, 1, 'Arena Norte', 'Rua Norte 45, Porto', 90.0, 55.0, 1, 'Campo multiusos'),
+(5, 1, 'Estádio Lisboa', 'Estrada Principal, Lisboa', 105.0, 68.0, 0, 'Estádio profissional de futebol'),
+(6, 1, 'Parque Desportivo', 'Parque Verde, Lisboa', 60.0, 40.0, 0, 'Basquete e futsal'),
+(7, 1, 'Campo Faro', 'Rua do Mar, Faro', 90.0, 50.0, 1, 'Campo de futebol ao ar livre'),
+(8, 1, 'basketball court Faro', 'Av. da Praia, Faro', 40.0, 20.0, 0, 'Ténis e voleibol'),
+(9, 1, 'Arena Coimbra', 'Rua Central, Coimbra', 95.0, 55.0, 0, 'Campo multiusos'),
+(10, 1, 'Parque Coimbra', 'Parque da Cidade, Coimbra', 70.0, 45.0, 1, 'Futsal e basquete');
 
 -- ========================================
 -- 7. Campos Privados / Públicos
@@ -395,6 +230,11 @@ INSERT INTO Jogador_joga (ID_Partida, ID_Jogador) VALUES
 (5, 1), (5, 3), (5, 9), (5, 10),  -- Estádio Lisboa: João, Carlos, Sofia, Lucas
 (6, 2), (6, 4), (6, 8);           -- Parque Desportivo: Maria, Ana, Paulo
 
+-- Atualizar no_jogadores em Partida
+UPDATE p
+SET p.no_jogadores = (SELECT COUNT(*) FROM Jogador_joga jj WHERE jj.ID_Partida = p.ID)
+FROM Partida p;
+
 -- ========================================
 -- 15. Reservas
 -- ========================================
@@ -454,12 +294,14 @@ INSERT INTO Chat_Live (ID_Partida, Titulo) VALUES
 -- ========================================
 INSERT INTO IMG_Campo (ID_Campo, ID_img) VALUES
 (1, 1),  -- Campo Central: Futebol
-(2, 2),  -- Campo Bairro: Futsal
-(3, 3),  -- basketball court Sol: Ténis
-(4, 4),  -- Arena Norte: Basquete
+(2, 1),  -- Campo Bairro: Futsal
+(3, 1),  -- basketball court Sol: Ténis
+(4, 1),  -- Arena Norte: Basquete
 (5, 1),  -- Estádio Lisboa: Futebol
-(6, 4),  -- Parque Desportivo: Basquete
+(6, 1),  -- Parque Desportivo: Basquete
 (7, 1),  -- Campo Faro: Futebol
-(8, 3),  -- basketball court Faro: Ténis
+(8, 1),  -- basketball court Faro: Ténis
 (9, 1),  -- Arena Coimbra: Futebol
-(10, 2); -- Parque Coimbra: Futsal
+(10, 1); -- Parque Coimbra: Futsal
+
+COMMIT TRANSACTION;
