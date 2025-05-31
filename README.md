@@ -6,10 +6,11 @@
 - DDL
 - MDL
 - Indices
-- Triggers
 - UDF
 - Views
 - Procedures
+- Triggers
+
 ### Para executar: python app.py (dentro da pasta src)
 ### Ou correr na BD que se encotra no IETTA
 

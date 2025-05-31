@@ -181,7 +181,7 @@ BEGIN
     SET @Fim = CAST(@Data AS DATETIME) + CAST(@Hora_Fim AS DATETIME);
 
     -- Calcular o total a pagar usando a UDF
-    SET @Total = dbo.fn_TotalPagamento(@Inicio, @Fim, @Preco);
+    SET @Total = dbo.TotalPagamento(@Inicio, @Fim, @Preco);
 
     -- Atualizar o campo Total_Pagamento na reserva
     UPDATE Reserva

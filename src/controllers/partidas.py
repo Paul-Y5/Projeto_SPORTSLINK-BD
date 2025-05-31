@@ -27,7 +27,7 @@ def create_partida(campo_id):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "EXEC sp_CreatePartida ?, ?, ?, ?, ?",
+                "EXEC CreatePartida ?, ?, ?, ?, ?",
                 (campo_id, data_hora, duracao, desporto_partida, user_id)
             )
             partida_id = cursor.fetchone()[0]
@@ -49,7 +49,7 @@ def get_Partida(id_partida):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_ObterPartida ?", (id_partida,))
+            cursor.execute("EXEC ObterPartida ?", (id_partida,))
             partida = cursor.fetchone()
         
         if partida:
@@ -58,7 +58,7 @@ def get_Partida(id_partida):
             partida[15] = [int(id) for id in jogadores_ids if id.isdigit()]
             jogadores = []
             for id_jogador in partida[15]:
-                cursor.execute("EXEC sp_GetUserInfo ?", (id_jogador,))
+                cursor.execute("EXEC GetUserInfo ?", (id_jogador,))
                 jogador = cursor.fetchone()
                 if jogador:
                     jogadores.append({
@@ -103,7 +103,7 @@ def get_Partidas_Abertas(nome_campo=None, distancia=None, latitude=None, longitu
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetPartidas @NomeCampo=?, @Distancia=?, @Latitude=?, @Longitude=?, @OrderBy=?, @OrderDirection=?",
+            cursor.execute("EXEC GetPartidas @NomeCampo=?, @Distancia=?, @Latitude=?, @Longitude=?, @OrderBy=?, @OrderDirection=?",
                            (nome_campo, distancia, latitude, longitude, order_by, order_direction))
             partidas = cursor.fetchall()
             for partida in partidas:
@@ -112,7 +112,7 @@ def get_Partidas_Abertas(nome_campo=None, distancia=None, latitude=None, longitu
 
                 jogadores = []
                 for id_jogador in partida[15]:
-                    cursor.execute("EXEC sp_GetUserInfo ?", (id_jogador,))
+                    cursor.execute("EXEC GetUserInfo ?", (id_jogador,))
                     jogador = cursor.fetchone()
                     if jogador:
                         jogadores.append({
@@ -151,7 +151,7 @@ def entrar_Partida(id_partida):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_AddJogadorToPartida ?, ?", (id_partida, user_id))
+            cursor.execute("EXEC AddJogadorToPartida ?, ?", (id_partida, user_id))
             result = cursor.fetchone()
             if result and result[0] == 1:
                 flash("Entrou na partida com sucesso!", "success")
@@ -171,7 +171,7 @@ def sair_Partida(id_partida):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_RemoveJogadorFromPartida ?, ?", (id_partida, user_id))
+            cursor.execute("EXEC RemoveJogadorFromPartida ?, ?", (id_partida, user_id))
             result = cursor.fetchone()
             if result and result[0] == 1:
                 flash("Saiu da partida com sucesso!", "success")

@@ -33,7 +33,7 @@ def adicionar_campo_publico():
         with conn.cursor() as cursor:
             cursor.execute("""
                 DECLARE @NewID INT;
-                EXEC sp_createCampoPub
+                EXEC createCampoPub
                     @Latitude = ?, 
                     @Longitude = ?, 
                     @ID_Mapa = ?, 
@@ -73,7 +73,7 @@ def adicionar_campo_publico():
                 for desporto_nome in desportos_selecionados:
                     id_desporto = desportos_map.get(desporto_nome)
                     if id_desporto:
-                        cursor.execute("EXEC sp_AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?;", (id_campo, id_desporto))
+                        cursor.execute("EXEC AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?;", (id_campo, id_desporto))
 
             conn.commit()
 
@@ -113,7 +113,7 @@ def editar_campo(ID):
 
             # Atualiza campo
             cursor.execute("""
-                EXEC sp_EditCampo 
+                EXEC EditCampo 
                     @ID_Campo = ?, 
                     @Nome = ?, 
                     @Endereco = ?, 
@@ -125,7 +125,7 @@ def editar_campo(ID):
 
             # Atualiza localização
             cursor.execute("""
-                EXEC sp_UpdatePonto 
+                EXEC UpdatePonto 
                     @ID = ?, 
                     @Latitude = ?, 
                     @Longitude = ?;
@@ -156,7 +156,7 @@ def editar_campo(ID):
                       f"Hora Abertura: {hora_abertura}, Hora Fecho: {hora_fecho}, Preço: {preco_dia}") """
 
                 cursor.execute("""
-                    EXEC sp_SetDisponibilidadeCampo 
+                    EXEC SetDisponibilidadeCampo 
                         @ID_Campo = ?, 
                         @ID_Dia = ?, 
                         @Hora_Abertura = ?, 
@@ -173,7 +173,7 @@ def editar_campo(ID):
             #print("IDs de desportos recuperados:", desporto_ids)
             for id_desporto, _ in desporto_ids:
                 #print(f"A associar desporto ID {id_desporto} ao campo ID {ID}")
-                cursor.execute("EXEC sp_AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?", (ID, int(id_desporto)))
+                cursor.execute("EXEC AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?", (ID, int(id_desporto)))
             # Remove desportos não selecionados
             ids_selecionados = [id_desporto for id_desporto, _ in desporto_ids]
             if ids_selecionados:
@@ -207,7 +207,7 @@ def excluir_campo():
             cursor = conn.cursor()
 
             # Chama a stored procedure para excluir o campo
-            cursor.execute("EXEC sp_DeleteCampo ?", (campo_id,))
+            cursor.execute("EXEC DeleteCampo ?", (campo_id,))
 
             conn.commit()
 
@@ -258,7 +258,7 @@ def adicionar_campo_privado():
             # Criar campo
             cursor.execute("""
                 DECLARE @ID_Campo INT;
-                EXEC sp_CreateCampo 
+                EXEC CreateCampo 
                     @Nome = ?, 
                     @Endereco = ?, 
                     @Comprimento = ?, 
@@ -292,7 +292,7 @@ def adicionar_campo_privado():
                 preco_dia = request.form.get(f'preco_dia_{sigla}') or preco_padrao
 
                 cursor.execute("""
-                    EXEC sp_SetDisponibilidadeCampo 
+                    EXEC SetDisponibilidadeCampo 
                         @ID_Campo = ?, 
                         @ID_Dia = ?, 
                         @Hora_Abertura = ?, 
@@ -301,7 +301,7 @@ def adicionar_campo_privado():
                 """, (campo_id, id_dia, hora_abertura, hora_fecho, preco_dia))
 
             for id_desporto, _ in desporto_ids:
-                cursor.execute("EXEC sp_AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?", (campo_id, id_desporto))
+                cursor.execute("EXEC AssociarDesportoCampo @ID_Campo = ?, @ID_Desporto = ?", (campo_id, id_desporto))
 
             conn.commit()
             flash('Campo privado adicionado com sucesso!', 'success')
@@ -316,7 +316,7 @@ def get_disponibilidade_por_campo(campo_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetDisponibilidadePorCampo ?", (campo_id,))
+            cursor.execute("EXEC GetDisponibilidadePorCampo ?", (campo_id,))
             disponibilidade = cursor.fetchall()
         return disponibilidade
     except Exception as e:
@@ -330,7 +330,7 @@ def get_campo_by_id(campo_id):
         cursor = conn.cursor()
 
         # Executa a stored procedure para obter os dados principais do campo
-        cursor.execute("EXEC sp_GetCampoByID ?", (campo_id,))
+        cursor.execute("EXEC GetCampoByID ?", (campo_id,))
         campo_infos = cursor.fetchall()
 
         if not campo_infos:
@@ -353,7 +353,7 @@ def get_campo_by_id(campo_id):
         }
 
         # Executa a stored procedure para obter a disponibilidade do campo
-        cursor.execute("EXEC sp_GetDisponibilidadePorCampo ?", (campo_id,))
+        cursor.execute("EXEC GetDisponibilidadePorCampo ?", (campo_id,))
         disponibilidade_rows = cursor.fetchall()
 
         # Formata a disponibilidade em uma lista de dicionários
@@ -375,7 +375,7 @@ def getReservasByCampo(campo_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetReservasByCampo ?", (campo_id,))
+            cursor.execute("EXEC GetReservasByCampo ?", (campo_id,))
             reservas_rows = cursor.fetchall()
 
         if not reservas_rows:
@@ -426,7 +426,7 @@ def get_campos(tipo):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "EXEC sp_GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?",
+                "EXEC GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?",
                 (None, user_id, tipo, pesquisa, order_by, order_dir, user_lat, user_lon)
             )
             campos = cursor.fetchall()
@@ -440,11 +440,11 @@ def get_campos(tipo):
 def get_campo_details(campo_id):
     with create_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("EXEC sp_GetCampoDetails ?", (campo_id,))
+        cursor.execute("EXEC GetCampoDetails ?", (campo_id,))
         campo_data = cursor.fetchone()
 
         # Obter disponibilidade
-        cursor.execute("EXEC sp_GetDisponibilidadeByCampo ?", (campo_id,))
+        cursor.execute("EXEC GetDisponibilidadeByCampo ?", (campo_id,))
         disponibilidade_data = cursor.fetchall()
 
     # Processar dados do campo

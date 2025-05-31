@@ -133,7 +133,7 @@ SELECT
   -- Métodos de Pagamento com Detalhes (apenas para arrendadores)
   (
     SELECT STRING_AGG(mp.Metodo + ': ' + mp.Detalhes, CHAR(10))
-    FROM dbo.fn_GetMetodosPagamentoDetalhes(u.ID) mp
+    FROM dbo.GetMetodosPagamentoDetalhes(u.ID) mp
     WHERE EXISTS (
         SELECT 1 FROM Arrendador as a2 WHERE a2.ID_Arrendador = u.ID
     )
@@ -304,7 +304,7 @@ SELECT
 	(SELECT STRING_AGG(CAST(jj.ID_Jogador AS VARCHAR(10)), ', ')
     FROM Jogador_joga jj
 	WHERE jj.ID_Partida = p.ID) AS Jogadores_IDs,
-  dbo.udf_GetMaxJogadores(p.ID_Campo) AS Max_Jogadores
+  dbo.GetMaxJogadores(p.ID_Campo) AS Max_Jogadores
 FROM Partida p
 LEFT JOIN vw_CampoPublico as c ON p.ID_Campo = c.ID_Campo
 LEFT JOIN IMG_Campo as ci on ci.ID_Campo=c.ID_Campo

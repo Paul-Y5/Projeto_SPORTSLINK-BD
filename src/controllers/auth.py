@@ -47,7 +47,7 @@ def registration():
                 return render_template("index.html")
             else:
                 # Insere o utilizador na tabela Utilizador usando a stored procedure
-                cursor.execute("EXEC sp_CreateUtilizador ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
+                cursor.execute("EXEC CreateUtilizador ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
                 (nome, email, numero_tele, password, nacionalidade,
                 data_nascimento, descricao, peso, altura, img_url, desportos_fav))
                 conn.commit()
@@ -70,7 +70,7 @@ def log():
     with create_connection() as conn:
         # Verifica se o utilizador existe
         cursor = conn.cursor()
-        cursor.execute("EXEC sp_AuthenticateUtilizador ?, ?", email, password)
+        cursor.execute("EXEC AuthenticateUtilizador ?, ?", email, password)
         user = cursor.fetchone()
 
     if user:

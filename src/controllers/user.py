@@ -9,7 +9,7 @@ def get_user_info(user_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("sp_GetUserInfo ?", (user_id,))
+            cursor.execute("GetUserInfo ?", (user_id,))
             user_info = cursor.fetchone()
         return user_info if user_info else None
     except Exception as e:
@@ -17,7 +17,7 @@ def get_user_info(user_id):
         return None
 
 def update_user_info():
-    """Atualiza informações do utilizador, jogador e arrendador via sp_UpdateUserInfo."""
+    """Atualiza informações do utilizador, jogador e arrendador via UpdateUserInfo."""
     import json  # garantir que json está importado
 
     username = request.form["username"]
@@ -81,7 +81,7 @@ def update_user_info():
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                EXEC sp_UpdateUserInfo 
+                EXEC UpdateUserInfo 
                     @UserID = ?, 
                     @Nome = ?, 
                     @Email = ?, 
@@ -125,7 +125,7 @@ def delete_user_account():
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_DeleteUtilizador ?", (user_id,))
+            cursor.execute("EXEC DeleteUtilizador ?", (user_id,))
             conn.commit()
         session.clear()
         return redirect(url_for("index"))
@@ -165,7 +165,7 @@ def make_arrendador():
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "EXEC sp_CreateArrendador @ID_Utilizador = ?, @IBAN = ?, @MetodosPagamento = ?",
+                "EXEC CreateArrendador @ID_Utilizador = ?, @IBAN = ?, @MetodosPagamento = ?",
                 (user_id, iban, json_final)
             )
             conn.commit()
@@ -185,7 +185,7 @@ def list_campos_arrendador():
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetCamposByUser ?", (user_id,))
+            cursor.execute("EXEC GetCamposByUser ?", (user_id,))
             campos = cursor.fetchall()
 
         return render_template(
@@ -215,7 +215,7 @@ def get_friends():
         with create_connection() as conn:
             cursor = conn.cursor()
             # Chama a stored procedure para obter os amigos do utilizador
-            cursor.execute("EXEC sp_GetFriends ?", (user_id,))
+            cursor.execute("EXEC GetFriends ?", (user_id,))
             amigos = cursor.fetchall()
         return render_template("lista_amigos.html", user_id=user_id, amigos=amigos)
     except Exception as e:
@@ -232,7 +232,7 @@ def add_friend():
         with create_connection() as conn:
             cursor = conn.cursor()
             # Chama a stored procedure para adicionar um amigo
-            cursor.execute("EXEC sp_AddFriend ?, ?", (session["user_id"], id_friend))
+            cursor.execute("EXEC AddFriend ?, ?", (session["user_id"], id_friend))
             conn.commit()
         flash("Amigo adicionado com sucesso!", "success")
         return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
@@ -246,7 +246,7 @@ def remove_friend(friend_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_RemoveFriend @UserID = ?, @FriendID = ?", (session.get("user_id"), int(friend_id)))
+            cursor.execute("EXEC RemoveFriend @UserID = ?, @FriendID = ?", (session.get("user_id"), int(friend_id)))
             conn.commit()
         flash("Amigo removido com sucesso!", "success")
     except Exception as e:
@@ -262,7 +262,7 @@ def get_InfoFriend():
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetFriendInfo ?", (friend_id,))
+            cursor.execute("EXEC GetFriendInfo ?", (friend_id,))
             friend_info = cursor.fetchone()
         if not friend_info:
             flash("Amigo não encontrado.", "warning")
@@ -277,7 +277,7 @@ def getHistoricPartidas(user_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetHistoricPartidas ?", (user_id,))
+            cursor.execute("EXEC GetHistoricPartidas ?", (user_id,))
             partidas = cursor.fetchall()
         return partidas
     except Exception as e:
@@ -302,7 +302,7 @@ def agendar_reserva(campo_id):
             with create_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "EXEC sp_CreateReserva @ID_Campo=?, @ID_Jogador=?, @Data=?, @Hora_Inicio=?, @Hora_Fim=?, @Estado=?, @Descricao=?",
+                    "EXEC CreateReserva @ID_Campo=?, @ID_Jogador=?, @Data=?, @Hora_Inicio=?, @Hora_Fim=?, @Estado=?, @Descricao=?",
                     (campo_id, id_jogador, data, hora_inicio, hora_fim, estado, descricao)
                 )
                 conn.commit()
@@ -318,7 +318,7 @@ def get_reservas(user_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetReservasByUser ?", (user_id,))
+            cursor.execute("EXEC GetReservasByUser ?", (user_id,))
             reservas = cursor.fetchall()
         return reservas
     except Exception as e:
@@ -329,7 +329,7 @@ def cancelar_reserva(reserva_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_DeleteReserva ?", (reserva_id,))
+            cursor.execute("EXEC DeleteReserva ?", (reserva_id,))
             conn.commit()
         return True
     except Exception as e:

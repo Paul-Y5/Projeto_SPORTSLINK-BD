@@ -2,20 +2,24 @@ USE SPORTSLINK;
 GO
 
 -- Utilizador já existe? (Verifica através do email que é único na tabela Utilizador)
-CREATE FUNCTION dbo.fn_UtilizadorExists (@Email VARCHAR(255))
+CREATE OR ALTER FUNCTION dbo.UtilizadorExists (@Email VARCHAR(512))
 RETURNS BIT
 AS
 BEGIN
-  DECLARE @Exists BIT;
+    DECLARE @Exists BIT;
 
-  SELECT @Exists = CASE WHEN EXISTS (SELECT 1 FROM Utilizador WHERE Email = @Email) THEN 1 ELSE 0 END;
+    SET @Exists = CASE 
+        WHEN EXISTS (SELECT 1 FROM dbo.Utilizador WHERE Email = @Email) 
+        THEN 1 
+        ELSE 0 
+    END;
 
-  RETURN @Exists;
+    RETURN @Exists;
 END;
 GO
 
 -- Verificar se é Arrendador
-CREATE FUNCTION dbo.fn_IsArrendador (@UserID INT)
+CREATE FUNCTION dbo.IsArrendador (@UserID INT)
 RETURNS BIT
 AS
 BEGIN
@@ -28,7 +32,7 @@ END;
 GO
 
 -- Calculo do número de horas de uma reserva no formato HH:MM
-CREATE FUNCTION dbo.fn_CalculaHorasFormatado (
+CREATE FUNCTION dbo.CalculaHorasFormatado (
     @HoraInicio DATETIME,
     @HoraFim DATETIME
 )
@@ -44,7 +48,7 @@ END;
 GO
 
 -- ESTADO PARTIDA
-CREATE FUNCTION dbo.fn_GetEstadoPartida
+CREATE FUNCTION dbo.GetEstadoPartida
 (
   @Estado VARCHAR(50)
 )
@@ -62,7 +66,7 @@ END;
 GO
 
 -- CALCULO DO TEMPO DE JOGO
-CREATE FUNCTION dbo.fn_CalculaDuracaoMinutos
+CREATE FUNCTION dbo.CalculaDuracaoMinutos
 (
   @Hora_Inicio TIME,
   @Hora_Fim TIME
@@ -74,7 +78,7 @@ BEGIN
 END;
 GO
 
-CREATE FUNCTION dbo.fn_GetMetodosPagamentoDetalhes (@UserId INT)
+CREATE FUNCTION dbo.GetMetodosPagamentoDetalhes (@UserId INT)
 RETURNS TABLE
 AS
 RETURN
@@ -90,7 +94,7 @@ SELECT
 GO
 
 -- Cálculo da distância entre dois pontos geográficos (latitude e longitude)
-CREATE FUNCTION dbo.fn_CalculateDistance
+CREATE FUNCTION dbo.CalculateDistance
 (
     @lat1 FLOAT,
     @lon1 FLOAT,
@@ -116,7 +120,7 @@ BEGIN
 END;
 GO
 
-CREATE FUNCTION dbo.fn_TotalPagamento (@Hora_inicio DATETIME, @Hora_fim DATETIME, @Preco DECIMAL(10,2))
+CREATE FUNCTION dbo.TotalPagamento (@Hora_inicio DATETIME, @Hora_fim DATETIME, @Preco DECIMAL(10,2))
 RETURNS DECIMAL(10,2)
 AS
 BEGIN
@@ -127,7 +131,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER FUNCTION udf_GetMaxJogadores
+CREATE OR ALTER FUNCTION GetMaxJogadores
     (@ID_Campo INT)
 RETURNS INT
 AS
