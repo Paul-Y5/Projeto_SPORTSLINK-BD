@@ -8,30 +8,35 @@ CREATE OR ALTER PROCEDURE AuthenticateUtilizador
 AS
 BEGIN
   SET NOCOUNT ON;
+
   DECLARE @StoredPassword VARBINARY(512);
   DECLARE @DecryptedPassword VARCHAR(512);
 
-  -- Obter a palavra-passe encriptada do utilizador
   SELECT @StoredPassword = [Password]
   FROM Utilizador
   WHERE Email = @Email;
 
-  -- Verificar se o utilizador existe
   IF @StoredPassword IS NULL
   BEGIN
-    RETURN; -- Nenhum resultado, indicando falha de autenticação
+    SELECT CAST(0 AS BIT) AS Success;
+    RETURN;
   END;
 
-  -- Desencriptar a palavra-passe armazenada
   SET @DecryptedPassword = CONVERT(VARCHAR(512), DecryptByPassPhrase('SportsLink2025', @StoredPassword));
 
-  -- Comparar a palavra-passe fornecida com a desencriptada
   IF @DecryptedPassword = @Password
   BEGIN
-    SELECT * FROM Utilizador WHERE Email = @Email;
-  END;
+    SELECT *, CAST(1 AS BIT) AS Success
+    FROM Utilizador
+    WHERE Email = @Email;
+  END
+  ELSE
+  BEGIN
+    SELECT CAST(0 AS BIT) AS Success;
+  END
 END;
 GO
+
 
 -- Criar Jogador
 CREATE OR ALTER PROCEDURE CreateJogador
@@ -223,7 +228,7 @@ BEGIN
 END;
 GO
 
--- Obter informações do utilizador
+-- Obter informações do utilizador que fez login
 CREATE OR ALTER PROCEDURE GetUserInfo
   @UserID INT
 AS
@@ -467,6 +472,7 @@ BEGIN
 END;
 GO
 
+
 -- Editar um campo
 CREATE OR ALTER PROCEDURE EditCampo
   @ID_Campo INT,
@@ -540,6 +546,31 @@ BEGIN
 END;
 GO
 
+-- CampoPrivado
+CREATE OR ALTER PROCEDURE GetCampoByID
+  @ID_Campo INT
+AS
+BEGIN
+SELECT c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude, c.Descricao, U.ID as ID_Arrendador,
+  dp.Preco, dp.Hora_abertura, dp.Hora_fecho, STRING_AGG(di.Nome, ', ') AS Dias_Disponiveis, i.[URL], STRING_AGG(desp.Nome, ',') as Desportos, cpub.Entidade_publica_resp
+  FROM Campo as c
+  LEFT JOIN Campo_Priv as cp on c.ID = cp.ID_Campo
+  JOIN Ponto as p on p.ID = c.ID_Ponto
+  LEFT JOIN Utilizador as U on U.ID = cp.ID_Arrendador
+  LEFT JOIN Campo_Pub as cpub on cpub.ID_Campo=c.ID
+  LEFT JOIN Disponibilidade as dp on dp.ID_Campo = cp.ID_Campo
+  LEFT JOIN IMG_Campo as IMG on IMG.ID_Campo = c.ID
+  JOIN Imagem as i on i.ID = IMG.ID_img
+  LEFT JOIN Dias_semana as di on di.ID = dp.ID_dia
+  LEFT JOIN Desporto_Campo as dc on dc.ID_Campo=c.ID
+  LEFT JOIN  Desporto as desp on desp.ID=dc.ID_Desporto
+  group by c.ID, c.Nome, c.Comprimento, c.Largura, c.Endereco, p.Latitude, p.Longitude,
+  c.Descricao, dp.Preco, dp.Hora_abertura, dp.Hora_fecho, i.[URL], U.ID, cpub.Entidade_publica_resp
+  HAVING c.ID = @ID_Campo;
+END;
+GO
+
+
 -- Associar desporto ao campo
 CREATE OR ALTER PROCEDURE AssociarDesportoCampo
   @ID_Campo INT,
@@ -602,8 +633,8 @@ BEGIN
         CASE 
             WHEN @Pesquisa IS NOT NULL THEN 
                 ' AND (vw.Nome LIKE ''%'' + @Pesquisa + ''%'' OR vw.Endereco LIKE ''%'' + @Pesquisa + ''%'' 
-                       OR vw.Dias_Disponiveis LIKE ''%'' + @Pesquisa + ''%'' OR vw.Desportos LIKE ''%'' + @Pesquisa + ''%'',
-                       OR vw.NOME_ARRENDADOR LIKE ''%'' + @Pesquisa + ''%'')'
+                       OR vw.Dias_Disponiveis LIKE ''%'' + @Pesquisa + ''%'' OR vw.Desportos LIKE ''%'' + @Pesquisa + ''%''
+                       OR vw.NOME_ARRENDADOR LIKE ''%'' + @Pesquisa + ''%'' )'
             ELSE '' 
         END +
         -- Excluir campos privados do próprio arrendador
@@ -616,7 +647,8 @@ BEGIN
             CASE WHEN @OrderDir = 'DESC' THEN 'DESC' ELSE 'ASC' END + ';';
 
     -- Executa a SQL montada dinamicamente com os parâmetros
-    EXEC @SQL
+    EXEC sp_executesql 
+        @SQL,
         N'@ID_Campo INT, @ID_Arrendador INT, @Tipo VARCHAR(10), @Pesquisa NVARCHAR(100), @OrderBy NVARCHAR(50), @OrderDir VARCHAR(4), @UserLat FLOAT, @UserLon FLOAT',
         @ID_Campo, @ID_Arrendador, @Tipo, @Pesquisa, @OrderBy, @OrderDir, @UserLat, @UserLon;
 END;
@@ -635,32 +667,32 @@ CREATE OR ALTER PROCEDURE createCampoPub
   @Descricao VARCHAR(2500),
   @Entidade_publica_resp VARCHAR(256),
   @URL VARCHAR(1000) = NULL,
-  @NewID INT OUTPUT
+  @NewID INT OUTPUT -- Adiciona isso
 AS
 BEGIN
   SET NOCOUNT ON;
 
-  DECLARE @ID_Campo INT;
-
   BEGIN TRY
     BEGIN TRANSACTION;
 
-    -- Cria o campo base (inclui imagem, se @URL fornecida)
+    DECLARE @ID_Campo INT;
+
+    -- Cria o campo base (inclui imagem, se @URL fornecido)
     EXEC CreateCampo
       @Nome = @Nome,
-      @Endereco = @Nome,
+      @Endereco = @Endereco,
       @Comprimento = @Comprimento,
       @Largura = @Largura,
       @Ocupado = @Ocupado,
       @Descricao = @Descricao,
-      @Latitude = @Longitude,
+      @Latitude = @Latitude,
       @Longitude = @Longitude,
-      @ID_Mapa = ID_Mapa,
+      @ID_Mapa = @ID_Mapa,
       @URL = @URL,
       @ID_Campo = @ID_Campo OUTPUT;
 
     -- Insere na tabela de campos públicos
-    INSERT INTO Campo_Pub (ID_Campo, Entidade_Publica_resp)
+    INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp)
     VALUES (@ID_Campo, @Entidade_publica_resp);
 
     -- Retorna ID final
@@ -668,6 +700,7 @@ BEGIN
 
     COMMIT TRANSACTION;
   END TRY
+
   BEGIN CATCH
     ROLLBACK TRANSACTION;
 
@@ -943,37 +976,36 @@ CREATE OR ALTER PROCEDURE GetPartidas
     @Distancia DECIMAL(10, 2) = NULL,
     @Latitude DECIMAL(9, 6) = NULL,
     @Longitude DECIMAL(9, 6) = NULL,
-    @OrderBy NVARCHAR(50) = 'Distancia',
-    @OrderDir NVARCHAR(4) = 'ASC'
+    @OrderBy NVARCHAR(50) = 'Distancia', -- Coluna padrão para ordenação
+    @OrderDirection NVARCHAR(4) = 'ASC' -- Direção padrão
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @SQL NVARCHAR(MAX);
-
-    SET @SQL = '
     WITH PartidasComDistancia AS (
         SELECT *,
                dbo.CalculateDistance(@Latitude, @Longitude, Latitude, Longitude) AS DistanciaCalculada
         FROM vw_PartidaDetalhes
-        WHERE (Estado = ''A decorrer'' OR Estado = ''Aguardando'')
-        AND (@NomeCampo IS NULL OR Nome_Campo LIKE ''%'' + @NomeCampo + ''%'')
+        WHERE (Estado = 'Andamento' OR Estado = 'Aguardando')
+        AND (@NomeCampo IS NULL OR Nome_Campo LIKE '%' + @NomeCampo + '%')
         AND (@Distancia IS NULL OR dbo.CalculateDistance(@Latitude, @Longitude, Latitude, Longitude) <= @Distancia)
     )
     SELECT *
     FROM PartidasComDistancia
-    ORDER BY ' +
+    ORDER BY 
         CASE 
-            WHEN @OrderBy = 'DataHora' THEN 'Data_Hora'
-            WHEN @OrderBy = 'NumJogadores' THEN 'no_jogadores'
-            WHEN @OrderBy = 'Distancia' THEN 'DistanciaCalculada'
-            ELSE 'Data_Hora'
-        END + ' ' + 
-        CASE WHEN @OrderDir = 'DESC' THEN 'DESC' ELSE 'ASC' END + ';';
-
-    EXEC @SQL
-        N'@NomeCampo NVARCHAR(100), @Distancia DECIMAL(10, 2), @Latitude DECIMAL(9, 6), @Longitude DECIMAL(9, 6)',
-        @NomeCampo, @Distancia, @Latitude, @Longitude;
+            WHEN @OrderBy = 'DataHora' AND @OrderDirection = 'ASC' THEN Data_Hora 
+            WHEN @OrderBy = 'DataHora' AND @OrderDirection = 'DESC' THEN Data_Hora 
+            WHEN @OrderBy = 'NumJogadores' AND @OrderDirection = 'ASC' THEN no_jogadores 
+            WHEN @OrderBy = 'NumJogadores' AND @OrderDirection = 'DESC' THEN no_jogadores 
+            WHEN @OrderBy = 'Distancia' AND @OrderDirection = 'ASC' THEN DistanciaCalculada 
+            WHEN @OrderBy = 'Distancia' AND @OrderDirection = 'DESC' THEN DistanciaCalculada 
+        END ASC,
+        CASE 
+            WHEN @OrderBy = 'DataHora' AND @OrderDirection = 'DESC' THEN Data_Hora 
+            WHEN @OrderBy = 'NumJogadores' AND @OrderDirection = 'DESC' THEN no_jogadores 
+            WHEN @OrderBy = 'Distancia' AND @OrderDirection = 'DESC' THEN DistanciaCalculada 
+    END DESC;
 END;
 GO
 
@@ -985,11 +1017,11 @@ CREATE OR ALTER PROCEDURE CreateReserva
     @Hora_Inicio TIME,
     @Hora_Fim TIME,
     @Estado VARCHAR(50),
-    @Descrição VARCHAR(2500) = NULL
+    @Descricao VARCHAR(2500) = NULL
 AS
 BEGIN
     INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Estado, Descricao)
-    VALUES (@ID_Campo, @ID_Jogador, @Data, @Hora_Inicio, @Hora_Fim, @Estado, @Descrição);
+    VALUES (@ID_Campo, @ID_Jogador, @Data, @Hora_Inicio, @Hora_Fim, @Estado, @Descricao);
 END;
 GO
 
@@ -1015,7 +1047,7 @@ CREATE OR ALTER PROCEDURE GetReservasByUser
   @ID_Utilizador INT
 AS
 BEGIN
-  SELECT * FROM vw_ReservasDetalhadas WHERE ID = @ID_Utilizador;
+  SELECT * FROM vw_ReservasDetalhadas WHERE ID_Utilizador = @ID_Utilizador;
 END;
 GO
 
@@ -1024,7 +1056,7 @@ CREATE OR ALTER PROCEDURE GetReservasByCampo
   @ID_Campo INT
 AS
 BEGIN
-  SELECT * FROM Reserva WHERE ID_Campo = @ID_Campo;
+  SELECT * FROM vw_ReservasDetalhadas WHERE ID_Campo = 1;
 END;
 GO
 
@@ -1052,6 +1084,26 @@ BEGIN
 END;
 GO
 
+-- Partida
+CREATE OR ALTER PROCEDURE ObterPartida
+    @ID_Partida INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Verificar se a partida existe
+    IF NOT EXISTS (SELECT 1 FROM Partida WHERE ID = @ID_Partida)
+    BEGIN
+        RAISERROR('Partida não encontrada (ID: %d).', 16, 1, @ID_Partida);
+        RETURN;
+    END;
+
+    -- Selecionar detalhes da partida
+    SELECT * FROM vw_PartidaDetalhes v
+    WHERE v.ID_Partida = @ID_Partida;
+END;
+GO
+
 -- Eliminar uma reserva
 CREATE OR ALTER PROCEDURE DeleteReserva
   @ID INT
@@ -1061,16 +1113,15 @@ BEGIN
 END;
 GO
 
--- Criar métodos de pagamento
+-- Criar Metodos Pagamento
 CREATE OR ALTER PROCEDURE createMetodosPagamento
   @ID_Utilizador INT,
-  @Metodos NVARCHAR(MAX) -- JSON: ['{"Metodo":"pay_pal","id":"email"},{"Metodo":"mbway","detalhes":"91234"}]'
+  @Metodos NVARCHAR(MAX)
 AS
 BEGIN
   SET NOCOUNT ON;
 
   BEGIN TRY
-    -- Inscreve vários métodos usando OPENJSON
     INSERT INTO Met_Paga_Arrendador (ID_Arrendador, Met_pagamento, Detalhes)
     SELECT
       @ID_Utilizador,
@@ -1078,22 +1129,22 @@ BEGIN
       Detalhes
     FROM OPENJSON (@Metodos)
     WITH (
-      Metodo VARCHAR(50),
+      Metodo NVARCHAR(50),
       Detalhes NVARCHAR(500)
     );
   END TRY
   BEGIN CATCH
-    -- Apenas relança o erro para ser tratado na camada pai
     THROW;
   END CATCH
 END;
 GO
 
+
 -- Criar um arrendador
 CREATE OR ALTER PROCEDURE CreateArrendador
   @ID_Utilizador INT,
   @IBAN VARCHAR(50),
-  @MetodosPagamento NVARCHAR(50), -- JSON string
+  @MetodosPagamento NVARCHAR(MAX), -- JSON string
   @No_Campos INT = 0
 AS
 BEGIN

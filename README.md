@@ -11,8 +11,8 @@
 - Procedures
 - Triggers
 
-### Para executar: python app.py (dentro da pasta src)
-### Ou correr na BD que se encotra no IETTA
+### Para executar: python app.py (dentro da pasta src) (Alterar conf.ini)
+### Ou correr na BD que se encotra no IETTA ()
 
 ---
 # 🏅 Aplicação de Agendamento de Partidas e Arrendamento de Campos Esportivos  

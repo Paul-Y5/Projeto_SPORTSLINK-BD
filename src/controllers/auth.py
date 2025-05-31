@@ -38,7 +38,7 @@ def registration():
 
     with create_connection() as conn:
         cursor = conn.cursor()
-        existe = cursor.execute("SELECT dbo.fn_UtilizadorExists(?)", (email,)).fetchone()
+        existe = cursor.execute("SELECT dbo.UtilizadorExists(?)", (email,)).fetchone()
 
         # Verifica se o email já existe na base de dados
         try:
@@ -68,20 +68,25 @@ def log():
         return redirect(url_for("admin.admin_dashboard")) """
 
     with create_connection() as conn:
-        # Verifica se o utilizador existe
         cursor = conn.cursor()
-        cursor.execute("EXEC AuthenticateUtilizador ?, ?", email, password)
-        user = cursor.fetchone()
+        try:
+            cursor.execute("EXEC AuthenticateUtilizador ?, ?", email, password)
+            columns = [column[0] for column in cursor.description]  # Pega os nomes das colunas
+            row = cursor.fetchone()
+            user = dict(zip(columns, row)) if row else None
+        except pyodbc.ProgrammingError as e:
+            user = None  # Nenhum resultado retornado
 
-    if user:
-        session["user_id"] = user[0]
-        session["username"] = user[1]
+    if user and user.get("Success") == 1:
+        session["user_id"] = user["ID"]  # Ajusta para o nome da tua coluna de ID
+        session["username"] = user["Nome"]  # Ajusta conforme necessário
 
-        tipo_utilizador = "Arrendador" if is_arrendador(user[0]) else "Jogador"
+        tipo_utilizador = "Arrendador" if is_arrendador(user["ID"]) else "Jogador"
         session["tipo_utilizador"] = tipo_utilizador
+        print(f"Tipo de utilizador: {tipo_utilizador}")
 
         flash(f"Login realizado com sucesso! Tipo de utilizador: {tipo_utilizador}", "success")
-        return redirect(url_for("dashboard.jog_dashboard", name=user[1]))
+        return redirect(url_for("dashboard.jog_dashboard", name=user["Nome"]))
     else:
         flash("Email ou password incorretos.", "danger")
         return render_template("index.html")

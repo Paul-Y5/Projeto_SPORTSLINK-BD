@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
+from flask import Blueprint, abort, jsonify, request, session, redirect, url_for, flash, render_template
 from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, get_campos, getReservasByCampo
 from controllers.partidas import create_partida, entrar_Partida, get_Partida, get_Partidas_Abertas, sair_Partida
 from controllers.user import add_friend, agendar_reserva, cancelar_reserva, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
@@ -109,6 +109,7 @@ def campo_detail(ID):
     if campo["ID_Arrendador"] == session["user_id"]:
         if request.method == "POST":
             editar_campo(ID)
+            campo, disponibilidade = get_campo_by_id(ID)
         #print("Campo é do arrendador")
         template = 'campo_details.html'
     else:
@@ -164,10 +165,11 @@ def list_partidas():
         distancia = request.form.get('distancia', type=float) if request.form.get('distancia') else None
         latitude = request.form.get('user_lat', type=float) if request.form.get('user_lat') else None
         longitude = request.form.get('user_lon', type=float) if request.form.get('user_lon') else None
-        order_by = request.form.get('order_by', 'DataHora')
+        order_by = request.form.get('order_by', 'Distancia')
         order_direction = request.form.get('order_direction', 'ASC')
 
         partidas = get_Partidas_Abertas(nome_campo, distancia, latitude, longitude, order_by, order_direction)
+        print(f"Partidas encontradas: {partidas}")
         if not partidas:
             flash("Nenhuma partida encontrada.", "info")
             return render_template("list_partidas.html", partidas=[])
@@ -193,14 +195,23 @@ def start_new_partida(campo_id):
 def get_partida(partida_id):
     try:
         if request.method == "POST":
-            sair_Partida(partida_id)
-            # Seria também possivel escrever no chat (Não implmementamos o chat, achamos pouco relevante) com um action= "write_chat"
-        partida = get_Partida(partida_id)
-        if not partida:
-            flash("Partida não encontrada.", "warning")
-            return redirect(url_for("dashboard.list_partidas"))
-        return render_template("partida_detail.html", partida=partida)
+            sair_Partida(partida_id)  # Handle POST for leaving a match
+            return redirect(url_for("dashboard.get_partida", partida_id=partida_id))
+
+        # Check if the client expects JSON (based on Accept header or query param)
+        if request.headers.get('Accept') == 'application/json':
+            partida = get_Partida(partida_id)  # New function for JSON response
+            if not partida:
+                return jsonify({"error": "Partida não encontrada"}), 404
+            return jsonify(partida)
+        else:
+            partida = get_Partida(partida_id)
+            if not partida:
+                flash("Partida não encontrada.", "warning")
+                return redirect(url_for("dashboard.list_partidas"))
+            return render_template("partida_details.html", partida=partida)
     except Exception as e:
+        print(f"Erro ao carregar partida: {e}")
         flash(f"Erro ao carregar partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.list_partidas"))
     

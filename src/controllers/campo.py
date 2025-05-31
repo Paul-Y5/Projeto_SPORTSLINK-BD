@@ -15,6 +15,7 @@ def adicionar_campo_publico():
         endereco = request.form['endereco']
         latitude = float(request.form['latitude'])
         longitude = float(request.form['longitude'])
+        print(f"Latitude: {latitude}, Longitude: {longitude}")
         entidade_publica_resp = request.form['entidade_publica_resp']
         ocupado = 0  # Campo inicia como disponível
         desportos_selecionados = request.form.getlist('desportos[]')
@@ -185,13 +186,11 @@ def editar_campo(ID):
                 """
                 cursor.execute(query_delete, (ID, *ids_selecionados))
 
-            conn.commit()
-            flash('Campo editado com sucesso!', 'success')
-            
-            return redirect(url_for('dashboard.campo_detail', ID=ID))
+            conn.commit()         
+            flash("Campo editado com sucesso!", "success")
 
     except Exception as e:
-        flash(f'Ocorreu um erro ao editar o campo: {e}', 'danger')
+        print(f"Erro ao editar campo: {e}")
 
     return redirect(url_for('dashboard.campo_detail', ID=ID))
 
@@ -212,10 +211,10 @@ def excluir_campo():
             conn.commit()
 
         flash("Campo excluído com sucesso!", "success")
+        return redirect(url_for('dashboard.arr_campos_list'))
     except Exception as e:
         flash(f"Erro ao excluir campo: {str(e)}", "danger")
-
-    return redirect(url_for("dashboard.arr_campos_list"))
+        return redirect(url_for('dashboard.arr_campos_list'))
 
 
 def adicionar_campo_privado():
@@ -384,6 +383,7 @@ def getReservasByCampo(campo_id):
         # Formata as reservas em uma lista de dicionários
         reservas = []
         for row in reservas_rows:
+            print(f"Processando reserva: {row}")
             hora_inicio_str = row[7].split('.')[0] + '.000000'
             hora_fim_str = row[8].split('.')[0] + '.000000'
             hora_inicio = datetime.strptime(hora_inicio_str, '%H:%M:%S.%f')
@@ -392,10 +392,12 @@ def getReservasByCampo(campo_id):
 
             reservas.append({
                 "ID": row[0],
-                "Nome": row[5],
+                "Nome_Campo": row[3],
+                "Nome_Arrendador": row[5],
                 "Data": row[6],
                 "Hora_Inicio": hora_inicio,
                 "Duracao": duracao,
+                "Estado": row[10],
                 "TotalPago": float(row[9]) if row[9] else None,
                 "Descricao": row[11]
             })
@@ -417,7 +419,7 @@ def get_campos(tipo):
     user_lat = request.args.get("user_lat", type=float)
     user_lon = request.args.get("user_lon", type=float)
 
-    print(f"Obtendo campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}")
+    print(f"A obter campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}")
 
     if order_dir not in ("ASC", "DESC"):
         order_dir = "ASC"

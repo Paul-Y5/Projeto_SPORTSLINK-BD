@@ -320,6 +320,7 @@ def get_reservas(user_id):
             cursor = conn.cursor()
             cursor.execute("EXEC GetReservasByUser ?", (user_id,))
             reservas = cursor.fetchall()
+            print(f"Reservas obtidas: {reservas}")
         return reservas
     except Exception as e:
         flash(f"Erro ao obter reservas: {str(e)}", "danger")
@@ -341,7 +342,7 @@ def is_arrendador(user_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT dbo.fn_IsArrendador(?)", user_id)
+            cursor.execute("SELECT dbo.IsArrendador(?)", user_id)
             is_arrendador = cursor.fetchone()[0]
             return bool(is_arrendador)
     except Exception as e:

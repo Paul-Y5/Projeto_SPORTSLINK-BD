@@ -26,12 +26,12 @@
             </div>
             <div class="col-md-2">
                 <select class="form-control" name="order_by">
+                    <option value="Distancia" {% if request.form.get('order_by', 'Distancia' )=='Distancia' %}selected{%
+                        endif %}>Distância</option>
                     <option value="DataHora" {% if request.form.get('order_by', 'DataHora' )=='DataHora' %}selected{%
                         endif %}>Data</option>
-                    <option value="NumJogadores" {% if request.form.get('order_by', 'DataHora' )=='NumJogadores'
+                    <option value="NumJogadores" {% if request.form.get('order_by', 'NumJogadores' )=='NumJogadores'
                         %}selected{% endif %}>Nº Jogadores</option>
-                    <option value="Distancia" {% if request.form.get('order_by', 'DataHora' )=='Distancia' %}selected{%
-                        endif %}>Distância</option>
                 </select>
             </div>
             <div class="col-md-2">

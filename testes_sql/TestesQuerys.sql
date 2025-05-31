@@ -282,3 +282,12 @@ GROUP BY
     c.ID, i.URL, c.Nome, c.Largura, c.Comprimento, c.Endereco, 
     p.Latitude, p.Longitude, dias.Dias_Disponiveis, desportos.Desportos, 
     c.Ocupado, cp.ID_Campo, part_agg.Partidas_Ativas;
+
+-- Listar stored procedures
+SELECT name, create_date, modify_date
+FROM sys.procedures;
+
+
+SELECT * from Partida
+EXEC GetPartidas
+SELECT * FROM vw_PartidaDetalhes

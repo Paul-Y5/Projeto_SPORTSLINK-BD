@@ -113,6 +113,36 @@
                 </div>
                 {% endfor %}
             </div>
+            <div class="card-footer bg-light">
+                <h4 class="fw-semibold mb-3">Reservas</h4>
+            
+                {% if reservas %}
+                <ul class="list-group">
+                    {% for reserva in reservas %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ reserva.Nome_Campo }}</div>
+                            <small>
+                                Arrendador: {{ reserva.Nome_Arrendador }}<br>
+                                Data: {{ reserva.Data }}<br>
+                                Início: {{ reserva.Hora_Inicio }}<br>
+                                Duração: {{ reserva.Duracao }} min<br>
+                                Estado: {{ reserva.Estado }}<br>
+                                {% if reserva.TotalPago %}
+                                Pago: {{ reserva.TotalPago }}€
+                                {% endif %}
+                            </small>
+                            {% if reserva.Descricao %}
+                            <p class="mt-1 mb-0"><em>{{ reserva.Descricao }}</em></p>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Sem Reservas.</p>
+                {% endif %}
+            </div>            
         </div>
         {% else %}
         <!-- Detalhes do Campo Público -->

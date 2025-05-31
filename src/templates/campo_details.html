@@ -24,7 +24,7 @@
             <div class="text-end">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar</button>
                 <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalReservas">Reservas</button>
-                <a href="#" class="btn btn-secondary" onclick="window.history.back(); return false;">Voltar</a>
+                <a href="{{ url_for('dashboard.arr_campos_list') }}" class="btn btn-secondary">Voltar</a>
             </div>
         </div>
 

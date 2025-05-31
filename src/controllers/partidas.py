@@ -44,58 +44,50 @@ def create_partida(campo_id):
 def get_Partida(id_partida):
     user_id = session.get("user_id")
     if not user_id:
-        return redirect(url_for("auth.login"))
-    
+        return None  # Let the caller handle the redirect or error
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC ObterPartida ?", (id_partida,))
             partida = cursor.fetchone()
         
-        if partida:
-            flash("Partida encontrada com sucesso!", "success")
-            jogadores_ids = partida[15].split(",") if partida[15] else []
-            partida[15] = [int(id) for id in jogadores_ids if id.isdigit()]
-            jogadores = []
-            for id_jogador in partida[15]:
-                cursor.execute("EXEC GetUserInfo ?", (id_jogador,))
-                jogador = cursor.fetchone()
-                if jogador:
-                    jogadores.append({
-                        "ID": jogador[0],
-                        "Nome": jogador[1],
-                        "Nacionalidade": jogador[4]
-                    })
-            partida[15] = jogadores
-            partida = {
-                "ID": partida[0],
-                "CampoID": partida[1],
-                "Campo": partida[2],
-                "Comprimento": partida[3],
-                "Largura": partida[4],
-                "Latitude": partida[5],
-                "Longitude": partida[6],
-                "CampoLocalizacao": partida[7],
-                "CampoDescricao": partida[8],
-                "DataHora": partida[9],
-                "Duracao": partida[10],
-                "Resultado": partida[11],
-                "Estado": partida[12],
-                "NoJogadors": partida[13],
-                "CampoImagemURL": partida[14],
-                "Jogadores": partida[15],
-                "MaxJogadores": partida[16],
-            }
-            return render_template(
-                "partida_detail.html",
-                partida=partida
-            )
-        else:
-            flash("Partida não encontrada.", "warning")
-            return redirect(url_for("dashboard.jog_dashboard"))  
+        if not partida:
+            return None
+
+        jogadores_ids = partida[15].split(",") if partida[15] else []
+        jogadores = []
+        for id_jogador in [int(id) for id in jogadores_ids if id.isdigit()]:
+            cursor.execute("EXEC GetUserInfo ?", (id_jogador,))
+            jogador = cursor.fetchone()
+            if jogador:
+                jogadores.append({
+                    "ID": jogador[0],
+                    "Nome": jogador[1],
+                    "Nacionalidade": jogador[4]
+                })
+
+        return {
+            "ID": partida[0],
+            "CampoID": partida[1],
+            "Campo": partida[2],
+            "Comprimento": float(partida[3]),  # Convert Decimal to float
+            "Largura": float(partida[4]),  # Convert Decimal to float
+            "Latitude": float(partida[5]),  # Convert Decimal to float
+            "Longitude": float(partida[6]),  # Convert Decimal to float
+            "CampoLocalizacao": partida[7],
+            "CampoDescricao": partida[8],
+            "DataHora": partida[9].isoformat(),  # Convert datetime to string
+            "Duracao": partida[10],
+            "Resultado": partida[11],
+            "Estado": partida[12],
+            "NoJogadores": partida[13],
+            "CampoImagemURL": partida[14],
+            "Jogadores": jogadores,
+            "MaxJogadores": partida[16],
+        }
     except Exception as e:
-        flash(f"Erro ao obter partida: {str(e)}", "danger")
-        return redirect(url_for("dashboard.jog_dashboard"))
+        print(f"Erro ao obter partida: {str(e)}")
+        return None
 
 
 # Com Filtros de Nome e ordenação por DataHora, Distancia, ou Número de Jogadores
@@ -147,18 +139,18 @@ def entrar_Partida(id_partida):
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("auth.login"))
-    
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC AddJogadorToPartida ?, ?", (id_partida, user_id))
+            cursor.execute("EXEC addJogadorToPartida ?, ?", (id_partida, user_id))
             result = cursor.fetchone()
+            print(f"Result from addJogadorToPartida: {result[0] if result else 0}")
             if result and result[0] == 1:
                 flash("Entrou na partida com sucesso!", "success")
-                return redirect(url_for("dashboard.partida_detail", ID=id_partida))
+                return redirect(url_for("dashboard.get_partida", partida_id=id_partida))
             else:
-                flash("Erro ao entrar na partida.", "danger")
-            return redirect(url_for("dashboard.list_partidas"))
+                flash("Erro ao entrar na partida: Jogador já inscrito ou outro problema.", "danger")
+                return redirect(url_for("dashboard.list_partidas"))
     except Exception as e:
         flash(f"Erro ao entrar na partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
@@ -171,11 +163,11 @@ def sair_Partida(id_partida):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC RemoveJogadorFromPartida ?, ?", (id_partida, user_id))
+            cursor.execute("EXEC removeJogadorFromPartida ?, ?", (id_partida, user_id))
             result = cursor.fetchone()
             if result and result[0] == 1:
                 flash("Saiu da partida com sucesso!", "success")
-                return redirect(url_for("dashboard.partida_detail", ID=id_partida))
+                return redirect(url_for("dashboard.partida_details", ID=id_partida))
             else:
                 flash("Erro ao sair da partida.", "danger")
             return redirect(url_for("dashboard.list_partidas"))
