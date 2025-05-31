@@ -130,3 +130,62 @@ BEGIN
   JOIN deleted d ON p.ID = d.ID_Partida;
 END;
 GO
+
+
+-- Calculo Imediato de Total_Pagamento
+CREATE TRIGGER tr_CalcularTotalPagamento
+ON Reserva
+AFTER INSERT
+AS
+BEGIN
+    -- Declaração das variáveis necessárias
+    DECLARE @ID INT;
+    DECLARE @ID_Campo INT;
+    DECLARE @Data DATE;
+    DECLARE @Hora_Inicio TIME;
+    DECLARE @Hora_Fim TIME;
+    DECLARE @Preco DECIMAL(10,2);
+    DECLARE @Total DECIMAL(10,2);
+    DECLARE @Inicio DATETIME;
+    DECLARE @Fim DATETIME;
+    DECLARE @Dia_Semana INT;
+
+    -- Obter os valores da linha inserida
+    SELECT 
+        @ID = ID,
+        @ID_Campo = ID_Campo,
+        @Data = [Data],
+        @Hora_Inicio = Hora_Inicio,
+        @Hora_Fim = Hora_Fim
+    FROM inserted;
+
+    -- Determinar o dia da semana (1=Domingo, 2=Segunda, ..., 7=Sábado)
+    SET @Dia_Semana = DATEPART(WEEKDAY, @Data);
+
+    -- Procurar o preço do campo para esse dia da semana
+    SELECT @Preco = Preco
+    FROM Disponibilidade
+    WHERE ID_Campo = @ID_Campo 
+    AND ID_dia = @Dia_Semana;
+
+    -- Verificar se o preço foi encontrado (campo disponível no dia)
+    IF @Preco IS NULL
+    BEGIN
+        RAISERROR('Campo não disponível neste dia', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END;
+
+    -- Criar valores DATETIME combinando Data com Hora_Inicio e Hora_Fim
+    SET @Inicio = CAST(@Data AS DATETIME) + CAST(@Hora_Inicio AS DATETIME);
+    SET @Fim = CAST(@Data AS DATETIME) + CAST(@Hora_Fim AS DATETIME);
+
+    -- Calcular o total a pagar usando a UDF
+    SET @Total = dbo.fn_TotalPagamento(@Inicio, @Fim, @Preco);
+
+    -- Atualizar o campo Total_Pagamento na reserva
+    UPDATE Reserva
+    SET Total_Pagamento = @Total
+    WHERE ID = @ID;
+END;
+GO

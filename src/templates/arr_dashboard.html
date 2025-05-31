@@ -273,7 +273,7 @@
 
 <!-- Modal Adicionar Campo Público -->
 <div class="modal fade" id="addPublicFieldModal" tabindex="-1" aria-labelledby="addPublicFieldModalLabel"
-    aria-hidden="true">
+    aria-hidden="true" id="addPublicFieldModal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('dashboard.jog_dashboard') }}" name="add_field"
@@ -317,7 +317,7 @@
                                                 name="largura" required>
                                         </div>
                                     </div>
-                                    <div class="mb-3">
+                                    <div class="mb-3" aria-required="true">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="desportos[]" value="Basquetebol" id="basquetebol">
                                             <label class="form-check-label" for="basquetebol">Basquetebol</label>

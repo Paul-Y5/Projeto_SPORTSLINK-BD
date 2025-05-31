@@ -33,42 +33,34 @@
             <div class="card-body">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
-                        <strong>Campo:</strong> {{ partida.ID_Campo }} (Nome do campo a ser preenchido dinamicamente)
+                        <strong>Campo:</strong> {{ partida.CampoNome or 'Não especificado' }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Data e Hora:</strong> {{ partida.Data_Hora.strftime('%Y-%m-%d %H:%M') }}
+                        <strong>Endereço:</strong> {{ partida.CampoLocalizacao or 'Não especificado' }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Duração:</strong> {{ partida.Duracao }} minutos
+                        <strong>Data e Hora:</strong> {{ partida.DataHora.strftime('%Y-%m-%d %H:%M') if partida.DataHora
+                        else 'Não especificado' }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Desporto:</strong> {{ partida.Desporto or 'Não especificado' }}
+                        <strong>Duração:</strong> {{ partida.Duracao or '0' }} minutos
                     </li>
                     <li class="list-group-item">
-                        <strong>Máximo de Jogadores:</strong> {{ partida.Max_Jogadores }}
+                        <strong>Jogadores Atuais:</strong> {{ partida.Jogadores|length }} / {{ partida.MaxJogadores or
+                        10 }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Jogadores Atuais:</strong> {{ partida.no_jogadores }} / {{ partida.Max_Jogadores }}
+                        <strong>Descrição:</strong> {{ partida.CampoDescricao or 'Sem descrição' }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Estado:</strong> {{ partida.Estado }}
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Descrição:</strong> {{ partida.Descricao or 'Sem descrição' }}
+                        <strong>Imagem:</strong>
+                        {% if partida.CampoImagemURL %}
+                        <img src="{{ partida.CampoImagemURL }}" alt="Imagem do Campo" style="max-width: 200px;">
+                        {% else %}
+                        Não disponível
+                        {% endif %}
                     </li>
                 </ul>
-
-                <!-- Status Indicator -->
-                {% set current_time = '2025-05-30 03:40:00' | strftime('%Y-%m-%d %H:%M:%S') %}
-                {% set partida_time = partida.Data_Hora.strftime('%Y-%m-%d %H:%M:%S') %}
-                {% if partida_time <= current_time and (partida_time | strftime('%Y-%m-%d %H:%M:%S') + ' + ' +
-                    partida.Duracao | int // 60 | string + ' hours' ) | strftime('%Y-%m-%d %H:%M:%S')>= current_time %}
-                    <div class="alert alert-info mt-3">A partida está em andamento!</div>
-                    {% elif partida_time > current_time %}
-                    <div class="alert alert-secondary mt-3">A partida está agendada para o futuro.</div>
-                    {% else %}
-                    <div class="alert alert-success mt-3">A partida foi concluída.</div>
-                    {% endif %}
             </div>
         </div>
 
@@ -78,15 +70,13 @@
                 <h2 class="mb-0">Jogadores Inscritos</h2>
             </div>
             <div class="card-body">
-                {% if jogadores %}
+                {% if partida.Jogadores %}
                 <ul class="list-group">
-                    {% for jogador in jogadores %}
+                    {% for jogador in partida.Jogadores %}
                     <li class="list-group-item">
                         <strong>{{ jogador.Nome }}</strong> (ID: {{ jogador.ID }})
                         <br>
-                        <small>Email: {{ jogador.Email }}</small>
-                        <br>
-                        <small>Telefone: {{ jogador.Num_Telefone or 'Não fornecido' }}</small>
+                        <small>Nacionalidade: {{ jogador.Nacionalidade or 'Não fornecida' }}</small>
                     </li>
                     {% endfor %}
                 </ul>
@@ -98,13 +88,7 @@
 
         <!-- Actions -->
         <div class="text-end">
-            {% if partida.Estado == 'Aguardando' and partida.no_jogadores < partida.Max_Jogadores %} <form method="POST"
-                action="{{ url_for('dashboard.add_jogador', partida_id=partida.ID) }}">
-                <button type="submit" class="btn btn-primary">Adicionar Jogador</button>
-                </form>
-                {% endif %}
-                <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary mt-2">Voltar ao
-                    Dashboard</a>
+            <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary mt-2">Voltar ao Dashboard</a>
         </div>
     </div>
 

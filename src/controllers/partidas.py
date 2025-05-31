@@ -1,5 +1,5 @@
 from db import create_connection
-from flask import flash, redirect, session, url_for
+from flask import flash, redirect, render_template, session, url_for
     
 from flask import request, session, redirect, url_for, flash
 from datetime import datetime
@@ -53,10 +53,135 @@ def get_Partida(id_partida):
             partida = cursor.fetchone()
         
         if partida:
-            return partida
+            flash("Partida encontrada com sucesso!", "success")
+            jogadores_ids = partida[15].split(",") if partida[15] else []
+            partida[15] = [int(id) for id in jogadores_ids if id.isdigit()]
+            jogadores = []
+            for id_jogador in partida[15]:
+                cursor.execute("EXEC sp_GetUserInfo ?", (id_jogador,))
+                jogador = cursor.fetchone()
+                if jogador:
+                    jogadores.append({
+                        "ID": jogador[0],
+                        "Nome": jogador[1],
+                        "Nacionalidade": jogador[4]
+                    })
+            partida[15] = jogadores
+            partida = {
+                "ID": partida[0],
+                "CampoID": partida[1],
+                "DataHora": partida[2],
+                "Duracao": partida[3],
+                "Desporto": partida[4],
+                "CriadorID": partida[5],
+                "CampoNome": partida[6],
+                "CampoLocalizacao": partida[7],
+                "CampoTipo": partida[8],
+                "CampoPreco": partida[9],
+                "CampoCapacidade": partida[10],
+                "CampoDescricao": partida[11],
+                "CampoImagemURL": partida[12],
+                "CriadorNome": partida[13],
+                "CriadorNacionalidade": partida[14],
+                "Jogadores": partida[15],
+                "MaxJogadores": partida[16],
+            }
+            return render_template(
+                "partida_detail.html",
+                partida=partida
+            )
         else:
             flash("Partida não encontrada.", "warning")
             return redirect(url_for("dashboard.jog_dashboard"))  
     except Exception as e:
         flash(f"Erro ao obter partida: {str(e)}", "danger")
-        return redirect(url_for("dashboard.jog_dashboard"))  
+        return redirect(url_for("dashboard.jog_dashboard"))
+
+def get_Partidas_Abertas():
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_GetPartidas")
+            partidas = cursor.fetchall()
+            for partida in partidas:
+                ids_jogadores = partida[15].split(",") if partida[15] else []
+                partida[15] = [int(id) for id in ids_jogadores if id.isdigit()]
+
+                jogadores = []
+                for id_jogador in partida[15]:
+                    cursor.execute("EXEC sp_GetUserInfo ?", (id_jogador,))
+                    jogador = cursor.fetchone()
+                    if jogador:
+                        jogadores.append({
+                            "ID": jogador[0],
+                            "Nome": jogador[1],
+                            "Nacionalidade": jogador[4]
+                        })
+                partida[15] = jogadores
+
+                partida = {
+                    "ID": partida[0],
+                    "CampoID": partida[1],
+                    "DataHora": partida[2],
+                    "Duracao": partida[3],
+                    "Desporto": partida[4],
+                    "CriadorID": partida[5],
+                    "CampoNome": partida[6],
+                    "CampoLocalizacao": partida[7],
+                    "CampoTipo": partida[8],
+                    "CampoPreco": partida[9],
+                    "CampoCapacidade": partida[10],
+                    "CampoDescricao": partida[11],
+                    "CampoImagemURL": partida[12],
+                    "CriadorNome": partida[13],
+                    "CriadorNacionalidade": partida[14],
+                    "Jogadores": partida[15],
+                    "MaxJogadores": partida[16],
+                }
+            partidas = [dict(zip([column[0] for column in cursor.description], partida)) for partida in partidas]
+            print(partidas)
+        return partidas
+    except Exception as e:
+        flash(f"Erro ao carregar partidas abertas: {str(e)}", "danger")
+        return []
+    
+
+def entrar_Partida(id_partida):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
+    
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_AddJogadorToPartida ?, ?", (id_partida, user_id))
+            result = cursor.fetchone()
+            if result and result[0] == 1:
+                flash("Entrou na partida com sucesso!", "success")
+                return redirect(url_for("dashboard.partida_detail", ID=id_partida))
+            else:
+                flash("Erro ao entrar na partida.", "danger")
+            return redirect(url_for("dashboard.list_partidas"))
+    except Exception as e:
+        flash(f"Erro ao entrar na partida: {str(e)}", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
+    
+def sair_Partida(id_partida):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
+    
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC sp_RemoveJogadorFromPartida ?, ?", (id_partida, user_id))
+            result = cursor.fetchone()
+            if result and result[0] == 1:
+                flash("Saiu da partida com sucesso!", "success")
+                return redirect(url_for("dashboard.partida_detail", ID=id_partida))
+            else:
+                flash("Erro ao sair da partida.", "danger")
+            return redirect(url_for("dashboard.list_partidas"))
+    except Exception as e:
+        flash(f"Erro ao sair da partida: {str(e)}", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))

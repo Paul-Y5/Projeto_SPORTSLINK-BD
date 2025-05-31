@@ -9,7 +9,7 @@ CREATE TABLE Utilizador (
   Nome              VARCHAR(256) NOT NULL,
   Email             VARCHAR(512) UNIQUE,
   Num_Tele          VARCHAR(64)  UNIQUE,
-  [Password]        VARCHAR(512) NOT NULL,
+  [Password]        VARBINARY(512) NOT NULL,
   Nacionalidade     VARCHAR(128),
 
   PRIMARY KEY (ID)
@@ -150,7 +150,7 @@ CREATE TABLE Reserva (
 
   PRIMARY KEY (ID),
   CHECK (Hora_Inicio < Hora_Fim),
-  CHECK ([Data] >= GETDATE()),
+  -- CHECK ([Data] >= GETDATE()), comentado porque há registos de reservas passadas
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID) ON DELETE CASCADE,
   FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID) ON DELETE CASCADE
 );

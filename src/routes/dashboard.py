@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
 from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, get_campos, getReservasByCampo
-from controllers.partidas import create_partida, get_Partida
-from controllers.user import add_friend, cancelar_reserva, delete_user_account, get_InfoFriend, get_Partidas_Abertas, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
+from controllers.partidas import create_partida, entrar_Partida, get_Partida, get_Partidas_Abertas, sair_Partida
+from controllers.user import add_friend, agendar_reserva, cancelar_reserva, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
 from utils.decorator_login import login_required
 from utils.general import get_siglas_dias
 
@@ -28,8 +28,6 @@ def jog_dashboard():
             reserva_id = request.form.get("reserva_id")
             if reserva_id:
                 cancelar_reserva(reserva_id)
-            else:
-                print("Reserva ID não fornecido para cancelamento.")
     
     if action == "view_fields":
         return ver_campos()
@@ -69,8 +67,8 @@ def ver_campos():
         return redirect(url_for("dashboard.jog_dashboard"))
 
     campos = get_campos(tipo)
-    print(f"Campos obtidos: {campos}")
-    print(tipo)
+    """     print(f"Campos obtidos: {campos}")
+        print(tipo) """
     if campos is None:
         flash("Erro ao carregar os campos.", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
@@ -81,33 +79,39 @@ def ver_campos():
 @dashboard_bp.route("/info_field/<int:ID>", methods=["GET", "POST"])
 @login_required
 def campo_detail(ID):
-    if request.method == "POST":
-        editar_campo(ID)
-
+     # Obtém os dados do campo e sua disponibilidade
     campo, disponibilidade = get_campo_by_id(ID)
-    if not campo:
-        print("Campo não encontrado")
+    if campo is None:
+        flash("Campo não encontrado.", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
 
-    reservas = getReservasByCampo(ID)
+    # Se o campo é privado (tem arrendador), procura as reservas
+    reservas = getReservasByCampo(ID) if campo['ID_Arrendador'] else []
 
+    # Cria um dicionário de disponibilidade para acesso fácil no template
     disponibilidade_dict = {item['dia'].lower(): item for item in disponibilidade}
+
+    # Define as variáveis adicionais para o template
+    siglas_dias = get_siglas_dias().items()
+    dias_ativos = [d['dia'] for d in disponibilidade]
 
     if not campo:
         abort(404)
 
-    print(f"Campo encontrado: {campo}")
-
     if campo["ID_Arrendador"] == session["user_id"]:
+        if request.method == "POST":
+            editar_campo(ID)
         #print("Campo é do arrendador")
         template = 'campo_details.html'
     else:
+        if request.method == "POST":
+            action = request.form.get("action")
+            if action == "cancelar_reserva":
+                cancelar_reserva(request.form.get("reserva_id"))
+            elif action == "agendar_reserva":
+                return agendar_reserva(ID)
         #print("Campo não é do arrendador")
         template = 'campo_details2.html'
-
-
-    # Estas variáveis são locais e passadas ao template via render_template
-    siglas_dias = get_siglas_dias().items()
-    dias_ativos = [d['dia'] for d in disponibilidade]
 
     return render_template(
         template,
@@ -140,10 +144,13 @@ def list_friends():
     return add_friend()
 
 
-@dashboard_bp.route("/list_partidas", methods=["GET"])
+@dashboard_bp.route("/list_partidas", methods=["GET", "POST"])
 @login_required
 def list_partidas():
     try:
+        if request.method == "POST":
+            partida_id = request.form.get("partida_id")
+            entrar_Partida(partida_id)
         partidas = get_Partidas_Abertas()
         if not partidas:
             flash("Nenhuma partida encontrada.", "info")
@@ -153,6 +160,34 @@ def list_partidas():
         flash(f"Erro ao carregar partidas: {e}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
 
+# Rota para iniciar uma nova partida
+@dashboard_bp.route("/partida/<int:campo_id>/nova", methods=["POST"])
+@login_required
+def start_new_partida(campo_id):
+    try:
+        partida_id = create_partida(campo_id)
+        return redirect(url_for('dashboard.get_partida', partida_id=partida_id))
+    except Exception as e:
+        flash(f"Erro ao iniciar partida: {str(e)}", "danger")
+        return redirect(url_for("dashboard.jog_dashboard"))
+
+# Rota para visualizar uma partida existente
+@dashboard_bp.route("/partida/<int:partida_id>", methods=["GET", "POST"])
+@login_required
+def get_partida(partida_id):
+    try:
+        if request.method == "POST":
+            sair_Partida(partida_id)
+            # Seria também possivel escrever no chat (Não implmementamos o chat, achamos pouco relevante) com um action= "write_chat"
+        partida = get_Partida(partida_id)
+        if not partida:
+            flash("Partida não encontrada.", "warning")
+            return redirect(url_for("dashboard.list_partidas"))
+        return render_template("partida_detail.html", partida=partida)
+    except Exception as e:
+        flash(f"Erro ao carregar partida: {str(e)}", "danger")
+        return redirect(url_for("dashboard.list_partidas"))
+    
 
 @dashboard_bp.route("/historico/<int:ID>", methods=["GET"])
 @login_required
@@ -165,15 +200,3 @@ def historic_partidas(ID):
     except Exception as e:
         flash(f"Erro ao carregar o histórico de partidas{e}.", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
-    
-@dashboard_bp.route("/start_partida/<int:campo_id>", methods=["GET", "POST"])
-@login_required
-def start_partida(campo_id):
-    if request.method == "POST":
-        try:
-            partida_id = create_partida(campo_id)
-            flash("Partida iniciada com sucesso!", "success")
-            return render_template("partida_details.html", partida_id=partida_id)
-        except Exception as e:
-            flash(f"Erro ao iniciar partida: {str(e)}", "danger")
-            return redirect(url_for("dashboard.jog_dashboard"))

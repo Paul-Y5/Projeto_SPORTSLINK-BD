@@ -273,7 +273,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('dashboard.jog_dashboard') }}" name="add_field"
-                enctype="multipart/form-data">
+                enctype="multipart/form-data" id="addPublicFieldModal">
                 <input type="hidden" name="action" value="add_field">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addPublicFieldModalLabel">Adicionar Campo Público</h5>

@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 import os
 from flask import session, redirect, url_for, flash, request
@@ -323,18 +324,19 @@ def get_disponibilidade_por_campo(campo_id):
         return None
 
 
+# Função para obter os detalhes do campo por ID
 def get_campo_by_id(campo_id):
     with create_connection() as conn:
         cursor = conn.cursor()
 
-        # Executa a primeira stored procedure (dados principais do campo)
+        # Executa a stored procedure para obter os dados principais do campo
         cursor.execute("EXEC sp_GetCampoByID ?", (campo_id,))
         campo_infos = cursor.fetchall()
 
         if not campo_infos:
             return None, []
 
-        # Extrai dados do campo
+        # Extrai os dados do campo da primeira linha
         first_row = campo_infos[0]
         campo_dict = {
             "ID": first_row[0],
@@ -347,16 +349,14 @@ def get_campo_by_id(campo_id):
             "Descricao": first_row[7],
             "ID_Arrendador": first_row[8],
             "URL": first_row[13],
-            "Desportos": list(set([row[14] for row in campo_infos if row[14]]))  # remove duplicados
+            "Desportos": list(set([row[14] for row in campo_infos if row[14]]))  # Remove duplicados
         }
 
-        # Executa a segunda stored procedure (disponibilidade)
+        # Executa a stored procedure para obter a disponibilidade do campo
         cursor.execute("EXEC sp_GetDisponibilidadePorCampo ?", (campo_id,))
         disponibilidade_rows = cursor.fetchall()
 
-        """ for row in disponibilidade_rows:
-            print(f"Disponibilidade rows: {row}")
- """
+        # Formata a disponibilidade em uma lista de dicionários
         disponibilidade = [
             {
                 "dia": row[0],
@@ -367,39 +367,43 @@ def get_campo_by_id(campo_id):
             for row in disponibilidade_rows
         ]
 
-        if not disponibilidade:
-            disponibilidade = []
-
         return campo_dict, disponibilidade
 
 
-def getReservasByCampo(ID):
+# Função para obter as reservas de um campo privado
+def getReservasByCampo(campo_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetReservasByCampo ?", (ID,))
-            reservas = cursor.fetchall()
-        if reservas:
-            reservas = [
-                {
-                    "Nome": row[0],
-                    "Nacionalidade": row[1],
-                    "Num_Tele": row[2],
-                    "Data": row[3],
-                    "Hora_Inicio": row[4],
-                    "Descricao": row[5],
-                    "Duracao": row[7],
-                    "TotalPago": Decimal(float(row[6])) * Decimal(str(int(row[7].split(':')[0]) + int(row[7].split(':')[1]) / 60)),
-                }
-                for row in reservas
-            ]
-            print(f"Reservas: {reservas}")
+            cursor.execute("EXEC sp_GetReservasByCampo ?", (campo_id,))
+            reservas_rows = cursor.fetchall()
+
+        if not reservas_rows:
+            return []
+
+        # Formata as reservas em uma lista de dicionários
+        reservas = []
+        for row in reservas_rows:
+            hora_inicio_str = row[7].split('.')[0] + '.000000'
+            hora_fim_str = row[8].split('.')[0] + '.000000'
+            hora_inicio = datetime.strptime(hora_inicio_str, '%H:%M:%S.%f')
+            hora_fim = datetime.strptime(hora_fim_str, '%H:%M:%S.%f')
+            duracao = (hora_fim - hora_inicio).total_seconds() / 3600
+
+            reservas.append({
+                "ID": row[0],
+                "Nome": row[5],
+                "Data": row[6],
+                "Hora_Inicio": hora_inicio,
+                "Duracao": duracao,
+                "TotalPago": float(row[9]) if row[9] else None,
+                "Descricao": row[11]
+            })
+
         return reservas
     except Exception as e:
         print(f"Erro ao obter reservas: {e}")
-        return None
-
-from flask import request, session, redirect, url_for
+        return []
 
 def get_campos(tipo):
     user_id = session.get("user_id")

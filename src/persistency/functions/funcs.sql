@@ -125,3 +125,28 @@ BEGIN
 
     RETURN @Total;
 END;
+
+CREATE OR ALTER FUNCTION udf_GetMaxJogadores
+    (@ID_Campo INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @MaxJogadores INT;
+
+    SELECT @MaxJogadores = CASE 
+        WHEN d.Nome = 'Futebol' THEN 22
+        WHEN d.Nome = 'Basquetebol' THEN 10
+        WHEN d.Nome = 'Ténis' THEN 2
+        ELSE 10
+    END
+    FROM Desporto_Campo dc
+    LEFT JOIN Desporto d ON dc.ID_Desporto = d.ID
+    WHERE dc.ID_Campo = @ID_Campo;
+
+    -- Se não houver desporto associado, retorna o valor padrão
+    IF @MaxJogadores IS NULL
+        SET @MaxJogadores = 10;
+
+    RETURN @MaxJogadores;
+END;
+GO

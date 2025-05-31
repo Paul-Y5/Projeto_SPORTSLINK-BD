@@ -99,6 +99,28 @@
     </div>
 </div>
 
+<!-- Modal para escolha do tipo de partida -->
+<div class="modal fade" id="tipoPartidaModal" tabindex="-1" aria-labelledby="tipoPartidaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tipoPartidaModalLabel">Escolher Tipo de Partida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('dashboard.list_partidas') }}" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Encontrar Partida
+                    </a>
+                    <a href="{{ url_for('dashboard.jog_dashboard') }}?action=view_fields&tipo=Publico" class="btn btn-success">
+                        <i class="fas fa-play"></i> Começar Partida
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     var map;
     var markers = [];

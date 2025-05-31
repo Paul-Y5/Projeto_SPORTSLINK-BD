@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import flash, redirect, render_template, request, session, url_for
 from db import create_connection
 from utils.general import get_dias_semana, get_siglas_dias
@@ -284,6 +285,35 @@ def getHistoricPartidas(user_id):
         return []
     
 
+def agendar_reserva(campo_id):
+    """Cria uma reserva de campo para o jogador."""
+    id_jogador = session["user_id"]
+    if request.method == "POST":
+        try:
+            data = request.form.get("data")
+            hora_inicio = request.form.get("hora_inicio")
+            hora_fim = request.form.get("hora_fim")
+            estado = "Confirmada"  # Estado inicial da reserva deveria ser "Pendente" e depois alterado pelo arrendador, mas para simplificar, vamos deixar como "Confirmada"
+            descricao = request.form.get("descricao", None)
+
+            print(f"Dados da reserva: {data}, {hora_inicio}, {hora_fim}, {estado}, {descricao}")
+
+            # Estabelecer conexão com o banco de dados e executar o procedimento
+            with create_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "EXEC sp_CreateReserva @ID_Campo=?, @ID_Jogador=?, @Data=?, @Hora_Inicio=?, @Hora_Fim=?, @Estado=?, @Descricao=?",
+                    (campo_id, id_jogador, data, hora_inicio, hora_fim, estado, descricao)
+                )
+                conn.commit()
+
+            flash("Reserva realizada com sucesso!", "success")
+            return redirect(url_for("dashboard.jog_dashboard"))
+
+        except Exception as e:
+            flash(f"Erro ao criar reserva: {str(e)}", "danger")
+            return redirect(url_for("dashboard.campo_detail", ID=campo_id))
+
 def get_reservas(user_id):
     try:
         with create_connection() as conn:
@@ -294,30 +324,6 @@ def get_reservas(user_id):
     except Exception as e:
         flash(f"Erro ao obter reservas: {str(e)}", "danger")
         return []
-    
-def get_Partidas_Abertas():
-    try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("EXEC sp_GetPartidas")
-            partidas = cursor.fetchall()
-        print(f"Partidas abertas: {partidas}")
-        return partidas
-    except Exception as e:
-        flash(f"Erro ao carregar partidas abertas: {str(e)}", "danger")
-        return []
-    
-# Auxiiares
-def is_arrendador(user_id):
-    try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT dbo.fn_IsArrendador(?)", user_id)
-            is_arrendador = cursor.fetchone()[0]
-            return bool(is_arrendador)
-    except Exception as e:
-        print(f"Erro ao verificar se o usuário é arrendador: {e}")
-        return False
     
 def cancelar_reserva(reserva_id):
     try:
@@ -331,3 +337,16 @@ def cancelar_reserva(reserva_id):
         flash(f"Erro ao cancelar reserva: {str(e)}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
     
+    
+# Auxiiares
+def is_arrendador(user_id):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT dbo.fn_IsArrendador(?)", user_id)
+            is_arrendador = cursor.fetchone()[0]
+            return bool(is_arrendador)
+    except Exception as e:
+        print(f"Erro ao verificar se o usuário é arrendador: {e}")
+        return False
+

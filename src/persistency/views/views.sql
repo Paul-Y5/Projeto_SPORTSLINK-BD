@@ -283,6 +283,7 @@ LEFT JOIN (
 GO
 
 
+-- View para obter os detalhes das partidas, incluindo id de jogadores
 CREATE OR ALTER VIEW vw_PartidaDetalhes AS
 SELECT 
 	p.ID AS ID_Partida,
@@ -292,23 +293,21 @@ SELECT
 	c.Largura,
 	c.Latitude,
 	c.Longitude,
+	c.Endereco,
 	c.Descricao,
 	p.Data_Hora,
 	p.Duracao,
 	p.Resultado,
 	p.Estado,
 	p.no_jogadores,
-  (
-    SELECT STRING_AGG(
-      'ID: ' + CAST(ISNULL(u.ID, 0) AS VARCHAR) + ', Nome: ' + ISNULL(u.Nome, 'Desconhecido'),
-      CHAR(10)
-    )
-
+	i.[URL],
+	(SELECT STRING_AGG(CAST(jj.ID_Jogador AS VARCHAR(10)), ', ')
     FROM Jogador_joga jj
-    LEFT JOIN Utilizador u ON u.ID = jj.ID_Jogador
-    WHERE jj.ID_Partida = p.ID
-  ) AS Jogadores
+	WHERE jj.ID_Partida = p.ID) AS Jogadores_IDs,
+  dbo.udf_GetMaxJogadores(p.ID_Campo) AS Max_Jogadores
 FROM Partida p
 LEFT JOIN vw_CampoPublico as c ON p.ID_Campo = c.ID_Campo
+LEFT JOIN IMG_Campo as ci on ci.ID_Campo=c.ID_Campo
+JOIN Imagem as i on i.ID=ci.ID_img
 WHERE p.ID_Campo = c.ID_Campo
 GO

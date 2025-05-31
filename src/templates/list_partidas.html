@@ -13,38 +13,56 @@
         <div class="col">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Partida #{{ partida.ID_Partida }}</h5>
+                    <h5 class="card-title">Partida #{{ partida["ID"] }}</h5>
                     <p class="card-text">
-                        <strong>Campo:</strong> {{ partida.Nome_Campo }}<br>
-                        <strong>Endereço:</strong> {{ partida.Endereco }}<br>
-                        <strong>Data e Hora:</strong> {{ partida.Data_Hora }}<br>
-                        <strong>Duração:</strong> {{ partida.Duracao }} minutos<br>
-                        <strong>Estado:</strong> {{ partida.Estado }}<br>
-                        <strong>Numero de Jogadores:</strong> {{ partida.no_jogadores }}<br>
+                        <strong>Campo:</strong> {{ partida.CampoNome or 'Não especificado' }}<br>
+                        <strong>Endereço:</strong> {{ partida.CampoLocalizacao or 'Não especificado' }}<br>
+                        <strong>Data e Hora:</strong> {{ partida.DataHora.strftime('%Y-%m-%d %H:%M') if partida.DataHora
+                        else 'Não especificado' }}<br>
+                        <strong>Duração:</strong> {{ partida.Duracao or '0' }} minutos<br>
+                        <strong>Desporto:</strong> {{ partida.Desporto or 'Não especificado' }}<br>
+                        <strong>Criador:</strong> {{ partida.CriadorNome }} (Nacionalidade: {{
+                        partida.CriadorNacionalidade or 'Não fornecida' }})<br>
+                        <strong>Capacidade do Campo:</strong> {{ partida.CampoCapacidade or 'Desconhecida' }}<br>
+                        <strong>Número de Jogadores:</strong> {{ partida.Jogadores|length }} / {{ partida.MaxJogadores
+                        or '10' }}<br>
                     </p>
 
                     <p>
                         <strong>Detalhes do Campo:</strong><br>
-                        Latitude: {{ partida.Latitude }} / Longitude: {{ partida.Longitude }}<br>
-                        Dimensões: {{ partida.Comprimento }}m x {{ partida.Largura }}m<br>
+                        Tipo: {{ partida.CampoTipo or 'Não especificado' }}<br>
+                        Preço: {{ partida.CampoPreco or 'Não especificado' }}<br>
+                        Descrição: {{ partida.CampoDescricao or 'Sem descrição' }}<br>
                     </p>
 
                     <p>
                         <strong>Jogadores:</strong><br>
-                        {{ partida.Detalhes_Jogadores }}
+                        {% if partida.Jogadores %}
+                        {% for jogador in partida.Jogadores %}
+                        <span class="badge bg-secondary mb-1">
+                            <a href="{{ url_for('dashboard.jogador_detail', ID=jogador.ID) }}" class="text-white">[#{{
+                                jogador.ID }}] {{ jogador.Nome }}</a>
+                            <small class="text-muted"> (Nacionalidade: {{ jogador.Nacionalidade or 'Não fornecida'
+                                }})</small>
+                        </span>
+                        {% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        <span class="text-muted">Nenhum jogador inscrito.</span>
+                        {% endif %}
                     </p>
 
-                    {% if partida.Imagens_Campo %}
+                    {% if partida.CampoImagemURL %}
                     <div class="mb-3">
-                        {% for img in partida.Imagens_Campo.split(', ') %}
-                        <img src="{{ img }}" alt="Imagem do Campo" class="img-fluid rounded" style="max-height: 150px;">
-                        {% endfor %}
+                        <img src="{{ partida.CampoImagemURL }}" alt="Imagem do Campo" class="img-fluid rounded"
+                            style="max-height: 150px;">
                     </div>
                     {% endif %}
 
-                    <a href="#" class="btn btn-success">
-                        Entrar na Partida
-                    </a>
+                    <form action="{{ url_for('dashboard.list_partidas') }}" method="POST" class="d-inline">
+                        <input type="hidden" name="partida_id" value="{{ partida.ID }}">
+                        <button type="submit" class="btn btn-success">Entrar na Partida</button>
+                    </form>
                 </div>
             </div>
         </div>

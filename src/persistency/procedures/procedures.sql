@@ -1,13 +1,34 @@
 USE SPORTSLINK;
 GO
 
--- Autenticar Utilizador
-CREATE PROCEDURE sp_AuthenticateUtilizador
+CREATE OR ALTER PROCEDURE sp_AuthenticateUtilizador
   @Email VARCHAR(512),
   @Password VARCHAR(512)
 AS
 BEGIN
-  SELECT * FROM Utilizador WHERE Email = @Email AND [Password] = @Password;
+  SET NOCOUNT ON;
+  DECLARE @StoredPassword VARBINARY(512);
+  DECLARE @DecryptedPassword VARCHAR(512);
+
+  -- Obter a senha criptografada do utilizador
+  SELECT @StoredPassword = [Password]
+  FROM Utilizador
+  WHERE Email = @Email;
+
+  -- Verificar se o utilizador existe
+  IF @StoredPassword IS NULL
+  BEGIN
+    RETURN; -- Nenhum resultado, indicando falha de autenticação
+  END;
+
+  -- Descriptografar a senha armazenada
+  SET @DecryptedPassword = CONVERT(VARCHAR(512), DecryptByPassPhrase('SportsLink2025', @StoredPassword));
+
+  -- Comparar a senha fornecida com a descriptografada
+  IF @DecryptedPassword = @Password
+  BEGIN
+    SELECT * FROM Utilizador WHERE Email = @Email;
+  END;
 END;
 GO
 
@@ -72,7 +93,7 @@ GO
 
 
 -- Cria Utilizador
-CREATE PROCEDURE sp_CreateUtilizador
+CREATE OR ALTER PROCEDURE sp_CreateUtilizador
   @Nome VARCHAR(256),
   @Email VARCHAR(512),
   @Num_Tele VARCHAR(64),
@@ -97,9 +118,15 @@ BEGIN
   BEGIN TRY
     BEGIN TRANSACTION;
 
-    -- 1. Inserir Utilizador
+    -- 1. Inserir Utilizador com senha criptografada
     INSERT INTO Utilizador (Nome, Email, Num_Tele, [Password], Nacionalidade)
-    VALUES (@Nome, @Email, @Num_Tele, @Password, @Nacionalidade);
+    VALUES (
+      @Nome,
+      @Email,
+      @Num_Tele,
+      EncryptByPassPhrase('SportsLink2025', @Password),
+      @Nacionalidade
+    );
 
     DECLARE @UserID INT = SCOPE_IDENTITY();
 
@@ -431,7 +458,7 @@ BEGIN
 END;
 GO
 
--- Adicionar um campo privado (sem atualizar No_Campos manualmente)
+-- Adicionar um campo privado (Trigger atualiza automaticamente o número de campos do arrendador)
 CREATE PROCEDURE sp_addCampoPriv
   @ID_Utilizador INT,
   @Latitude DECIMAL(9,6),
@@ -578,80 +605,94 @@ GO
 
 
 -- Adicionar um jogador a uma partida
-CREATE PROCEDURE sp_AddJogadorToPartida
+CREATE OR ALTER PROCEDURE sp_AddJogadorToPartida
     @ID_Partida INT,
     @ID_Jogador INT
 AS
 BEGIN
     SET NOCOUNT ON;
     DECLARE @Estado VARCHAR(50);
-    DECLARE @MaxJogadores INT;
     DECLARE @NoJogadoresAtual INT;
+    DECLARE @MaxJogadores INT;
+    DECLARE @Data_Hora DATETIME;
 
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Get the current state, max_jogadores, and no_jogadores from Partida
-        SELECT @Estado = Estado, @NoJogadoresAtual = no_jogadores
+        -- Obter informações da partida
+        SELECT 
+            @Estado = Estado,
+            @NoJogadoresAtual = no_jogadores,
+            @Data_Hora = Data_Hora
         FROM Partida
         WHERE ID = @ID_Partida;
 
-        -- Check if the partida exists
+        -- Verificar se a partida existe
         IF @Estado IS NULL
         BEGIN
-            RAISERROR('Partida não encontrada.', 16, 1);
+            RAISERROR('Partida não encontrada (ID: %d).', 16, 1, @ID_Partida);
             ROLLBACK TRANSACTION;
             RETURN;
         END;
 
-        -- Check if the partida is finalized
-        IF @Estado = 'Finalizada'
+        -- Verificar se a partida está em estado válido
+        IF @Estado IN ('Finalizada', 'Em Andamento')
         BEGIN
-            RAISERROR('Não é possível adicionar jogadores a uma partida finalizada.', 16, 1);
+            RAISERROR('Não é possível adicionar jogadores a uma partida em andamento ou finalizada.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END;
 
-        -- Check if the player exists
-        IF NOT EXISTS (
-            SELECT 1 FROM Jogador
-            WHERE ID = @ID_Jogador
-        )
+        -- Verificar se o jogador existe
+        IF NOT EXISTS (SELECT 1 FROM Jogador WHERE ID = @ID_Jogador)
         BEGIN
-            RAISERROR('Jogador não encontrado.', 16, 1);
+            RAISERROR('Jogador não encontrado (ID: %d).', 16, 1, @ID_Jogador);
             ROLLBACK TRANSACTION;
             RETURN;
         END;
 
-        -- Check if the player is already in the partida
+        -- Verificar se o jogador já está na partida
         IF EXISTS (
-            SELECT 1 FROM Jogador_joga
-            WHERE ID_Partida = @ID_Partida AND ID_Jogador = @ID_Jogador
+            SELECT 1 
+            FROM Jogador_joga 
+            WHERE ID_Partida = @ID_Partida 
+            AND ID_Jogador = @ID_Jogador
         )
         BEGIN
-            RAISERROR('O jogador já está nesta partida.', 16, 1);
+            RAISERROR('O jogador (ID: %d) já está nesta partida (ID: %d).', 16, 1, @ID_Jogador, @ID_Partida);
             ROLLBACK TRANSACTION;
             RETURN;
         END;
 
-        -- Check if the maximum number of players has been reached
-        IF @MaxJogadores IS NOT NULL AND @NoJogadoresAtual >= @MaxJogadores
+        -- Obter o número máximo de jogadores baseado no desporto do campo
+        SELECT @MaxJogadores = CASE 
+            WHEN d.Nome = 'Futebol' THEN 22
+            WHEN d.Nome = 'Basquetebol' THEN 10 
+            WHEN d.Nome = 'Ténis' THEN 2
+            ELSE 10  -- Padrão para outros desportos
+        END
+        FROM Partida p
+        JOIN Campo c ON p.ID_Campo = c.ID
+        LEFT JOIN Desporto_Campo dc ON dc.ID_Campo = c.ID
+        LEFT JOIN Desporto d ON dc.ID_Desporto = d.ID
+        WHERE p.ID = @ID_Partida;
+
+        -- Verificar se o limite máximo de jogadores foi atingido
+        IF @NoJogadoresAtual >= @MaxJogadores
         BEGIN
-            RAISERROR('A partida já atingiu o número máximo de jogadores.', 16, 1);
+            RAISERROR('A partida (ID: %d) já atingiu o número máximo de jogadores (%d).', 16, 1, @ID_Partida, @MaxJogadores);
             ROLLBACK TRANSACTION;
             RETURN;
         END;
 
-        -- Insert the player into the Jogador_joga table
+        -- Inserir o jogador na tabela Jogador_joga
         INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
         VALUES (@ID_Partida, @ID_Jogador);
 
-        -- Update the no_jogadores count in the Partida table
-        UPDATE Partida
-        SET no_jogadores = no_jogadores + 1
-        WHERE ID = @ID_Partida;
+        -- O trigger trg_UpdateNoJogadores_Insert atualiza no_jogadores automaticamente
 
         COMMIT TRANSACTION;
+        SELECT 1 AS Success; -- Retorno de sucesso
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
@@ -674,13 +715,6 @@ AS
 BEGIN
   DELETE FROM Jogador_joga
   WHERE ID_Partida = @ID_Partida AND ID_Jogador = @ID_Jogador;
-
-  -- Atualiza o número de jogadores
-  UPDATE Partida
-  SET no_jogadores = (
-    SELECT COUNT(*) FROM Jogador_joga WHERE ID_Partida = @ID_Partida
-  )
-  WHERE ID = @ID_Partida;
 END;
 GO
 
@@ -774,18 +808,17 @@ Go
 
 -- Criar uma reserva
 CREATE PROCEDURE sp_CreateReserva
-  @ID_Campo INT,
-  @ID_Jogador INT,
-  @Data DATE,
-  @Hora_Inicio TIME,
-  @Hora_Fim TIME,
-  @Total_Pagamento DECIMAL(10,2),
-  @Estado VARCHAR(50),
-  @Descricao VARCHAR(2500) = NULL
+    @ID_Campo INT,
+    @ID_Jogador INT,
+    @Data DATE,
+    @Hora_Inicio TIME,
+    @Hora_Fim TIME,
+    @Estado VARCHAR(50),
+    @Descricao VARCHAR(2500) = NULL
 AS
 BEGIN
-  INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao)
-  VALUES (@ID_Campo, @ID_Jogador, @Data, @Hora_Inicio, @Hora_Fim, @Total_Pagamento, @Estado, @Descricao);
+    INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Estado, Descricao)
+    VALUES (@ID_Campo, @ID_Jogador, @Data, @Hora_Inicio, @Hora_Fim, @Estado, @Descricao);
 END;
 GO
 
@@ -1213,44 +1246,22 @@ BEGIN
 END;
 GO
 
-
--- Obter detalhes de uma partida específica
+-- Obter métodos de pagamento de um arrendador
 CREATE OR ALTER PROCEDURE sp_ObterPartida
     @ID_Partida INT
 AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT 
-        p.ID AS ID_Partida,
-        p.ID_Campo,
-        c.Nome AS Nome_Campo,
-        c.Endereco,
-        p.Data_Hora,
-        p.Duracao,
-        p.Estado,
-        p.no_jogadores,
-        po.Latitude,
-        po.Longitude,
-        c.Comprimento,
-        c.Largura,
-        p.Resultado,
-        i.[URL] AS Imagem_Campo,
-        10 AS Max_Jogadores,
-        (SELECT STRING_AGG(u.Nome, ', ') FROM Jogador_joga jj
-         JOIN Jogador j ON jj.ID_Jogador = j.ID
-         JOIN Utilizador u ON j.ID = u.ID
-         WHERE jj.ID_Partida = p.ID) AS Participantes,
-        (SELECT TOP 1 d.Nome FROM Desporto_Campo dc 
-         JOIN Desporto d ON dc.ID_Desporto = d.ID 
-         WHERE dc.ID_Campo = p.ID_Campo) AS Desporto
-    FROM 
-        Partida p
-        INNER JOIN Campo c ON p.ID_Campo = c.ID
-		INNER JOIN Ponto po on po.ID=c.ID_Ponto
-        LEFT JOIN IMG_Campo ic ON c.ID = ic.ID_Campo
-        LEFT JOIN Imagem i ON ic.ID_img = i.ID
-    WHERE 
-        p.ID = @ID_Partida
-END
+
+    -- Verificar se a partida existe
+    IF NOT EXISTS (SELECT 1 FROM Partida WHERE ID = @ID_Partida)
+    BEGIN
+        RAISERROR('Partida não encontrada (ID: %d).', 16, 1, @ID_Partida);
+        RETURN;
+    END;
+
+    -- Selecionar detalhes da partida
+    SELECT * FROM vw_PartidaDetalhes v
+    WHERE v.ID_Partida = 2;
+END;
 GO
