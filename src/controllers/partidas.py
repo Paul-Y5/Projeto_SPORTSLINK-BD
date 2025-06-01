@@ -54,7 +54,7 @@ def get_Partida(id_partida):
         if not partida:
             return None
 
-        jogadores_ids = partida[15].split(",") if partida[15] else []
+        jogadores_ids = partida[15].split(", ") if partida[15] else []
         jogadores = []
         for id_jogador in [int(id) for id in jogadores_ids if id.isdigit()]:
             cursor.execute("EXEC GetUserInfo ?", (id_jogador,))
@@ -99,8 +99,11 @@ def get_Partidas_Abertas(nome_campo=None, distancia=None, latitude=None, longitu
                            (nome_campo, distancia, latitude, longitude, order_by, order_direction))
             partidas = cursor.fetchall()
             for partida in partidas:
-                ids_jogadores = partida[15].split(",") if partida[15] else []
+                ids_jogadores = partida[15].split(", ") if partida[15] else []
                 partida[15] = [int(id) for id in ids_jogadores if id.isdigit()]
+                if partida[0] == 2:
+                    print("Partida com ID 2 encontrada, verificando jogadores...")
+                    print(f"IDs de jogadores: {partida[15]}")
 
                 jogadores = []
                 for id_jogador in partida[15]:
@@ -138,13 +141,15 @@ def get_Partidas_Abertas(nome_campo=None, distancia=None, latitude=None, longitu
 def entrar_Partida(id_partida):
     user_id = session.get("user_id")
     if not user_id:
+        flash("Sessão inválida. Faça login novamente.", "danger")
         return redirect(url_for("auth.login"))
+    
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC addJogadorToPartida ?, ?", (id_partida, user_id))
+            conn.commit()  # Garantir que a transação é confirmada
             result = cursor.fetchone()
-            print(f"Result from addJogadorToPartida: {result[0] if result else 0}")
             if result and result[0] == 1:
                 flash("Entrou na partida com sucesso!", "success")
                 return redirect(url_for("dashboard.get_partida", partida_id=id_partida))
@@ -152,8 +157,9 @@ def entrar_Partida(id_partida):
                 flash("Erro ao entrar na partida: Jogador já inscrito ou outro problema.", "danger")
                 return redirect(url_for("dashboard.list_partidas"))
     except Exception as e:
+        print(f"Erro detalhado ao entrar na partida: {str(e)}")  # Log para depuração
         flash(f"Erro ao entrar na partida: {str(e)}", "danger")
-        return redirect(url_for("dashboard.jog_dashboard"))
+        return redirect(url_for("dashboard.list_partidas"))  # Redireciona para list_partidas em vez de jog_dashboard
     
 def sair_Partida(id_partida):
     user_id = session.get("user_id")
@@ -174,3 +180,4 @@ def sair_Partida(id_partida):
     except Exception as e:
         flash(f"Erro ao sair da partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
+    

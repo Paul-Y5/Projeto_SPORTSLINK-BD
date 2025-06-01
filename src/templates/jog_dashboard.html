@@ -14,7 +14,20 @@
     </div>
     {% endif %}
     {% endwith %}
-
+    {% if ongoing_match %}
+    <div class="card mt-4">
+        <div class="card-header">
+            Partida em Andamento
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Partida ID: {{ ongoing_match.ID }}</h5>
+            <p class="card-text">Campo: {{ ongoing_match.Campo }}</p>
+            <p class="card-text">Data e Hora: {{ ongoing_match.DataHora }}</p>
+            <a href="{{ url_for('dashboard.get_partida', partida_id=ongoing_match.ID) }}" class="btn btn-primary">Ver
+                Detalhes</a>
+        </div>
+    </div>
+    {% endif %}
     <!-- Perfil do Utilizador -->
     <div class="card user-info p-4 text-center">
         <ul class="list-group list-group-flush text-start mt-3">
@@ -27,6 +40,35 @@
             <li class="list-group-item"><strong>Desportos Favoritos:</strong> {{ user['Desportos_Favoritos'] or 'Nenhum' }}</li>
             <li class="list-group-item"><strong>Descrição:</strong> {{ user['DescricaoJogador'] or '-' }}</li>
         </ul>
+        <!-- Avaliações -->
+        <div class="card user-info p-4 mt-4">
+            <h2 style="color: black;">Avaliações</h2>
+            {% if ratings %}
+            {% set total = 0 %}
+            {% set count = 0 %}
+            {% for rating in ratings %}
+            {% set total = total + rating.Avaliacao %}
+            {% set count = count + 1 %}
+            {% endfor %}
+            {% set average = (total / count) if count > 0 else 0 %}
+            <p><strong>Média de Avaliações:</strong> {{ "%.1f" | format(average) }} / 5 ({{ count }} avaliações)</p>
+            <ul class="list-group list-group-flush">
+                {% for rating in ratings %}
+                <li class="list-group-item">
+                    <strong>Avaliador:</strong> {{ rating.Nome }}
+                    <br><strong>Nota:</strong> {{ rating.Avaliacao }} / 5
+                    <br><strong>Data e Hora:</strong> {{ rating.Data_Hora.strftime('%Y-%m-%d %H:%M') if rating.Data_Hora is
+                    string else rating.Data_Hora }}
+                    {% if rating.Comentario %}
+                    <br><strong>Comentário:</strong> {{ rating.Comentario }}
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-center">Ainda não tens avaliações.</p>
+            {% endif %}
+        </div>
         <div class="mt-3">
             <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#editModal">
                 Editar Perfil

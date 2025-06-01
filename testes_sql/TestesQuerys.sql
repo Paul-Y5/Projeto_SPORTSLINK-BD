@@ -291,3 +291,11 @@ FROM sys.procedures;
 SELECT * from Partida
 EXEC GetPartidas
 SELECT * FROM vw_PartidaDetalhes
+
+
+SELECT u.Nome, r.Avaliacao, r.Data_Hora, r.Comentario
+    FROM Rating r
+    INNER JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
+	JOIN Utilizador as u on u.ID=rj.ID_Avaliador
+    WHERE rj.ID_Jogador = 1
+

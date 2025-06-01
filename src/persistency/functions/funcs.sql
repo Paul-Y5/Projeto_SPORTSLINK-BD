@@ -19,7 +19,7 @@ END;
 GO
 
 -- Verificar se é Arrendador
-CREATE FUNCTION dbo.IsArrendador (@UserID INT)
+CREATE OR ALTER FUNCTION dbo.IsArrendador (@UserID INT)
 RETURNS BIT
 AS
 BEGIN
@@ -32,7 +32,7 @@ END;
 GO
 
 -- Calculo do número de horas de uma reserva no formato HH:MM
-CREATE FUNCTION dbo.CalculaHorasFormatado (
+CREATE OR ALTER FUNCTION dbo.CalculaHorasFormatado (
     @HoraInicio DATETIME,
     @HoraFim DATETIME
 )
@@ -48,7 +48,7 @@ END;
 GO
 
 -- ESTADO PARTIDA
-CREATE FUNCTION dbo.GetEstadoPartida
+CREATE OR ALTER FUNCTION dbo.GetEstadoPartida
 (
   @Estado VARCHAR(50)
 )
@@ -66,7 +66,7 @@ END;
 GO
 
 -- CALCULO DO TEMPO DE JOGO
-CREATE FUNCTION dbo.CalculaDuracaoMinutos
+CREATE OR ALTER FUNCTION dbo.CalculaDuracaoMinutos
 (
   @Hora_Inicio TIME,
   @Hora_Fim TIME
@@ -78,7 +78,7 @@ BEGIN
 END;
 GO
 
-CREATE FUNCTION dbo.GetMetodosPagamentoDetalhes (@UserId INT)
+CREATE OR ALTER FUNCTION dbo.GetMetodosPagamentoDetalhes (@UserId INT)
 RETURNS TABLE
 AS
 RETURN
@@ -94,7 +94,7 @@ SELECT
 GO
 
 -- Cálculo da distância entre dois pontos geográficos (latitude e longitude)
-CREATE FUNCTION dbo.CalculateDistance
+CREATE OR ALTER FUNCTION dbo.CalculateDistance
 (
     @lat1 FLOAT,
     @lon1 FLOAT,
@@ -120,7 +120,7 @@ BEGIN
 END;
 GO
 
-CREATE FUNCTION dbo.TotalPagamento (@Hora_inicio DATETIME, @Hora_fim DATETIME, @Preco DECIMAL(10,2))
+CREATE OR ALTER FUNCTION dbo.TotalPagamento (@Hora_inicio DATETIME, @Hora_fim DATETIME, @Preco DECIMAL(10,2))
 RETURNS DECIMAL(10,2)
 AS
 BEGIN
@@ -153,5 +153,20 @@ BEGIN
         SET @MaxJogadores = 10;
 
     RETURN @MaxJogadores;
+END;
+GO
+
+CREATE OR ALTER FUNCTION IsPlayerOnMatch (@ID_Jogador INT)
+RETURNS BIT
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM Jogador_joga jj
+        JOIN Partida p ON jj.ID_Partida = p.ID
+        WHERE jj.ID_Jogador = @ID_Jogador AND p.Estado = 'Andamento'
+    )
+        RETURN 1;
+    RETURN 0;
 END;
 GO

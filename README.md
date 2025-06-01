@@ -4,12 +4,12 @@
 
 ## Ordem de carregamento de ficheiros para a BD:
 - DDL
-- MDL
+- Triggers (Para fazer as atualizações automáticas dos inserts do DML, Idade, pagamento, etc)
+- DML
 - Indices
 - UDF
 - Views
 - Procedures
-- Triggers
 
 ### Para executar: python app.py (dentro da pasta src) (Alterar conf.ini)
 ### Ou correr na BD que se encotra no IETTA ()

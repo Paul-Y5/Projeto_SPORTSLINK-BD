@@ -1,7 +1,7 @@
-from flask import Blueprint, abort, jsonify, request, session, redirect, url_for, flash, render_template
+from flask import Blueprint, abort, request, session, redirect, url_for, flash, render_template
 from controllers.campo import adicionar_campo_privado, adicionar_campo_publico, editar_campo, excluir_campo, get_campo_by_id, get_campos, getReservasByCampo
 from controllers.partidas import create_partida, entrar_Partida, get_Partida, get_Partidas_Abertas, sair_Partida
-from controllers.user import add_friend, agendar_reserva, cancelar_reserva, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, get_reservas, make_arrendador, remove_friend, update_user_info, get_user_info, list_campos_arrendador
+from controllers.user import add_friend, agendar_reserva, cancelar_reserva, delete_user_account, get_InfoFriend, get_friends, getHistoricPartidas, get_reservas, inGame, make_arrendador, rate_friend, remove_friend, update_user_info, get_user_info, list_campos_arrendador
 from utils.decorator_login import login_required
 from utils.general import get_siglas_dias
 
@@ -11,10 +11,11 @@ dashboard_bp = Blueprint("dashboard", __name__)
 @login_required
 def jog_dashboard():
     user_id = session["user_id"]
-    user = get_user_info(user_id)
+    user, ratings = get_user_info(user_id)
     tipo_utilizador = session.get("tipo_utilizador", "Jogador")
     reservas = get_reservas(user_id)
-    
+    ongoing_match = inGame(user_id)
+
     action = request.args.get("action")
     if request.method == "POST":
         action = request.form.get("action")
@@ -41,8 +42,8 @@ def jog_dashboard():
         return ver_campos()
     
     if tipo_utilizador == "Arrendador":
-        return render_template("arr_dashboard.html", user=user, reservas=reservas)
-    return render_template("jog_dashboard.html", user=user, reservas=reservas)
+        return render_template("arr_dashboard.html", user=user, reservas=reservas, ongoing_match=ongoing_match, ratings=ratings)
+    return render_template("jog_dashboard.html", user=user, reservas=reservas, ongoing_match=ongoing_match, ratings=ratings)
 
 
 @dashboard_bp.route("/arrendador", methods=["GET", "POST"])
@@ -159,7 +160,7 @@ def list_partidas():
             action = request.form.get("action")
             if action == "entrar_partida":
                 partida_id = request.form.get("partida_id")
-                entrar_Partida(partida_id)
+                return entrar_Partida(partida_id)  # Retorna o resultado diretamente
         
         nome_campo = request.form.get('nome_campo')
         distancia = request.form.get('distancia', type=float) if request.form.get('distancia') else None
@@ -169,7 +170,7 @@ def list_partidas():
         order_direction = request.form.get('order_direction', 'ASC')
 
         partidas = get_Partidas_Abertas(nome_campo, distancia, latitude, longitude, order_by, order_direction)
-        print(f"Partidas encontradas: {partidas}")
+        #print(f"Partidas encontradas: {partidas}")
         if not partidas:
             flash("Nenhuma partida encontrada.", "info")
             return render_template("list_partidas.html", partidas=[])
@@ -194,25 +195,21 @@ def start_new_partida(campo_id):
 @login_required
 def get_partida(partida_id):
     try:
-        if request.method == "POST":
-            sair_Partida(partida_id)  # Handle POST for leaving a match
-            return redirect(url_for("dashboard.get_partida", partida_id=partida_id))
+        partida = get_Partida(partida_id)
+        if not partida:
+            flash("Partida não encontrada.", "danger")
+            return redirect(url_for("dashboard.list_partidas"))
 
-        # Check if the client expects JSON (based on Accept header or query param)
-        if request.headers.get('Accept') == 'application/json':
-            partida = get_Partida(partida_id)  # New function for JSON response
-            if not partida:
-                return jsonify({"error": "Partida não encontrada"}), 404
-            return jsonify(partida)
-        else:
-            partida = get_Partida(partida_id)
-            if not partida:
-                flash("Partida não encontrada.", "warning")
+        if request.method == "POST":
+            action = request.form.get("action")
+            if action == "sair_partida":
+                sair_Partida(partida_id)
+                flash("Saíste da partida com sucesso.", "success")
                 return redirect(url_for("dashboard.list_partidas"))
-            return render_template("partida_details.html", partida=partida)
+        
+        return render_template("partida_details.html", partida=partida)
     except Exception as e:
-        print(f"Erro ao carregar partida: {e}")
-        flash(f"Erro ao carregar partida: {str(e)}", "danger")
+        flash(f"Erro ao carregar a partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.list_partidas"))
     
 
@@ -227,3 +224,23 @@ def historic_partidas(ID):
     except Exception as e:
         flash(f"Erro ao carregar o histórico de partidas{e}.", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
+
+@dashboard_bp.route("/rate_friend", methods=["POST"])
+@login_required
+def rate_friend_route():
+    if "user_id" not in session:
+        flash("Sessão expirada. Faça login novamente.", "danger")
+        return redirect(url_for("index"))
+    
+    friend_id = request.form.get("friend_id")
+    rating = request.form.get("rating")
+    comment = request.form.get("comment", "")
+    
+    user_id = session["user_id"]
+    
+    if rate_friend(user_id, friend_id, rating, comment):
+        flash("Avaliação enviada com sucesso!", "success")
+    else:
+        flash("Erro ao enviar avaliação. Tente novamente.", "danger")
+    
+    return redirect(url_for("dashboard.list_friends", action="detail", friend_id=friend_id))

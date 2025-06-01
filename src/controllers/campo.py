@@ -370,42 +370,67 @@ def get_campo_by_id(campo_id):
 
 
 # Função para obter as reservas de um campo privado
+from datetime import datetime
+
 def getReservasByCampo(campo_id):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC GetReservasByCampo ?", (campo_id,))
+            query = """
+                SELECT 
+                    v.ID, v.Nome_Campo, v.Nome_Jogador, v.Data, v.Hora_Inicio, v.Hora_Fim, 
+                    v.Total_Pagamento, v.Estado, v.Descricao, 
+                    u.Nacionalidade, u.Num_Tele
+                FROM vw_ReservasDetalhadas v
+                JOIN Utilizador u ON v.ID_Jogador = u.ID
+                WHERE v.ID_Campo = ? AND v.Estado = 'Confirmada';
+            """
+            cursor.execute(query, (campo_id,))
             reservas_rows = cursor.fetchall()
 
         if not reservas_rows:
             return []
 
-        # Formata as reservas em uma lista de dicionários
         reservas = []
         for row in reservas_rows:
             print(f"Processando reserva: {row}")
-            hora_inicio_str = row[7].split('.')[0] + '.000000'
-            hora_fim_str = row[8].split('.')[0] + '.000000'
-            hora_inicio = datetime.strptime(hora_inicio_str, '%H:%M:%S.%f')
-            hora_fim = datetime.strptime(hora_fim_str, '%H:%M:%S.%f')
-            duracao = (hora_fim - hora_inicio).total_seconds() / 3600
+            # Keep Hora_Inicio and Hora_Fim as strings
+            hora_inicio_str = row[4].split('.')[0]  # e.g., "10:00:00"
+            hora_fim_str = row[5].split('.')[0]      # e.g., "12:00:00"
+
+            # Calculate duration in hours
+            hora_inicio_parts = hora_inicio_str.split(':')
+            hora_fim_parts = hora_fim_str.split(':')
+            hora_inicio_minutes = int(hora_inicio_parts[0]) * 60 + int(hora_inicio_parts[1])
+            hora_fim_minutes = int(hora_fim_parts[0]) * 60 + int(hora_fim_parts[1])
+            duracao = (hora_fim_minutes - hora_inicio_minutes) / 60  # Duration in hours
+            if duracao < 0:  # Handle crossing midnight
+                duracao += 24
+
+            # Format Data as string if it's a datetime object
+            data = row[3]
+            if isinstance(data, datetime):
+                data = data.strftime('%Y-%m-%d')
 
             reservas.append({
                 "ID": row[0],
-                "Nome_Campo": row[3],
-                "Nome_Arrendador": row[5],
-                "Data": row[6],
-                "Hora_Inicio": hora_inicio,
+                "Nome_Campo": row[1],
+                "Nome": row[2],           # Nome_Jogador
+                "Nacionalidade": row[9],
+                "Num_Tele": row[10],
+                "Data": data,
+                "Hora_Inicio": hora_inicio_str,  # Keep as string "HH:MM:SS"
                 "Duracao": duracao,
-                "Estado": row[10],
-                "TotalPago": float(row[9]) if row[9] else None,
-                "Descricao": row[11]
+                "Estado": row[7],
+                "TotalPago": float(row[6]) if row[6] else None,
+                "Descricao": row[8]
             })
 
         return reservas
     except Exception as e:
         print(f"Erro ao obter reservas: {e}")
         return []
+    
 
 def get_campos(tipo):
     user_id = session.get("user_id")

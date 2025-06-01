@@ -288,8 +288,7 @@
         </div>
 
         <!-- Modal Reservas -->
-        <div class="modal fade" id="modalReservas" tabindex="-1" aria-labelledby="modalReservasLabel"
-            aria-hidden="true">
+        <div class="modal fade" id="modalReservas" tabindex="-1" aria-labelledby="modalReservasLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -312,12 +311,15 @@
                             <tbody>
                                 {% for reserva in reservas %}
                                 <tr>
-                                    <td>{{ reserva.Data }}</td>
-                                    <td>{{ reserva.Nome }}, {{ reserva.Nacionalidade }}, {{ reserva.Num_Tele }}</td>
-                                    <td>{{ reserva.Hora_Inicio[:5] }}</td>
-                                    <td>{{ reserva.Duracao }}</td>
-                                    <td>{{ reserva.TotalPago }} €</td>
-                                    <td>{{ reserva.Descricao }}</td>
+                                    <td>{{ reserva.Data if reserva.Data else '---' }}</td>
+                                    <td>{{ reserva.Nome if reserva.Nome else '---' }}, {{ reserva.Nacionalidade if
+                                        reserva.Nacionalidade else '---' }}, {{ reserva.Num_Tele if reserva.Num_Tele else '---'
+                                        }}</td>
+                                    <td>{{ reserva.Hora_Inicio[:5] if reserva.Hora_Inicio else '---' }}</td>
+                                    <td>{{ "%.1f"|format(reserva.Duracao) if reserva.Duracao is not none else '---' }}</td>
+                                    <td>{{ "%.2f"|format(reserva.TotalPago) if reserva.TotalPago is not none else '---' }} €
+                                    </td>
+                                    <td>{{ reserva.Descricao if reserva.Descricao else '---' }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

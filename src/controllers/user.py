@@ -11,10 +11,24 @@ def get_user_info(user_id):
             cursor = conn.cursor()
             cursor.execute("GetUserInfo ?", (user_id,))
             user_info = cursor.fetchone()
-        return user_info if user_info else None
+
+            # Obter avaliações de avaliadores que avaliaram o amigo
+            cursor.execute("EXEC GetRatings ?", (user_id,))
+            ratings_data = cursor.fetchall()
+        
+        # Mapear avaliações para lista de dicionários
+        ratings = [
+            {
+                "Avaliacao": rating.Avaliacao,
+                "Comentario": rating.Comentario,
+                "DataAvaliacao": rating.DataAvaliacao if isinstance(rating.DataAvaliacao, datetime) else datetime.strptime(rating.DataAvaliacao, '%Y-%m-%d %H:%M:%S')
+            }
+            for rating in ratings_data
+        ]
+        return user_info, ratings
     except Exception as e:
         print(f"Erro ao obter informações do usuário: {e}")
-        return None
+        return None, []
 
 def update_user_info():
     """Atualiza informações do utilizador, jogador e arrendador via UpdateUserInfo."""
@@ -262,16 +276,51 @@ def get_InfoFriend():
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
+            
+            # Obter informações do amigo
             cursor.execute("EXEC GetFriendInfo ?", (friend_id,))
-            friend_info = cursor.fetchone()
-        if not friend_info:
-            flash("Amigo não encontrado.", "warning")
-            return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
-        return render_template("amigo_details.html", user=friend_info)
-    except Exception as e:
-        flash(f"Erro ao carregar informações do amigo. [{e}]", "danger")
-        return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
+            friend_data = cursor.fetchone()
+            
+            if not friend_data:
+                flash("Amigo não encontrado.", "warning")
+                return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
+            
+            # Mapear colunas para dicionário
+            friend_info = {
+                "ID_Utilizador": friend_data.ID_Utilizador,
+                "Nacionalidade": friend_data.Nacionalidade,
+                "Imagem": friend_data.Imagens_Perfil,
+                "Data_Nascimento": friend_data.Data_Nascimento if friend_data.Data_Nascimento else None,
+                "Idade": friend_data.Idade,
+                "Peso": friend_data.Peso,
+                "Altura": friend_data.Altura,
+                "Desportos_Favoritos": friend_data.Desportos_Favoritos,
+                "DescricaoJogador": friend_data.DescricaoJogador
+            }
+            
+            # Obter avaliações de avaliadores que avaliaram o amigo
+            cursor.execute("EXEC GetRatings ?", (friend_id,))
+            ratings_data = cursor.fetchall()
+            
+            # Mapear avaliações para lista de dicionários
+            ratings = [
+                {
+                    "Nome": rating.Nome,
+                    "Avaliacao": rating.Avaliacao,
+                    "Comentario": rating.Comentario,
+                    "DataAvaliacao": rating.Data_Hora if isinstance(rating.Data_Hora, datetime) else datetime.strptime(rating.Data_Hora, '%Y-%m-%d %H:%M:%S')
+                }
+                for rating in ratings_data
+            ]
 
+            print(f"Informações do amigo: {friend_info}")
+            print(f"Avaliações do amigo: {ratings}")
+            
+            return render_template("amigo_details.html", user=friend_info, ratings=ratings)
+            
+    except Exception as e:
+        flash(f"Erro ao carregar informações do amigo: {str(e)}", "danger")
+        return redirect(url_for("dashboard.list_friends", ID=session["user_id"]))
 
 def getHistoricPartidas(user_id):
     try:
@@ -284,7 +333,6 @@ def getHistoricPartidas(user_id):
         flash("Erro ao carregar o histórico de partidas.", "danger")
         return []
     
-
 def agendar_reserva(campo_id):
     """Cria uma reserva de campo para o jogador."""
     id_jogador = session["user_id"]
@@ -349,3 +397,52 @@ def is_arrendador(user_id):
         print(f"Erro ao verificar se o usuário é arrendador: {e}")
         return False
 
+def rate_friend(user_id, friend_id, rating, comment):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC AddRating ?, ?, ?, ?, ?", (user_id, friend_id, rating, comment, datetime.now()))
+            conn.commit()
+            result = cursor.fetchone()
+            if result and result[0] == 1:
+                return True
+            else:
+                return False
+    except Exception as e:
+        flash(f"Erro ao avaliar jogador: {str(e)}", "danger")
+        return False
+
+
+def inGame(user_id):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+
+            # Verificar se o jogador está em uma partida usando IsPlayerOnMatch
+            cursor.execute("SELECT dbo.IsPlayerOnMatch(?) AS IsInMatch", (user_id,))
+            is_in_match = cursor.fetchone()[0]  # Acessar o primeiro (e único) valor da tupla
+
+            if not is_in_match:
+                cursor.close()
+                return None  # Jogador não está em nenhuma partida
+
+            # Configurar o cursor para retornar dicionários na próxima consulta
+            cursor.close()
+            cursor = conn.cursor(as_dict=True)
+
+            # Obter detalhes da partida em andamento
+            query = """
+                SELECT p.ID, p.Data_Hora, c.Nome AS Campo
+                FROM Partida p
+                JOIN Campo c ON p.ID_Campo = c.ID_Campo
+                JOIN Jogador_joga jj ON p.ID_Partida = jj.ID_Partida
+                WHERE jj.ID_Jogador = ? AND p.Estado = 'Em Andamento';
+            """
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            cursor.close()
+            return result
+    except Exception as e:
+        flash(f"Erro ao verificar partida em andamento: {e}", "danger")
+        print(f"Erro ao verificar partida em andamento: {e}")
+        return None
