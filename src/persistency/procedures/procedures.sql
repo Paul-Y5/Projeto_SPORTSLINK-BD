@@ -804,7 +804,7 @@ BEGIN
             RETURN;
         END;
 
-        IF dbo.IsPlayerInOngoingMatch(@ID_Jogador) = 1
+        IF dbo.IsPlayerOnMatch(@ID_Jogador) = 1
         BEGIN
             RAISERROR('O jogador já está em uma partida em andamento.', 16, 1);
             ROLLBACK TRANSACTION;
@@ -868,50 +868,53 @@ GO
 -- Criar uma nova partida
 CREATE OR ALTER PROCEDURE CreatePartida
     @ID_Campo INT,
+    @No_Jog INT,
     @Data_Hora DATETIME,
     @Duracao INT,
-    @Desporto VARCHAR(50),
-    @ID_Jogador INT
+    @Estado VARCHAR(50),
+    @ID_Criador INT,
+    @NewID INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @ID_Partida INT;
+    DECLARE @Hora_Fim TIME;
+    DECLARE @Data DATE;
+    DECLARE @Hora_Inicio TIME;
 
-    BEGIN TRY
-        BEGIN TRANSACTION;
+    -- Extrair data e hora de início
+    SET @Data = CAST(@Data_Hora AS DATE);
+    SET @Hora_Inicio = CAST(@Data_Hora AS TIME);
+    SET @Hora_Fim = DATEADD(MINUTE, @Duracao, @Hora_Inicio);
 
-        INSERT INTO Partida (ID_Campo, no_jogadores, Data_Hora, Duracao, Estado)
-        VALUES (@ID_Campo, 0, @Data_Hora, @Duracao, 'Aguardando');
+    -- Inserir a partida com todas as colunas obrigatórias
+    INSERT INTO Partida (
+        ID_Campo,
+        no_jogadores,
+        Data_Hora,
+        Duracao,
+        Resultado,
+        Estado
+    )
+    VALUES (
+        @ID_Campo,      -- Campo fornecido
+        @No_Jog,        -- Número de jogadores fornecido
+        @Data_Hora,     -- Data e hora fornecidas
+        @Duracao,       -- Duração fornecida
+        NULL,           -- Resultado inicial é NULL
+        @Estado         -- Estado fornecido
+    );
 
-        SET @ID_Partida = SCOPE_IDENTITY();
+    -- Obter o ID gerado
+    SET @NewID = SCOPE_IDENTITY();
 
-        IF @ID_Jogador IS NOT NULL
-        BEGIN
-            EXECUTE addJogadorToPartida 
-                @ID_Partida = @ID_Partida,
-                @ID_Jogador = @ID_Jogador;
-        END
-        ELSE
-            BEGIN
-            RAISERROR ('ID do jogador não fornecido.', 16, 1);
-        END
+    -- Adicionar o criador à partida
+    INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
+    VALUES (@NewID, @ID_Criador);
 
-        COMMIT TRANSACTION;
-        SELECT @ID_Partida AS PartidaID;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-        DECLARE @ErrorState INT = ERROR_STATE();
-
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
+    -- Retornar o ID gerado
+    RETURN @NewID;
 END;
 GO
-
 
 -- Atualizar uma partida existente
 CREATE OR ALTER PROCEDURE UpdatePartida

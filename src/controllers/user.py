@@ -402,9 +402,8 @@ def rate_friend(user_id, friend_id, rating, comment):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC AddRating ?, ?, ?, ?, ?", (user_id, friend_id, rating, comment, datetime.now()))
-            conn.commit()
-            result = cursor.fetchone()[0]
+            cursor.execute("EXEC AddRating ?, ?, ?, ?, ?", (user_id, friend_id, int(rating), comment, datetime.now()))
+            result = cursor.fetchone()
             if result and result[0] == 1:
                 return True
             else:
