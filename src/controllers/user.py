@@ -288,6 +288,7 @@ def get_InfoFriend():
             # Mapear colunas para dicionário
             friend_info = {
                 "ID_Utilizador": friend_data.ID_Utilizador,
+                "Nome": friend_data.Nome,
                 "Nacionalidade": friend_data.Nacionalidade,
                 "Imagem": friend_data.Imagens_Perfil,
                 "Data_Nascimento": friend_data.Data_Nascimento if friend_data.Data_Nascimento else None,
@@ -403,7 +404,7 @@ def rate_friend(user_id, friend_id, rating, comment):
             cursor = conn.cursor()
             cursor.execute("EXEC AddRating ?, ?, ?, ?, ?", (user_id, friend_id, rating, comment, datetime.now()))
             conn.commit()
-            result = cursor.fetchone()
+            result = cursor.fetchone()[0]
             if result and result[0] == 1:
                 return True
             else:

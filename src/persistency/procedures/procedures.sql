@@ -1285,75 +1285,69 @@ GO
 
 -- Adicionar uma avaliação
 CREATE OR ALTER PROCEDURE AddRating
-    @ID_Rater INT,
-    @ID_Ratee INT,
-    @Avaliacao INT,
-    @Comentario VARCHAR(255) = NULL,
-    @Date_Av DATETIME
+  @ID_Rater INT,
+  @ID_Ratee INT,
+  @Avaliacao INT,
+  @Comentario VARCHAR(255) = NULL,
+  @Date_Av DATETIME
 AS
 BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        BEGIN TRANSACTION;
+  SET NOCOUNT ON;
 
-        -- Validate inputs
-        IF @Avaliacao < 1 OR @Avaliacao > 5
-        BEGIN
-            RAISERROR('A avaliação deve estar entre 1 e 5.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
+  BEGIN TRY
+      BEGIN TRANSACTION;
 
-        -- Prevent self-rating
-        IF @ID_Rater = @ID_Ratee
-        BEGIN
-            RAISERROR('Não é permitido avaliar a si mesmo.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
+      IF @Avaliacao < 1 OR @Avaliacao > 5
+      BEGIN
+          RAISERROR('A avaliação deve estar entre 1 e 5.', 11, 1);
+          ROLLBACK TRANSACTION;
+          RETURN;
+      END;
 
-        -- Check if a rating already exists
-        IF EXISTS (
-            SELECT 1 
-            FROM Rating r 
-            JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
-            WHERE r.ID_Avaliador = @ID_Rater 
+      IF @ID_Rater = @ID_Ratee
+      BEGIN
+          RAISERROR('Não é permitido avaliar a si mesmo.', 11, 1);
+          ROLLBACK TRANSACTION;
+          RETURN;
+      END;
+
+      IF EXISTS (
+          SELECT 1 
+          FROM Rating r 
+          JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
+          WHERE r.ID_Avaliador = @ID_Rater 
             AND rj.ID_Jogador = @ID_Ratee
-        )
-        BEGIN
-            -- Update existing rating
-            UPDATE Rating
-            SET Avaliacao = @Avaliacao,
-                Comentario = @Comentario,
-                Data_Hora = @Date_Av
-            FROM Rating r
-            JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
-            WHERE r.ID_Avaliador = @ID_Rater 
+      )
+      BEGIN
+          UPDATE Rating
+          SET Avaliacao = @Avaliacao,
+              Comentario = @Comentario,
+              Data_Hora = @Date_Av
+          FROM Rating r
+          JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
+          WHERE r.ID_Avaliador = @ID_Rater 
             AND rj.ID_Jogador = @ID_Ratee;
-        END
-        ELSE
-        BEGIN
-            -- Insert new rating
-            INSERT INTO Rating (ID_Avaliador, Avaliacao, Comentario, Data_Hora)
-            VALUES (@ID_Rater, @Avaliacao, @Comentario, @Date_Av);
+      END
+      ELSE
+      BEGIN
+          INSERT INTO Rating (ID_Avaliador, Avaliacao, Comentario, Data_Hora)
+          VALUES (@ID_Rater, @Avaliacao, @Comentario, @Date_Av);
 
-            -- Insert into Rating_Jogador
-            INSERT INTO Rating_Jogador (ID_Avaliador, ID_Jogador)
-            VALUES (@ID_Rater, @ID_Ratee);
-        END;
+          INSERT INTO Rating_Jogador (ID_Avaliador, ID_Jogador)
+          VALUES (@ID_Rater, @ID_Ratee);
+      END;
 
-        COMMIT TRANSACTION;
-        SELECT 1 AS Success, 'Avaliação enviada com sucesso.' AS Message;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-        DECLARE @ErrorState INT = ERROR_STATE();
-        SELECT 0 AS Success, @ErrorMessage AS Message;
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH;
+      COMMIT TRANSACTION;
+      SELECT 1 AS Success, 'Avaliação enviada com sucesso.' AS Message;
+  END TRY
+  BEGIN CATCH
+      IF @@TRANCOUNT > 0
+          ROLLBACK TRANSACTION;
+
+      -- Somente um tipo de retorno
+      SELECT 0 AS Success, ERROR_MESSAGE() AS Message;
+      RETURN;
+  END CATCH
 END;
 GO
 

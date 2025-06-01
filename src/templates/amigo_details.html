@@ -1,4 +1,4 @@
-{% extends "base_user.html" %}
+{% extends "base_index.html" %}
 {% block title %}Informações do Amigo{% endblock %}
 {% block content %}
 <div class="container mt-4">
@@ -24,7 +24,7 @@
         </div>
         <div class="card-body">
             <ul class="list-group list-group-flush">
-                <li class="list-group-item"><strong>Número de Telemóvel:</strong> {{ user.Num_Tele or '-' }}</li>
+                <li class="list-group-item"><strong>Nome:</strong> {{ user.Nome }}</li>
                 <li class="list-group-item"><strong>Nacionalidade:</strong> {{ user.Nacionalidade or '-' }}</li>
                 <li class="list-group-item"><strong>Data de Nascimento:</strong> {{ user.Data_Nascimento }} ({{
                     user.Idade }} anos)</li>
