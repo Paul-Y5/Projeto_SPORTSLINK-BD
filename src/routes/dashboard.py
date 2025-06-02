@@ -12,6 +12,7 @@ dashboard_bp = Blueprint("dashboard", __name__)
 def jog_dashboard():
     user_id = session["user_id"]
     user, ratings = get_user_info(user_id)
+    print(f"User info: {user}")
     tipo_utilizador = session.get("tipo_utilizador", "Jogador")
     reservas = get_reservas(user_id)
     ongoing_match = inGame(user_id)

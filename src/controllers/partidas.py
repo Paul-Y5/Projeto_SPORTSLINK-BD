@@ -10,8 +10,8 @@ def create_partida(campo_id):
         return redirect(url_for("auth.login"))
 
     # Obter dados do formulário
-    data_partida = request.form.get("data_partida")  # Ex.: "2025-06-01"
-    hora_inicio_partida = request.form.get("hora_inicio_partida")  # Ex.: "14:50"
+    data_partida = request.form.get("data_partida")
+    hora_inicio_partida = request.form.get("hora_inicio_partida")
     duracao_partida = request.form.get("duracao_partida")
     no_jogadores = request.form.get("no_jogadores")
     estado = request.form.get("estado", "Aguardando")  # Default para "Aguardando"

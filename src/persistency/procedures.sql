@@ -1145,7 +1145,6 @@ BEGIN
 END;
 GO
 
-
 -- Criar um arrendador
 CREATE OR ALTER PROCEDURE CreateArrendador
   @ID_Utilizador INT,
