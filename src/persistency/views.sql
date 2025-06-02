@@ -13,7 +13,7 @@ SELECT
   p.Latitude,
   p.Longitude,
   c.Descricao,
-
+  
   -- Desportos com DISTINCT
   des.Desportos,
 
@@ -46,62 +46,8 @@ CROSS APPLY (
 WHERE c.ID=cp.ID_Campo
 GO
 
--- View para obter os detalhes de um campo, incluindo disponibilidade e imagens
-CREATE OR ALTER VIEW vw_CampoPrivDetalhes AS
-SELECT 
-  c.ID AS ID_Campo,
-  c.Nome AS Nome_Campo,
-  c.Comprimento,
-  c.Largura,
-  c.Endereco,
-  p.Latitude,
-  p.Longitude,
-  c.Descricao,
-
-  -- Dias Disponíveis (sem DISTINCT no STRING_AGG)
-  (
-    SELECT STRING_AGG(Nome, ', ')
-    FROM (
-      SELECT DISTINCT di.Nome
-      FROM Disponibilidade dp2
-      JOIN Dias_semana di ON dp2.ID_Dia = di.ID
-      WHERE dp2.ID_Campo = c.ID
-    ) AS Dias_Distintos
-  ) AS Dias_Disponiveis,
-
-  -- Preço
-  (SELECT TOP 1 dp.Preco
-   FROM Disponibilidade dp
-   WHERE dp.ID_Campo = c.ID) AS Preco,
-
-  -- Hora Abertura
-  (SELECT TOP 1 dp.Hora_Abertura
-   FROM Disponibilidade dp
-   WHERE dp.ID_Campo = c.ID) AS Hora_Abertura,
-
-  -- Hora Fecho
-  (SELECT TOP 1 dp.Hora_Fecho
-   FROM Disponibilidade dp
-   WHERE dp.ID_Campo = c.ID) AS Hora_Fecho,
-
-  -- Imagens (sem DISTINCT no STRING_AGG)
-  (
-    SELECT STRING_AGG(URL, ', ')
-    FROM (
-      SELECT DISTINCT img.URL
-      FROM IMG_Campo ic
-      JOIN Imagem img ON img.ID = ic.ID_img
-      WHERE ic.ID_Campo = c.ID
-    ) AS Imagens_Distintas
-  ) AS Imagens
-
-FROM Campo c
-LEFT JOIN Ponto p ON c.ID_Ponto = p.ID;
-GO
-
-
 -- View para obter os detalhes de um utilizador (Arrendador ou Jogador)
-CREATE VIEW vw_InfoUtilizador AS
+CREATE OR ALTER VIEW vw_InfoUtilizador AS
 WITH Metodos_Pagamento_Unicos AS (
     SELECT DISTINCT ID_Arrendador, Met_pagamento
     FROM Met_Paga_Arrendador
@@ -117,53 +63,60 @@ Desportos_Unicos AS (
     JOIN Desporto d ON dj.ID_Desporto = d.ID
 )
 SELECT 
-  u.ID AS ID_Utilizador,
-  u.Nome,
-  u.Email,
-  u.Num_Tele,
-  u.Nacionalidade,
-  j.Idade,
-  j.Data_Nascimento,
-  j.Descricao AS DescricaoJogador,
-  j.Peso,
-  j.Altura,
-  a.IBAN,
-  a.No_Campos,
-
-  -- Métodos de Pagamento com Detalhes (apenas para arrendadores)
-  (
-    SELECT STRING_AGG(mp.Metodo + ': ' + mp.Detalhes, CHAR(10))
-    FROM dbo.GetMetodosPagamentoDetalhes(u.ID) mp
-    WHERE EXISTS (
-        SELECT 1 FROM Arrendador as a2 WHERE a2.ID_Arrendador = u.ID
-    )
-  ) AS Metodos_Pagamento,
-
-  -- Imagens de Perfil
-  (
-    SELECT STRING_AGG(img.URL, ', ') 
-    FROM Imagens_Unicas as img 
-    WHERE img.ID_Utilizador = u.ID
-  ) AS Imagens_Perfil,
-
-  -- Desportos Favoritos
-  (
-    SELECT STRING_AGG(ds.Nome, ', ') 
-    FROM Desportos_Unicos as ds 
-    WHERE ds.ID_Jogador = u.ID
-  ) AS Desportos_Favoritos,
-
-  -- Tipo de Utilizador
-  CASE 
-    WHEN a.ID_Arrendador IS NOT NULL THEN 'Arrendador'
-    ELSE 'Jogador'
-  END AS Tipo
-
+    u.ID AS ID_Utilizador,
+    u.Nome,
+    u.Email,
+    u.Num_Tele,
+    u.Nacionalidade,
+    dbo.fn_CalculaIdade(j.Data_Nascimento) AS Idade,
+    j.Data_Nascimento,
+    j.Descricao AS DescricaoJogador,
+    j.Peso,
+    j.Altura,
+    a.IBAN,
+    a.No_Campos,
+    AVG(CAST(r.Avaliacao AS FLOAT)) AS Rating, -- Explicitly cast to avoid integer division issues
+    -- Métodos de Pagamento com Detalhes (apenas para arrendadores)
+    (
+        SELECT STRING_AGG(mp.Metodo + ': ' + mp.Detalhes, CHAR(10))
+        FROM dbo.GetMetodosPagamentoDetalhes(u.ID) mp
+        WHERE u.ID IN (SELECT ID_Arrendador FROM Arrendador)
+    ) AS Metodos_Pagamento,
+    -- Imagens de Perfil
+    (
+        SELECT STRING_AGG(img.URL, ', ') 
+        FROM Imagens_Unicas img 
+        WHERE img.ID_Utilizador = u.ID
+    ) AS Imagens_Perfil,
+    -- Desportos Favoritos
+    (
+        SELECT STRING_AGG(ds.Nome, ', ') 
+        FROM Desportos_Unicos ds 
+        WHERE ds.ID_Jogador = u.ID
+    ) AS Desportos_Favoritos,
+    CASE 
+        WHEN a.ID_Arrendador IS NOT NULL THEN 'Arrendador'
+        ELSE 'Jogador'
+    END AS Tipo
 FROM Utilizador u
 LEFT JOIN Jogador j ON u.ID = j.ID
-LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador;
+LEFT JOIN Arrendador a ON u.ID = a.ID_Arrendador
+LEFT JOIN Rating_Jogador rj ON rj.ID_Jogador = u.ID
+LEFT JOIN Rating r ON r.ID = rj.ID_Avaliacao
+GROUP BY 
+    u.ID,
+    u.Nome,
+    u.Email,
+    u.Num_Tele,
+    u.Nacionalidade,
+    j.Data_Nascimento,
+    j.Descricao,
+    j.Peso,
+    j.Altura,
+    a.IBAN,
+    a.No_Campos,
+    a.ID_Arrendador;
 GO
-
 
 -- View para obter informações detalhadas de um utilizador, incluindo desportos favoritos e imagens de perfil
 CREATE OR ALTER VIEW vw_InfoAmigo AS
@@ -181,7 +134,7 @@ SELECT
   u.ID AS ID_Utilizador,
   u.Nome,
   u.Nacionalidade,
-  j.Idade,
+  dbo.fn_CalculaIdade(j.Data_Nascimento) AS Idade,
   j.Data_Nascimento,
   j.Descricao AS DescricaoJogador,
   j.Peso,
@@ -220,7 +173,7 @@ LEFT JOIN Disponibilidade di ON r.ID_Campo = di.ID_Campo
 GO
 
 -- View para obter as reservas futuras
-CREATE VIEW vw_ReservasFuturas AS
+CREATE OR ALTER VIEW vw_ReservasFuturas AS
 SELECT *
 FROM vw_ReservasDetalhadas
 WHERE [Data] >= CAST(GETDATE() AS DATE);

@@ -22,7 +22,9 @@ def adicionar_campo_publico():
 
         # Processa imagem
         img_file = request.files.get('img')
+        print(f"Imagem recebida: {img_file}")
         if img_file and img_file.filename:
+            print(f"Salvando imagem: {img_file.filename}")
             img_url = f"img/{img_file.filename}"
             save_path = os.path.join("src", "static", "img", img_file.filename)
             img_file.save(save_path)
@@ -222,15 +224,16 @@ def adicionar_campo_privado():
     if not user_id:
         return redirect(url_for('auth.login'))
 
-    img_file = request.files.get("img")
-    img_url = None
-
+     # Processa imagem
+    img_file = request.files.get('img')
+    print(f"Imagem recebida: {img_file}")
     if img_file and img_file.filename:
+        print(f"Salvando imagem: {img_file.filename}")
         img_url = f"img/{img_file.filename}"
         save_path = os.path.join("src", "static", "img", img_file.filename)
         img_file.save(save_path)
     else:
-        img_url = 'img/campo.png'
+        img_url = 'img/campo.png'  # Imagem padrão se não for fornecida
 
     nome = request.form.get('nome')
     lat = request.form.get('latitude')
@@ -370,8 +373,6 @@ def get_campo_by_id(campo_id):
 
 
 # Função para obter as reservas de um campo privado
-from datetime import datetime
-
 def getReservasByCampo(campo_id):
     try:
         with create_connection() as conn:
@@ -394,20 +395,19 @@ def getReservasByCampo(campo_id):
         reservas = []
         for row in reservas_rows:
             print(f"Processando reserva: {row}")
-            # Keep Hora_Inicio and Hora_Fim as strings
+
             hora_inicio_str = row[4].split('.')[0]  # e.g., "10:00:00"
             hora_fim_str = row[5].split('.')[0]      # e.g., "12:00:00"
 
-            # Calculate duration in hours
+            # Calculo de duração em horas
             hora_inicio_parts = hora_inicio_str.split(':')
             hora_fim_parts = hora_fim_str.split(':')
             hora_inicio_minutes = int(hora_inicio_parts[0]) * 60 + int(hora_inicio_parts[1])
             hora_fim_minutes = int(hora_fim_parts[0]) * 60 + int(hora_fim_parts[1])
             duracao = (hora_fim_minutes - hora_inicio_minutes) / 60  # Duration in hours
-            if duracao < 0:  # Handle crossing midnight
+            if duracao < 0:
                 duracao += 24
 
-            # Format Data as string if it's a datetime object
             data = row[3]
             if isinstance(data, datetime):
                 data = data.strftime('%Y-%m-%d')
@@ -443,8 +443,9 @@ def get_campos(tipo):
     order_dir = request.args.get("order_dir", "ASC").upper()
     user_lat = request.args.get("user_lat", type=float)
     user_lon = request.args.get("user_lon", type=float)
+    dia_semana = request.args.get("dia_semana", type=int)
 
-    print(f"A obter campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}")
+    print(f"A obter campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}, dia_semana: {dia_semana}")
 
     if order_dir not in ("ASC", "DESC"):
         order_dir = "ASC"
@@ -453,17 +454,17 @@ def get_campos(tipo):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "EXEC GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?",
-                (None, user_id, tipo, pesquisa, order_by, order_dir, user_lat, user_lon)
+                "EXEC GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?, @DiaSemana=?",
+                (None, user_id, tipo, pesquisa, order_by, order_dir, user_lat, user_lon, dia_semana)
             )
             campos = cursor.fetchall()
 
-        #print(f"Campos obtidos: {campos}")
         return campos
     except Exception as e:
         print(f"Erro ao obter campos: {e}")
         return None
-
+    
+# obter detalhes de um campo específico, incluindo disponibilidade
 def get_campo_details(campo_id):
     with create_connection() as conn:
         cursor = conn.cursor()

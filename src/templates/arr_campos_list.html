@@ -82,7 +82,7 @@
         aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form method="POST" action="{{ url_for('dashboard.arr_campos_list') }}" name="add">
+                <form method="POST" action="{{ url_for('dashboard.arr_campos_list') }}" name="add" enctype="multipart/form-data">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addPrivateFieldModalLabel">Adicionar Campo Privado</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -102,7 +102,7 @@
                                     data-bs-parent="#accordionCampo">
                                     <div class="accordion-body">
                                         <div class="mb-3">
-                                            <label class="form-label">Foto de Perfil</label>
+                                            <label class="form-label">Foto</label>
                                             <input type="file" class="form-control" name="img" accept="image/*">
                                         </div>
                                         <div class="mb-3">

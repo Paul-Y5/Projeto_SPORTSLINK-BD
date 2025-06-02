@@ -1,6 +1,5 @@
 from flask import Flask, render_template, redirect, request, url_for, session
 from config import Config
-from db import create_connection
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 

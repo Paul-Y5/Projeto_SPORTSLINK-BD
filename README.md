@@ -4,10 +4,10 @@
 
 ## Ordem de carregamento de ficheiros para a BD:
 - DDL
+- UDF (Uma é utilizada num trigger)
 - Triggers (Para fazer as atualizações automáticas dos inserts do DML, Idade, pagamento, etc)
-- DML
+- DML (Para atualizar valores automaticamente via triggers)
 - Indices
-- UDF
 - Views
 - Procedures
 

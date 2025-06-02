@@ -53,23 +53,23 @@ INSERT INTO Utilizador (Nome, Email, Num_Tele, [Password], Nacionalidade) VALUES
 -- ========================================
 -- 2. Jogadores
 -- ========================================
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -25, GETDATE()), 25, 'Jogador ativo e competitivo.', 75.0, 1.80
+INSERT INTO Jogador (ID, Data_Nascimento, Descricao, Peso, Altura)
+SELECT ID, DATEADD(YEAR, -25, GETDATE()), 'Jogador ativo e competitivo.', 75.0, 1.80
 FROM Utilizador
 WHERE Nome IN ('João Silva', 'Pedro Alves', 'Carlos Dias', 'Lucas Souza');
 
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -30, GETDATE()), 30, 'Jogadora experiente.', 80.0, 1.85
+INSERT INTO Jogador (ID, Data_Nascimento, Descricao, Peso, Altura)
+SELECT ID, DATEADD(YEAR, -30, GETDATE()), 'Jogadora experiente.', 80.0, 1.85
 FROM Utilizador
 WHERE Nome IN ('Maria Costa', 'Ana Lima', 'Sofia Mendes');
 
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -22, GETDATE()), 22, 'Jogador amador.', 70.0, 1.75
+INSERT INTO Jogador (ID, Data_Nascimento, Descricao, Peso, Altura)
+SELECT ID, DATEADD(YEAR, -22, GETDATE()), 'Jogador amador.', 70.0, 1.75
 FROM Utilizador
 WHERE Nome IN ('António Rocha');
 
-INSERT INTO Jogador (ID, Data_Nascimento, Idade, Descricao, Peso, Altura)
-SELECT ID, DATEADD(YEAR, -28, GETDATE()), 28, 'Jogador de futsal.', 78.0, 1.82
+INSERT INTO Jogador (ID, Data_Nascimento, Descricao, Peso, Altura)
+SELECT ID, DATEADD(YEAR, -28, GETDATE()), 'Jogador de futsal.', 78.0, 1.82
 FROM Utilizador
 WHERE Nome IN ('Paulo Ferreira', 'Rita Nunes');
 
@@ -249,6 +249,7 @@ INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_
 -- ========================================
 -- 16. Ratings
 -- ========================================
+-- Inserir em Rating (sem alterações, está correto)
 INSERT INTO Rating (ID_Avaliador, Data_Hora, Comentario, Avaliacao) VALUES
 (1, '2025-05-30 20:00', 'Muito bom!', 5),
 (2, '2025-05-30 21:00', 'Bom campo.', 4),
@@ -256,11 +257,21 @@ INSERT INTO Rating (ID_Avaliador, Data_Hora, Comentario, Avaliacao) VALUES
 (4, '2025-05-30 22:30', 'Piso escorregadio.', 3),
 (5, '2025-05-30 23:00', 'Ótima experiência.', 4);
 
-INSERT INTO Rating_Campo (ID_Campo, ID_Avaliador) VALUES
-(1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
+-- Inserir em Rating_Campo (usar ID_Avaliacao em vez de ID_Avaliador)
+INSERT INTO Rating_Campo (ID_Campo, ID_Avaliacao) VALUES
+(1, 1), -- ID_Avaliacao 1 (corresponde a ID_Avaliador 1)
+(2, 2), -- ID_Avaliacao 2 (corresponde a ID_Avaliador 2)
+(3, 3), -- ID_Avaliacao 3 (corresponde a ID_Avaliador 3)
+(4, 4), -- ID_Avaliacao 4 (corresponde a ID_Avaliador 4)
+(5, 5); -- ID_Avaliacao 5 (corresponde a ID_Avaliador 5)
 
-INSERT INTO Rating_Jogador (ID_Jogador, ID_Avaliador) VALUES
-(2, 1), (3, 2), (1, 3), (4, 5), (5, 4);
+-- Inserir em Rating_Jogador (usar ID_Avaliacao em vez de ID_Avaliador)
+INSERT INTO Rating_Jogador (ID_Jogador, ID_Avaliacao) VALUES
+(2, 1), -- ID_Avaliacao 1 (corresponde a ID_Avaliador 1)
+(3, 2), -- ID_Avaliacao 2 (corresponde a ID_Avaliador 2)
+(1, 3), -- ID_Avaliacao 3 (corresponde a ID_Avaliador 3)
+(4, 5), -- ID_Avaliacao 5 (corresponde a ID_Avaliador 5)
+(5, 4); -- ID_Avaliacao 4 (corresponde a ID_Avaliador 4)
 
 -- ========================================
 -- 17. Amizades

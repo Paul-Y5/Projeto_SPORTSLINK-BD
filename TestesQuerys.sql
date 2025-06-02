@@ -1,7 +1,7 @@
 Use SPORTSLINK;
 Go
 
-SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Nacionalidade, J.Idade, J.Descricao, A.IBAN, A.No_Campos,
+SELECT U.ID, U.Nome, U.Email, U.Num_Tele, U.Nacionalidade, J.Descricao, A.IBAN, A.No_Campos,
     CASE WHEN A.ID_Arrendador IS NOT NULL THEN 'Arrendador'
         ELSE 'Jogador'
     END AS Tipo
@@ -54,7 +54,7 @@ SELECT j2.ID, u.Nome, AVG(r.Avaliacao) AS Rating
 FROM Jogador_Amizade as ja JOIN Jogador as j2 ON (ja.ID_J1=j2.ID OR ja.ID_J2=j2.ID)
 JOIN Utilizador as u ON u.ID=j2.ID
 LEFT JOIN Rating_Jogador as rj ON rj.ID_Jogador=j2.ID
-LEFT JOIN Rating as r ON r.ID_Avaliador=rj.ID_Avaliador
+LEFT JOIN Rating as r ON r.ID=rj.ID_Avaliacao
 WHERE (ja.ID_J1 = 511126546 OR ja.ID_J2 = 511126546) AND j2.ID <> 511126546
 GROUP BY j2.ID, u.Nome
 
@@ -93,7 +93,6 @@ SELECT
   u.Email,
   u.Num_Tele,
   u.Nacionalidade,
-  j.Idade,
   j.Data_Nascimento,
   j.Descricao AS DescricaoJogador,
   j.Peso,
@@ -117,7 +116,7 @@ LEFT JOIN Desporto_Jogador dj ON u.ID = dj.ID_Jogador
 LEFT JOIN Desporto d ON dj.ID_Desporto = d.ID
 GROUP BY 
   u.ID, u.Nome, u.Email, u.Num_Tele, u.Nacionalidade, 
-  j.Idade, j.Data_Nascimento, j.Descricao, j.Peso, j.Altura, 
+	j.Data_Nascimento, j.Descricao, j.Peso, j.Altura, 
   a.IBAN, a.No_Campos, mpa.Met_pagamento, a.ID_Arrendador;
 GO
 
@@ -295,7 +294,6 @@ SELECT * FROM vw_PartidaDetalhes
 
 SELECT u.Nome, r.Avaliacao, r.Data_Hora, r.Comentario
     FROM Rating r
-    INNER JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
-	JOIN Utilizador as u on u.ID=rj.ID_Avaliador
+    INNER JOIN Rating_Jogador rj ON r.ID = rj.ID_Avaliacao
+	JOIN Utilizador as u on u.ID=r.ID_Avaliador
     WHERE rj.ID_Jogador = 1
-

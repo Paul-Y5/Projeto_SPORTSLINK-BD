@@ -1,45 +1,27 @@
 USE SPORTSLINK;
 GO
 
--- Trigger para calcular a idade do jogador
-CREATE TRIGGER trg_CalculaIdade
-ON Jogador
-AFTER INSERT, UPDATE
-AS
-BEGIN
-  SET NOCOUNT ON;
-
-  UPDATE j
-  SET j.Idade = DATEDIFF(YEAR, i.Data_Nascimento, GETDATE()) 
-    - CASE 
-        WHEN MONTH(i.Data_Nascimento) > MONTH(GETDATE())
-            OR (MONTH(i.Data_Nascimento) = MONTH(GETDATE()) AND DAY(i.Data_Nascimento) > DAY(GETDATE()))
-        THEN 1 
-        ELSE 0 
-        END
-  FROM Jogador j
-  INNER JOIN inserted i ON j.ID = i.ID;
-END;
-GO
-
--- Trigger para verificar reservas sobrepostas
-CREATE TRIGGER trg_PreventOverlappingReservations
+CREATE OR ALTER TRIGGER trg_PreventOverlappingReservations
 ON Reserva
 INSTEAD OF INSERT
 AS
 BEGIN
+  -- Verifica sobreposição de horário para o mesmo campo e data
   IF EXISTS (
     SELECT 1
     FROM Reserva r
-    JOIN inserted i ON r.ID_Campo = i.ID_Campo AND r.[Data] = i.[Data]
-    WHERE
-      (i.Hora_Inicio < r.Hora_Fim AND i.Hora_Fim > r.Hora_Inicio)
+    JOIN inserted i
+      ON r.ID_Campo = i.ID_Campo
+     AND r.[Data] = i.[Data]
+     AND i.Hora_Inicio < r.Hora_Fim
+     AND i.Hora_Fim > r.Hora_Inicio
   )
   BEGIN
     RAISERROR('Já existe uma reserva para este campo neste horário.', 16, 1);
-    ROLLBACK TRANSACTION;
     RETURN;
   END
+
+  -- Nenhuma sobreposição detectada, pode inserir
   INSERT INTO Reserva (ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao)
   SELECT ID_Campo, ID_Jogador, [Data], Hora_Inicio, Hora_Fim, Total_Pagamento, Estado, Descricao
   FROM inserted;
@@ -47,7 +29,7 @@ END;
 GO
 
 -- Trigger para atualizar o estado do campo quando uma reserva é criada/cancelada
-CREATE TRIGGER trg_UpdateCampoOcupadoOnReserva
+CREATE OR ALTER TRIGGER trg_UpdateCampoOcupadoOnReserva
 ON Reserva
 AFTER INSERT, DELETE
 AS
@@ -66,9 +48,8 @@ BEGIN
 END;
 GO
 
-
 -- Trigger para INSERT com múltiplas linhas
-CREATE TRIGGER trg_UpdateNoCampos_Insert
+CREATE OR ALTER TRIGGER trg_UpdateNoCampos_Insert
 ON Campo_Priv
 AFTER INSERT
 AS
@@ -85,7 +66,7 @@ END;
 GO
 
 -- Trigger para DELETE com múltiplas linhas
-CREATE TRIGGER trg_UpdateNoCampos_Delete
+CREATE OR ALTER TRIGGER trg_UpdateNoCampos_Delete
 ON Campo_Priv
 AFTER DELETE
 AS
@@ -101,41 +82,30 @@ BEGIN
 END;
 GO
 
--- Atualiza o número de jogadores após inserção
-CREATE TRIGGER trg_UpdateNoJogadores_Insert
+-- Trigger para atualizar o número de jogadores em Partida
+CREATE OR ALTER TRIGGER trg_UpdateNoJogadores_InsertDelete
 ON Jogador_joga
-AFTER INSERT
+AFTER INSERT, DELETE
 AS
 BEGIN
+  -- Atualiza o número de jogadores em todas as partidas afetadas
   UPDATE p
   SET no_jogadores = (
-    SELECT COUNT(*) FROM Jogador_joga WHERE ID_Partida = i.ID_Partida
+    SELECT COUNT(*) FROM Jogador_joga WHERE ID_Partida = p.ID
   )
   FROM Partida p
-  JOIN inserted i ON p.ID = i.ID_Partida;
+  WHERE p.ID IN (
+    SELECT ID_Partida FROM inserted
+    UNION
+    SELECT ID_Partida FROM deleted
+  );
 END;
 GO
-
--- Atualiza o número de jogadores após remoção
-CREATE TRIGGER trg_UpdateNoJogadores_Delete
-ON Jogador_joga
-AFTER DELETE
-AS
-BEGIN
-  UPDATE p
-  SET no_jogadores = (
-    SELECT COUNT(*) FROM Jogador_joga WHERE ID_Partida = d.ID_Partida
-  )
-  FROM Partida p
-  JOIN deleted d ON p.ID = d.ID_Partida;
-END;
-GO
-
 
 -- Calculo Imediato de Total_Pagamento
-CREATE TRIGGER tr_CalcularTotalPagamento
+CREATE OR ALTER TRIGGER trg_CalcularTotalPagamento
 ON Reserva
-AFTER INSERT
+AFTER INSERT, UPDATE
 AS
 BEGIN
     -- Declaração das variáveis necessárias
@@ -199,8 +169,8 @@ BEGIN
     SET NOCOUNT ON;
     UPDATE p
     SET Estado = CASE
-        WHEN GETDATE() >= DATEADD(MINUTE, -15, p.Data_Hora) AND GETDATE() < DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Em Andamento'
-        WHEN GETDATE() >= DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Concluída'
+        WHEN GETDATE() >= DATEADD(MINUTE, -15, p.Data_Hora) AND GETDATE() < DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Andamento'
+        WHEN GETDATE() >= DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Finalizada'
         ELSE 'Aguardando'
     END
     FROM Partida p

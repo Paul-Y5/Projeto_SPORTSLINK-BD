@@ -590,7 +590,7 @@ BEGIN
 END;
 GO
 
--- Obter campos com filtros e ordenação
+-- Obter campos disponíveis
 CREATE OR ALTER PROCEDURE GetCampos
     @ID_Campo INT = NULL,
     @ID_Arrendador INT = NULL,
@@ -599,58 +599,62 @@ CREATE OR ALTER PROCEDURE GetCampos
     @OrderBy NVARCHAR(50) = 'Nome',
     @OrderDir VARCHAR(4) = 'ASC',
     @UserLat FLOAT = NULL,
-    @UserLon FLOAT = NULL
+    @UserLon FLOAT = NULL,
+    @DiaSemana INT = NULL  -- Novo parâmetro para ordenar por preço no dia da semana
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @SQL NVARCHAR(MAX);
-    DECLARE @EffectiveOrderBy NVARCHAR(50);
+    -- SubConsulta com cálculo de distância e menor preço do dia
+    WITH CamposComDistancia AS (
+        SELECT 
+            vw.*,
+            -- Distância calculada se coordenadas forem fornecidas
+            CASE 
+                WHEN @UserLat IS NOT NULL AND @UserLon IS NOT NULL 
+                THEN dbo.CalculateDistance(@UserLat, @UserLon, vw.Latitude, vw.Longitude)
+                ELSE NULL
+            END AS DistanciaCalculada,
 
-    -- Determina o campo de ordenação efetivo
-    SET @EffectiveOrderBy = 
-        CASE 
-            WHEN @OrderBy = 'Distance' AND @UserLat IS NOT NULL AND @UserLon IS NOT NULL THEN 'Distance'
-            ELSE COALESCE(@OrderBy, 'Nome')
-        END;
+            -- Preço mais barato no dia fornecido
+            (
+                SELECT MIN(d.Preco)
+                FROM Disponibilidade d
+                WHERE d.ID_Campo = vw.ID
+                  AND (@DiaSemana IS NOT NULL AND d.ID_dia = @DiaSemana)
+            ) AS PrecoMaisBarato
 
-    SET @SQL = '
-        SELECT *, 
-               dbo.CalculateDistance(@UserLat, @UserLon, vw.LATITUDE, vw.LONGITUDE) AS Distance
-        FROM vw_CamposDisponiveis AS vw
-        WHERE 1 = 1' +
-        -- Filtro por ID específico
-        CASE 
-            WHEN @ID_Campo IS NOT NULL THEN ' AND vw.ID = @ID_Campo'
-            ELSE '' 
-        END +
-        -- Filtro por tipo de campo
-        CASE 
-            WHEN @Tipo IS NOT NULL THEN ' AND vw.Tipo = @Tipo'
-            ELSE '' 
-        END +
-        -- Filtro por pesquisa em Nome, Endereço, Dias_Disponiveis, Desportos, NOME_ARRENDADOR
-        CASE 
-            WHEN @Pesquisa IS NOT NULL THEN 
-                ' AND (vw.Nome LIKE ''%'' + @Pesquisa + ''%'' OR vw.Endereco LIKE ''%'' + @Pesquisa + ''%'' 
-                       OR vw.Dias_Disponiveis LIKE ''%'' + @Pesquisa + ''%'' OR vw.Desportos LIKE ''%'' + @Pesquisa + ''%''
-                       OR vw.NOME_ARRENDADOR LIKE ''%'' + @Pesquisa + ''%'' )'
-            ELSE '' 
-        END +
-        -- Excluir campos privados do próprio arrendador
-        CASE 
-            WHEN @ID_Arrendador IS NOT NULL THEN 
-                ' AND (vw.Tipo = ''Publico'' OR (vw.Tipo = ''Privado'' AND vw.ID_Arrendador <> @ID_Arrendador))'
-            ELSE '' 
-        END +
-        ' ORDER BY ' + QUOTENAME(@EffectiveOrderBy) + ' ' + 
-            CASE WHEN @OrderDir = 'DESC' THEN 'DESC' ELSE 'ASC' END + ';';
+        FROM vw_CamposDisponiveis vw
+        WHERE
+            (@ID_Campo IS NULL OR vw.ID = @ID_Campo)
+            AND (@Tipo IS NULL OR vw.Tipo = @Tipo)
+            AND (
+                @Pesquisa IS NULL OR
+                vw.Nome LIKE '%' + @Pesquisa + '%' OR
+                vw.Endereco LIKE '%' + @Pesquisa + '%' OR
+                vw.Dias_Disponiveis LIKE '%' + @Pesquisa + '%' OR
+                vw.Desportos LIKE '%' + @Pesquisa + '%' OR
+                vw.NOME_ARRENDADOR LIKE '%' + @Pesquisa + '%'
+            )
+            AND (
+                @ID_Arrendador IS NULL OR
+                vw.Tipo = 'Publico' OR 
+                (vw.Tipo = 'Privado' AND vw.ID_Arrendador <> @ID_Arrendador)
+            )
+    )
 
-    -- Executa a SQL montada dinamicamente com os parâmetros
-    EXEC sp_executesql 
-        @SQL,
-        N'@ID_Campo INT, @ID_Arrendador INT, @Tipo VARCHAR(10), @Pesquisa NVARCHAR(100), @OrderBy NVARCHAR(50), @OrderDir VARCHAR(4), @UserLat FLOAT, @UserLon FLOAT',
-        @ID_Campo, @ID_Arrendador, @Tipo, @Pesquisa, @OrderBy, @OrderDir, @UserLat, @UserLon;
+    -- Seleção final com ordenação dinâmica
+    SELECT *
+    FROM CamposComDistancia
+    ORDER BY 
+        CASE WHEN @OrderBy = 'Nome'      AND @OrderDir = 'ASC'  THEN Nome END ASC,
+        CASE WHEN @OrderBy = 'Nome'      AND @OrderDir = 'DESC' THEN Nome END DESC,
+        CASE WHEN @OrderBy = 'Distancia' AND @OrderDir = 'ASC'  THEN DistanciaCalculada END ASC,
+        CASE WHEN @OrderBy = 'Distancia' AND @OrderDir = 'DESC' THEN DistanciaCalculada END DESC,
+        CASE WHEN @OrderBy = 'Tipo'      AND @OrderDir = 'ASC'  THEN Tipo END ASC,
+        CASE WHEN @OrderBy = 'Tipo'      AND @OrderDir = 'DESC' THEN Tipo END DESC,
+        CASE WHEN @OrderBy = 'Preco'     AND @OrderDir = 'ASC'  THEN PrecoMaisBarato END ASC,
+        CASE WHEN @OrderBy = 'Preco'     AND @OrderDir = 'DESC' THEN PrecoMaisBarato END DESC;
 END;
 GO
 
@@ -1214,7 +1218,7 @@ BEGIN
 END;
 GO
 
--- Obter amigos
+-- Obter amigos de um utilizador
 CREATE OR ALTER PROCEDURE GetFriends
   @UserID INT
 AS
@@ -1228,7 +1232,7 @@ BEGIN
   INNER JOIN Jogador AS j2 ON (ja.ID_J1 = j2.ID OR ja.ID_J2 = j2.ID)
   INNER JOIN Utilizador AS u ON u.ID = j2.ID
   LEFT JOIN Rating_Jogador AS rj ON rj.ID_Jogador = j2.ID
-  LEFT JOIN Rating AS r ON r.ID_Avaliador = rj.ID_Avaliador
+  LEFT JOIN Rating AS r ON r.ID = rj.ID_Avaliacao
   LEFT JOIN IMG_Perfil AS ipf ON ipf.ID_Utilizador = j2.ID
   LEFT JOIN Imagem AS i ON i.ID = ipf.ID_img
   WHERE (ja.ID_J1 = @UserID OR ja.ID_J2 = @UserID) AND j2.ID <> @UserID
@@ -1292,78 +1296,119 @@ CREATE OR ALTER PROCEDURE AddRating
   @ID_Ratee INT,
   @Avaliacao INT,
   @Comentario VARCHAR(255) = NULL,
-  @Date_Av DATETIME
+  @Date_Av DATETIME,
+  @IsCampo BIT = 0 -- Novo parâmetro para indicar se é uma avaliação de campo
 AS
 BEGIN
   SET NOCOUNT ON;
-
   BEGIN TRY
-      BEGIN TRANSACTION;
+    BEGIN TRANSACTION;
+    IF @Avaliacao < 1 OR @Avaliacao > 5
+    BEGIN
+      RAISERROR('A avaliação deve estar entre 1 e 5.', 11, 1);
+      ROLLBACK TRANSACTION;
+      RETURN;
+    END;
+    IF @IsCampo = 0 AND @ID_Rater = @ID_Ratee
+    BEGIN
+      RAISERROR('Não é permitido avaliar a si mesmo.', 11, 1);
+      ROLLBACK TRANSACTION;
+      RETURN;
+    END;
 
-      IF @Avaliacao < 1 OR @Avaliacao > 5
-      BEGIN
-          RAISERROR('A avaliação deve estar entre 1 e 5.', 11, 1);
-          ROLLBACK TRANSACTION;
-          RETURN;
-      END;
+    DECLARE @ID_Avaliacao INT;
 
-      IF @ID_Rater = @ID_Ratee
-      BEGIN
-          RAISERROR('Não é permitido avaliar a si mesmo.', 11, 1);
-          ROLLBACK TRANSACTION;
-          RETURN;
-      END;
+    -- Verificar se já existe uma avaliação do mesmo avaliador para o mesmo alvo
+    IF @IsCampo = 0 AND EXISTS (
+      SELECT 1 
+      FROM Rating r 
+      JOIN Rating_Jogador rj ON r.ID = rj.ID_Avaliacao
+      WHERE r.ID_Avaliador = @ID_Rater 
+        AND rj.ID_Jogador = @ID_Ratee
+    )
+    BEGIN
+      -- Atualizar a avaliação existente
+      UPDATE Rating
+      SET Avaliacao = @Avaliacao,
+          Comentario = @Comentario,
+          Data_Hora = @Date_Av
+      FROM Rating r
+      JOIN Rating_Jogador rj ON r.ID = rj.ID_Avaliacao
+      WHERE r.ID_Avaliador = @ID_Rater 
+        AND rj.ID_Jogador = @ID_Ratee;
+    END
+    ELSE IF @IsCampo = 1 AND EXISTS (
+      SELECT 1 
+      FROM Rating r 
+      JOIN Rating_Campo rc ON r.ID = rc.ID_Avaliacao
+      WHERE r.ID_Avaliador = @ID_Rater 
+        AND rc.ID_Campo = @ID_Ratee
+    )
+    BEGIN
+      -- Atualizar a avaliação existente para o campo
+      UPDATE Rating
+      SET Avaliacao = @Avaliacao,
+          Comentario = @Comentario,
+          Data_Hora = @Date_Av
+      FROM Rating r
+      JOIN Rating_Campo rc ON r.ID = rc.ID_Avaliacao
+      WHERE r.ID_Avaliador = @ID_Rater 
+        AND rc.ID_Campo = @ID_Ratee;
+    END
+    ELSE
+    BEGIN
+      -- Inserir nova avaliação
+      INSERT INTO Rating (ID_Avaliador, Avaliacao, Comentario, Data_Hora)
+      VALUES (@ID_Rater, @Avaliacao, @Comentario, @Date_Av);
+      
+      -- Capturar o ID gerado
+      SET @ID_Avaliacao = SCOPE_IDENTITY();
 
-      IF EXISTS (
-          SELECT 1 
-          FROM Rating r 
-          JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
-          WHERE r.ID_Avaliador = @ID_Rater 
-            AND rj.ID_Jogador = @ID_Ratee
-      )
-      BEGIN
-          UPDATE Rating
-          SET Avaliacao = @Avaliacao,
-              Comentario = @Comentario,
-              Data_Hora = @Date_Av
-          FROM Rating r
-          JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
-          WHERE r.ID_Avaliador = @ID_Rater 
-            AND rj.ID_Jogador = @ID_Ratee;
-      END
+      -- Inserir na tabela apropriada (Rating_Jogador ou Rating_Campo)
+      IF @IsCampo = 0
+        INSERT INTO Rating_Jogador (ID_Avaliacao, ID_Jogador)
+        VALUES (@ID_Avaliacao, @ID_Ratee);
       ELSE
-      BEGIN
-          INSERT INTO Rating (ID_Avaliador, Avaliacao, Comentario, Data_Hora)
-          VALUES (@ID_Rater, @Avaliacao, @Comentario, @Date_Av);
+        INSERT INTO Rating_Campo (ID_Avaliacao, ID_Campo)
+        VALUES (@ID_Avaliacao, @ID_Ratee);
+    END;
 
-          INSERT INTO Rating_Jogador (ID_Avaliador, ID_Jogador)
-          VALUES (@ID_Rater, @ID_Ratee);
-      END;
-
-      COMMIT TRANSACTION;
-      SELECT 1 AS Success, 'Avaliação enviada com sucesso.' AS Message;
+    COMMIT TRANSACTION;
+    SELECT 1 AS Success, 'Avaliação enviada com sucesso.' AS Message;
   END TRY
   BEGIN CATCH
-      IF @@TRANCOUNT > 0
-          ROLLBACK TRANSACTION;
-
-      -- Somente um tipo de retorno
-      SELECT 0 AS Success, ERROR_MESSAGE() AS Message;
-      RETURN;
+    IF @@TRANCOUNT > 0
+      ROLLBACK TRANSACTION;
+    SELECT 0 AS Success, ERROR_MESSAGE() AS Message;
+    RETURN;
   END CATCH
 END;
 GO
 
--- Obter avaliações de um jogador
+-- Obter avaliações de um jogador ou campo
 CREATE OR ALTER PROCEDURE GetRatings
-    @ID_Jogador INT
+  @ID_Alvo INT,
+  @IsCampo BIT = 0
 AS
 BEGIN
-    SET NOCOUNT ON;
+  SET NOCOUNT ON;
+  IF @IsCampo = 0
+  BEGIN
+    -- Avaliações de um jogador
     SELECT u.Nome, r.Avaliacao, r.Data_Hora, r.Comentario
     FROM Rating r
-    INNER JOIN Rating_Jogador rj ON r.ID_Avaliador = rj.ID_Avaliador
-	  JOIN Utilizador as u on u.ID=rj.ID_Avaliador
-    WHERE rj.ID_Jogador = @ID_Jogador;
+    INNER JOIN Rating_Jogador rj ON r.ID = rj.ID_Avaliacao
+    JOIN Utilizador AS u ON u.ID = r.ID_Avaliador
+    WHERE rj.ID_Jogador = @ID_Alvo;
+  END
+  ELSE
+  BEGIN
+    -- Avaliações de um campo
+    SELECT u.Nome, r.Avaliacao, r.Data_Hora, r.Comentario
+    FROM Rating r
+    INNER JOIN Rating_Campo rc ON r.ID = rc.ID_Avaliacao
+    JOIN Utilizador AS u ON u.ID = r.ID_Avaliador
+    WHERE rc.ID_Campo = @ID_Alvo;
+  END
 END;
 GO

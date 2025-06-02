@@ -44,24 +44,16 @@
         <div class="card user-info p-4 mt-4">
             <h2 style="color: black;">Avaliações</h2>
             {% if ratings %}
-            {% set total = 0 %}
-            {% set count = 0 %}
-            {% for rating in ratings %}
-            {% set total = total + rating.Avaliacao %}
-            {% set count = count + 1 %}
-            {% endfor %}
-            {% set average = (total / count) if count > 0 else 0 %}
-            <p><strong>Média de Avaliações:</strong> {{ "%.1f" | format(average) }} / 5 ({{ count }} avaliações)</p>
+            <p><strong>Média de Avaliações:</strong> ({{ user['Rating'] }}/5)</p>
             <ul class="list-group list-group-flush">
                 {% for rating in ratings %}
                 <li class="list-group-item">
-                    <strong>Avaliador:</strong> {{ rating.Nome }}
-                    <br><strong>Nota:</strong> {{ rating.Avaliacao }} / 5
-                    <br><strong>Data e Hora:</strong> {{ rating.Data_Hora.strftime('%Y-%m-%d %H:%M') if rating.Data_Hora is
-                    string else rating.Data_Hora }}
-                    {% if rating.Comentario %}
-                    <br><strong>Comentário:</strong> {{ rating.Comentario }}
-                    {% endif %}
+                    <div class="list-group-item mb-3 p-3 border rounded">
+                        <h5 class="mb-1">Avaliador: {{ rating.Nome }}</h5>
+                        <p><strong>Classificação:</strong> {{ rating.Avaliacao }}</p>
+                        <p><strong>Comentário:</strong> {{ rating.Comentario|default('Nenhum comentário') }}</p>
+                        <p><strong>Data:</strong> {{ rating.DataAvaliacao }}</p>
+                    </div>
                 </li>
                 {% endfor %}
             </ul>

@@ -18,7 +18,6 @@ CREATE TABLE Utilizador (
 CREATE TABLE Jogador (
   ID INT PRIMARY KEY,
   Data_Nascimento DATE NOT NULL,
-  Idade INT, 
   Descricao VARCHAR(2500),
   Peso DECIMAL(5,2),
   Altura DECIMAL(5,2),
@@ -122,7 +121,7 @@ CREATE TABLE Partida (
   Data_Hora          DATETIME NOT NULL,
   Duracao            INT,
   Resultado          VARCHAR(50),
-  Estado             VARCHAR(50) CHECK (Estado IN ('Aguardando', 'Em Andamento', 'Finalizada')),
+  Estado             VARCHAR(50) CHECK (Estado IN ('Aguardando', 'Andamento', 'Finalizada')),
 
   PRIMARY KEY (ID),
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID) ON DELETE SET NULL
@@ -156,31 +155,32 @@ CREATE TABLE Reserva (
 );
 
 CREATE TABLE Rating (
+  ID                INT IDENTITY(1,1),
   ID_Avaliador      INT,
   Data_Hora         DATETIME,
   Comentario        VARCHAR(2500),
   Avaliacao         INT CHECK (Avaliacao BETWEEN 1 AND 5) NOT NULL,
 
-  PRIMARY KEY (ID_Avaliador),
+  PRIMARY KEY (ID),
   FOREIGN KEY (ID_Avaliador) REFERENCES Jogador(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE Rating_Campo (
-  ID_Avaliador       INT,
+  ID_Avaliacao       INT,
   ID_Campo           INT,
 
-  PRIMARY KEY (ID_Campo, ID_Avaliador),
+  PRIMARY KEY (ID_Campo, ID_Avaliacao),
   FOREIGN KEY (ID_Campo) REFERENCES Campo(ID) ON DELETE CASCADE,
-  FOREIGN KEY (ID_Avaliador) REFERENCES Rating(ID_Avaliador) ON DELETE CASCADE
+  FOREIGN KEY (ID_Avaliacao) REFERENCES Rating(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE Rating_Jogador (
   ID_Jogador         INT,
-  ID_Avaliador       INT,
+  ID_Avaliacao       INT,
 
-  PRIMARY KEY (ID_Jogador, ID_Avaliador),
+  PRIMARY KEY (ID_Jogador, ID_Avaliacao),
   FOREIGN KEY (ID_Jogador) REFERENCES Jogador(ID) ON DELETE CASCADE,
-  FOREIGN KEY (ID_Avaliador) REFERENCES Rating(ID_Avaliador) ON DELETE NO ACTION
+  FOREIGN KEY (ID_Avaliacao) REFERENCES Rating(ID) ON DELETE NO ACTION
 );
 
 CREATE TABLE Dias_semana (

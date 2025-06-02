@@ -18,7 +18,7 @@ def conn_string() -> str:
 
     if trusted == "yes":
         # Usa autenticação integrada do Windows
-        return f"DRIVER={{SQL Server}};SERVER={server};DATABASE={db_name};Trusted_Connection=yes;"
+        return f"DRIVER={{SQL Server}};SERVER={server};DATABASE={db_name};Trusted_Connection={trusted};"
     else:
         # Usa username e password
         username = config["database"]["username"]

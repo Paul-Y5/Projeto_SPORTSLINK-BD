@@ -15,13 +15,14 @@ def get_user_info(user_id):
             # Obter avaliações de avaliadores que avaliaram o amigo
             cursor.execute("EXEC GetRatings ?", (user_id,))
             ratings_data = cursor.fetchall()
-        
+
         # Mapear avaliações para lista de dicionários
         ratings = [
             {
+                "Nome": rating.Nome,
                 "Avaliacao": rating.Avaliacao,
                 "Comentario": rating.Comentario,
-                "DataAvaliacao": rating.DataAvaliacao if isinstance(rating.DataAvaliacao, datetime) else datetime.strptime(rating.DataAvaliacao, '%Y-%m-%d %H:%M:%S')
+                "DataAvaliacao": rating.Data_Hora if isinstance(rating.Data_Hora, datetime) else datetime.strptime(rating.Data_Hora, '%Y-%m-%d %H:%M:%S')
             }
             for rating in ratings_data
         ]
@@ -402,12 +403,25 @@ def rate_friend(user_id, friend_id, rating, comment):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC AddRating ?, ?, ?, ?, ?", (user_id, friend_id, int(rating), comment, datetime.now()))
+            
+            # Data e hora atual
+            current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Chamar a stored procedure AddRating
+            # @IsCampo = 0 porque é uma avaliação de jogador
+            cursor.execute("EXEC AddRating ?, ?, ?, ?, ?, ?", 
+                          (user_id, friend_id, rating, comment, current_datetime, 0))
+            
+            # Obter o resultado
             result = cursor.fetchone()
             if result and result[0] == 1:
                 return True
             else:
+                flash(result[1] if result else "Erro desconhecido ao avaliar jogador.", "danger")
                 return False
+                
+    # Faltou implementar rating a campos, mas vamos manter o foco em jogadores (apenas para demonstrar a lógica)
+    
     except Exception as e:
         flash(f"Erro ao avaliar jogador: {str(e)}", "danger")
         return False

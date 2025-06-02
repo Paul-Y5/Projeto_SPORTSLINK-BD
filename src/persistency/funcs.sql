@@ -1,6 +1,24 @@
 USE SPORTSLINK;
 GO
 
+CREATE OR ALTER FUNCTION dbo.fn_CalculaIdade (@DataNascimento DATE)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @Idade INT;
+
+    SET @Idade = DATEDIFF(YEAR, @DataNascimento, GETDATE())
+        - CASE 
+            WHEN MONTH(@DataNascimento) > MONTH(GETDATE()) 
+                 OR (MONTH(@DataNascimento) = MONTH(GETDATE()) AND DAY(@DataNascimento) > DAY(GETDATE()))
+            THEN 1 
+            ELSE 0 
+          END;
+
+    RETURN @Idade;
+END;
+GO
+
 -- Utilizador já existe? (Verifica através do email que é único na tabela Utilizador)
 CREATE OR ALTER FUNCTION dbo.UtilizadorExists (@Email VARCHAR(512))
 RETURNS BIT
@@ -44,24 +62,6 @@ BEGIN
     DECLARE @Minutos INT = @TotalMin % 60
 
     RETURN RIGHT('0' + CAST(@Horas AS VARCHAR), 2) + ':' + RIGHT('0' + CAST(@Minutos AS VARCHAR), 2)
-END;
-GO
-
--- ESTADO PARTIDA
-CREATE OR ALTER FUNCTION dbo.GetEstadoPartida
-(
-  @Estado VARCHAR(50)
-)
-RETURNS VARCHAR(100)
-AS
-BEGIN
-  RETURN 
-    CASE @Estado
-      WHEN 'Aguardando' THEN 'Partida aguardando jogadores'
-      WHEN 'Em Andamento' THEN 'Partida em progresso'
-      WHEN 'Finalizada' THEN 'Partida finalizada'
-      ELSE 'Estado desconhecido'
-    END
 END;
 GO
 

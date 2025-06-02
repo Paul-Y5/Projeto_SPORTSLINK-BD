@@ -14,6 +14,7 @@
     <form method="get" action="{{ url_for('dashboard.ver_campos') }}" class="row g-3 align-items-center">
         <input type="hidden" id="user_lat" name="user_lat">
         <input type="hidden" id="user_lon" name="user_lon">
+        <input type="hidden" id="dia_semana" name="dia_semana">
         <div class="col-md-3">
             <input type="text" class="form-control" name="pesquisa" placeholder="Pesquisar por nome ou endereço"
             value="{{ request.args.get('pesquisa', '') }}">
@@ -24,6 +25,7 @@
                 <option value="Nome" {% if request.args.get('order_by')=='Nome' %}selected{% endif %}>Nome</option>
                 <option value="Largura" {% if request.args.get('order_by')=='Largura' %}selected{% endif %}>Largura</option>
                 <option value="Comprimento" {% if request.args.get('order_by')=='Comprimento' %}selected{% endif %}>Comprimento</option>
+                <option value="Preco" {% if request.args.get('order_by')=='Preco' %}selected{% endif %}>Preço</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -193,6 +195,15 @@
             }, 100);
         }
     });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const hoje = new Date();
+        const dia = hoje.getDay(); // 0 (domingo) a 6 (sábado)
+        // Convertendo para padrão 1–7 (domingo = 1)
+        const diaSQL = dia === 0 ? 1 : dia + 1;
+        document.getElementById('dia_semana').value = diaSQL;
+    });
+
 </script>
 
 {% endblock %}

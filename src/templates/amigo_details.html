@@ -20,7 +20,8 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h2 class="mb-0">Informações do Amigo</h2>
-            <a href="javascript:history.back()" class="btn btn-light">Voltar</a>
+            <a href="{{ url_for('dashboard.friends_list') }}" class="btn btn-light btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar à Lista de Amigos
         </div>
         <div class="card-body">
             <ul class="list-group list-group-flush">
