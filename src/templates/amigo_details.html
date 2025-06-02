@@ -20,11 +20,18 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h2 class="mb-0">Informações do Amigo</h2>
-            <a href="{{ url_for('dashboard.friends_list') }}" class="btn btn-light btn-sm">
-                <i class="bi bi-arrow-left"></i> Voltar à Lista de Amigos
+            <div class="btn-group">
+                <a href="{{ url_for('dashboard.list_friends') }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar à Lista de Amigos
+                </a>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body text-center">
             <ul class="list-group list-group-flush">
+                <li class="list-group-item text-center">
+                    <img src="{{ url_for('static', filename=(user['Imagens_Perfil'].split(',')[0] if user['Imagens_Perfil'] else 'img/icon_def.png')) }}"
+                        alt="Imagem de Perfil" class="img-fluid rounded-circle" style="width: 150px; height: 150px; margin: 2%; object-fit: cover;">
+                </li>
                 <li class="list-group-item"><strong>Nome:</strong> {{ user.Nome }}</li>
                 <li class="list-group-item"><strong>Nacionalidade:</strong> {{ user.Nacionalidade or '-' }}</li>
                 <li class="list-group-item"><strong>Data de Nascimento:</strong> {{ user.Data_Nascimento }} ({{

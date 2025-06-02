@@ -14,6 +14,21 @@
 ### Para executar: python app.py (dentro da pasta src) (Alterar conf.ini)
 ### Ou correr na BD que se encotra no IETTA ()
 
+# Organização da pasta
+## conf.ini está fora da src, esse é o ficheiro a alterar apra colocar as credenciais de acesso
+## Ainda fora da pasta src os ficheiros .sql para criar a base dados, tabelas (DDL), DML para inserção de dados e indices para criar os indices.
+## Para além disso tem todos os testes de querys que fizemos e scripts para apagar tanto dados como
+
+## Dentro da src:
+- app.py (o que executa o website com blueprints)
+- config.oy e db.py (para a conexão)
+- utils (funções auxiliar de python)
+- templates (todas as páginas HTML usadas)
+- static (pasta que possuem css, js e imagens utilizadas (ao carregar imagens para a bd o url fica como caminho para a pasta img/"imagem.png"))
+- routes (possui as rotas com as blueprints usadas Dashboard e Auth)
+- persistency (possui ficheiros para criar SPs, UDFs, Triggers e Views)
+- controllers (onde é feita toda a lógica de interação entre html e BD através de connection.execute(), várias funções que são chamadas nas routes)
+
 ---
 # 🏅 Aplicação de Agendamento de Partidas e Arrendamento de Campos Esportivos  
 
