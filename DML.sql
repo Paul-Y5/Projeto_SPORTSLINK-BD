@@ -316,3 +316,120 @@ INSERT INTO IMG_Campo (ID_Campo, ID_img) VALUES
 (10, 1); -- Parque Coimbra: Futsal
 
 COMMIT TRANSACTION;
+
+-- Para Testar Indices (Adicionar muitos dados para se perceber a diferença de performance)
+
+/* -- Populate Utilizador table
+DECLARE @i INT = 30;
+
+WHILE @i <= 1000
+BEGIN
+    INSERT INTO Utilizador (Nome, Email, Num_Tele, [Password], Nacionalidade)
+    VALUES (
+        CONCAT('User Name ', @i),
+        CONCAT('user', @i, '@example.com'),
+        CONCAT('912345', RIGHT('000' + CAST(@i AS VARCHAR), 3)),
+        CONVERT(VARBINARY(512), HASHBYTES('SHA2_256', 'password' + CAST(@i AS VARCHAR))),
+        CASE WHEN @i % 4 = 0 THEN 'Portugal' 
+             WHEN @i % 4 = 1 THEN 'Brasil' 
+             WHEN @i % 4 = 2 THEN 'Espanha' 
+             ELSE 'França' END
+    );
+
+    SET @i = @i + 1;
+END;
+
+-- Populate Jogador table
+SET @i = 30;
+
+WHILE @i <= 1000
+BEGIN
+    INSERT INTO Jogador (ID, Data_Nascimento, Descricao, Peso, Altura)
+    VALUES (
+        @i,
+        DATEADD(YEAR, -1 * (18 + (@i % 22)), GETDATE()), -- Random age between 18 and 40
+        CONCAT('Biography for player ', @i, '...'),
+        ROUND(50 + (RAND() * 50), 2), -- Weight between 50 and 100 kg
+        ROUND(150 + (RAND() * 50), 2) -- Height between 150 and 200 cm
+    );
+
+    SET @i = @i + 1;
+END;
+
+-- Populate Arrendador table (using subset of Utilizador IDs)
+SET @i = 30;
+
+WHILE @i <= 500
+BEGIN
+    INSERT INTO Arrendador (ID_Arrendador, IBAN, No_Campos)
+    VALUES (
+        @i,
+        CONCAT('PT50', RIGHT('0000000000000000000000' + CAST(@i AS VARCHAR), 21)),
+        1 + (@i % 5) -- Between 1 and 5 fields
+    );
+
+    SET @i = @i + 1;
+END;
+
+-- Populate Ponto table
+SET @i = 1;
+
+WHILE @i <= 471
+BEGIN
+    INSERT INTO Ponto (ID_Mapa, Latitude, Longitude)
+    VALUES (
+        1,
+        ROUND(38.5 + (RAND() * 5), 6), -- Random latitude around Portugal
+        ROUND(-9.5 + (RAND() * 5), 6)  -- Random longitude around Portugal
+    );
+
+    SET @i = @i + 1;
+END;
+
+-- Populate Campo table (limited to match Ponto records)
+SET @i = 30;
+
+WHILE @i <= 500
+BEGIN
+    INSERT INTO Campo (ID_Ponto, ID_Mapa, Nome, Endereco, Comprimento, Largura, ocupado, Descricao)
+    VALUES (
+        @i - 29, -- Align with Ponto IDs (1 to 471)
+        1,
+        CONCAT('Field ', @i),
+        CONCAT('Address ', @i, ', City'),
+        ROUND(90 + (RAND() * 30), 2), -- Length between 90 and 120 meters
+        ROUND(45 + (RAND() * 25), 2), -- Width between 45 and 70 meters
+        CASE WHEN @i % 2 = 0 THEN 0 ELSE 1 END,
+        CONCAT('Description for field ', @i, '...')
+    );
+
+    SET @i = @i + 1;
+END;
+
+-- Populate Campo_Pub table (first 235 fields)
+SET @i = 30;
+
+WHILE @i <= 264
+BEGIN
+    INSERT INTO Campo_Pub (ID_Campo, Entidade_publica_resp)
+    VALUES (
+        @i,
+        CONCAT('Municipality ', @i)
+    );
+
+    SET @i = @i + 1;
+END;
+
+-- Populate Campo_Priv table (next 236 fields, linked to Arrendadores)
+SET @i = 265;
+
+WHILE @i <= 500
+BEGIN
+    INSERT INTO Campo_Priv (ID_Campo, ID_Arrendador)
+    VALUES (
+        @i,
+        30 + ((@i - 265) % 471) -- Link to Arrendador IDs 30 to 500
+    );
+
+    SET @i = @i + 1;
+END; */

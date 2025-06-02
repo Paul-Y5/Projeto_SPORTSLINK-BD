@@ -103,3 +103,22 @@ BEGIN
     CREATE NONCLUSTERED INDEX idx_disponibilidade_id_campo ON Disponibilidade (ID_Campo) WITH (FILLFACTOR = 85);
 END
 GO
+
+
+-- Apgar Indices
+/* -- Executa os DROP INDEX diretamente (mesmo filtro seguro)
+DECLARE @sql NVARCHAR(MAX) = N'';
+
+SELECT @sql += 'DROP INDEX [' + i.name + '] ON [' + s.name + '].[' + t.name + '];' + CHAR(13)
+FROM 
+    sys.indexes i
+    INNER JOIN sys.tables t ON i.object_id = t.object_id
+    INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE 
+    i.type_desc = 'NONCLUSTERED' AND
+    i.is_primary_key = 0 AND 
+    i.is_unique_constraint = 0 AND
+    i.name IS NOT NULL;
+
+EXEC sp_executesql @sql;
+ */
