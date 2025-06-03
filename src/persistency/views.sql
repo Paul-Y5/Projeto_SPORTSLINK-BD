@@ -230,7 +230,7 @@ LEFT JOIN (
         ID_Campo, 
         STRING_AGG(CAST(ID AS VARCHAR), ',') AS Partidas_Ativas
     FROM Partida
-    WHERE Estado IN ('Aguardando', 'Decorrer')
+    WHERE Estado IN ('Aguardando', 'Andamento')
     GROUP BY ID_Campo
 ) AS part_agg ON part_agg.ID_Campo = c.ID;
 GO
