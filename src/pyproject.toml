@@ -3,7 +3,6 @@ name = "src"
 version = "1.2.0"
 description = "Base de Dados - Projeto Final"
 authors = ["Paulo Cunha <paulo.c50@ua.pt>", "Rafael Ferreira <rafaelferreira31@ua.pt>"]
-readme = README.md
 package-mode = false
 
 [tool.poetry.dependencies]

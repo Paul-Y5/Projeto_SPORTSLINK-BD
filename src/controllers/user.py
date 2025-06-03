@@ -426,7 +426,6 @@ def rate_friend(user_id, friend_id, rating, comment):
         flash(f"Erro ao avaliar jogador: {str(e)}", "danger")
         return False
 
-
 def inGame(user_id):
     try:
         with create_connection() as conn:
@@ -434,7 +433,7 @@ def inGame(user_id):
 
             # Verificar se o jogador está em uma partida usando IsPlayerOnMatch
             cursor.execute("SELECT dbo.IsPlayerOnMatch(?) AS IsInMatch", (user_id,))
-            is_in_match = cursor.fetchone()[0]  # Acessar o primeiro (e único) valor da tupla
+            is_in_match = cursor.fetchone()[0]  # Acede o primeiro (e único) valor do tuplo
 
             if not is_in_match:
                 cursor.close()
@@ -442,15 +441,15 @@ def inGame(user_id):
 
             # Configurar o cursor para retornar dicionários na próxima consulta
             cursor.close()
-            cursor = conn.cursor(as_dict=True)
+            cursor = conn.cursor()
 
             # Obter detalhes da partida em andamento
             query = """
                 SELECT p.ID, p.Data_Hora, c.Nome AS Campo
                 FROM Partida p
-                JOIN Campo c ON p.ID_Campo = c.ID_Campo
-                JOIN Jogador_joga jj ON p.ID_Partida = jj.ID_Partida
-                WHERE jj.ID_Jogador = ? AND p.Estado = 'Em Andamento';
+                JOIN Campo c ON p.ID_Campo = c.ID
+                JOIN Jogador_joga jj ON p.ID = jj.ID_Partida
+                WHERE jj.ID_Jogador = ? AND p.Estado = 'Andamento';
             """
             cursor.execute(query, (user_id,))
             result = cursor.fetchone()

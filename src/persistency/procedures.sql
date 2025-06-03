@@ -914,9 +914,7 @@ BEGIN
     -- Adicionar o criador à partida
     INSERT INTO Jogador_joga (ID_Partida, ID_Jogador)
     VALUES (@NewID, @ID_Criador);
-
-    -- Retornar o ID gerado
-    RETURN @NewID;
+    
 END;
 GO
 

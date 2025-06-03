@@ -10,57 +10,39 @@ def create_partida(campo_id):
         return redirect(url_for("auth.login"))
 
     # Obter dados do formulário
-    data_partida = request.form.get("data_partida")
-    hora_inicio_partida = request.form.get("hora_inicio_partida")
     duracao_partida = request.form.get("duracao_partida")
-    no_jogadores = request.form.get("no_jogadores")
-    estado = request.form.get("estado", "Aguardando")  # Default para "Aguardando"
 
     try:
         # Validar data e hora
-        data_hora_str = f"{data_partida} {hora_inicio_partida}"
-        data_hora = datetime.strptime(data_hora_str, "%Y-%m-%d %H:%M")
+        data_hora = datetime.now()
         duracao = int(duracao_partida)
-        no_jog = int(no_jogadores) if no_jogadores else 1  # Inclui o criador
 
         # Validações
         if duracao < 15 or duracao > 240:
             flash("A duração deve estar entre 15 e 240 minutos!", "danger")
             return redirect(url_for("dashboard.campo_detail", ID=campo_id))
 
-        if estado not in ["Aguardando", "Andamento", "Finalizada"]:
-            flash("Estado inválido. Deve ser 'Aguardando', 'Em Andamento' ou 'Finalizada'.", "danger")
-            return redirect(url_for("dashboard.campo_detail", ID=campo_id))
-
         # Executar a stored procedure
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "EXEC CreatePartida ?, ?, ?, ?, ?, ?, ?",
-                (campo_id, no_jog, data_hora, duracao, estado, user_id, 0)
-            )
+            
+            # SQL com OUTPUT
+            cursor.execute("""
+                DECLARE @OutputID INT;
+                EXEC CreatePartida ?, ?, ?, ?, ?, ?, @OutputID OUTPUT;
+                SELECT @OutputID;
+            """, (campo_id, 1, data_hora, duracao, "Aguardando", user_id))
+            
             result = cursor.fetchone()
-            if result is None:
-                flash("Erro ao criar partida: Nenhuma resposta do banco de dados.", "danger")
+            if result is None or result[0] is None:
+                flash("Erro ao criar partida: Nenhuma resposta da base de dados.", "danger")
                 return redirect(url_for("dashboard.campo_detail", ID=campo_id))
-            partida_id = result[0]
-            if partida_id < 0:
-                flash("Erro ao criar partida: Verifique os dados fornecidos.", "danger")
-                return redirect(url_for("dashboard.campo_detail", ID=campo_id))
-            return partida_id
 
-    except ValueError as e:
-        flash(f"Erro nos dados fornecidos: {str(e)}", "danger")
+            partida_id = result[0]
+
+            return partida_id
     except Exception as e:
         error_msg = str(e)
-        if "O campo não está disponível nesse horário" in error_msg:
-            flash("O campo não está disponível no horário selecionado.", "danger")
-        elif "Já existe uma reserva para este horário" in error_msg:
-            flash("Já existe uma reserva para este horário.", "danger")
-        elif "Estado inválido" in error_msg:
-            flash("Estado inválido. Deve ser 'Aguardando', 'Em Andamento' ou 'Finalizada'.", "danger")
-        else:
-            flash(f"Erro inesperado ao iniciar partida: {error_msg}", "danger")
         print(f"Erro ao criar partida: {error_msg}")
     return redirect(url_for("dashboard.campo_detail", ID=campo_id))
     
@@ -178,7 +160,6 @@ def entrar_Partida(id_partida):
                 return redirect(url_for("dashboard.list_partidas"))
     except Exception as e:
         print(f"Erro detalhado ao entrar na partida: {str(e)}")  # Log para depuração
-        flash(f"Erro ao entrar na partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.list_partidas"))  # Redireciona para list_partidas em vez de jog_dashboard
     
 def sair_Partida(id_partida):
