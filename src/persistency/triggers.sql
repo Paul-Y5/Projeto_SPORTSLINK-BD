@@ -160,6 +160,7 @@ BEGIN
 END;
 GO
 
+
 -- Trigger para atualizar o estado da partida
 CREATE OR ALTER TRIGGER trg_UpdatePartidaEstado
 ON Partida
@@ -167,14 +168,21 @@ AFTER INSERT, UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
+
     UPDATE p
     SET Estado = CASE
-        WHEN GETDATE() >= DATEADD(MINUTE, -15, p.Data_Hora) AND GETDATE() < DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Andamento'
+        WHEN GETDATE() >= DATEADD(MINUTE, -15, p.Data_Hora) 
+             AND GETDATE() < DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Andamento'
         WHEN GETDATE() >= DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Finalizada'
         ELSE 'Aguardando'
     END
     FROM Partida p
-    INNER JOIN Jogador_joga j ON p.ID = j.ID_Partida
-    WHERE p.Estado = 'Aguardando';
+    INNER JOIN inserted i ON p.ID = i.ID
+    WHERE p.Estado != CASE
+        WHEN GETDATE() >= DATEADD(MINUTE, -15, p.Data_Hora) 
+             AND GETDATE() < DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Andamento'
+        WHEN GETDATE() >= DATEADD(MINUTE, p.Duracao, p.Data_Hora) THEN 'Finalizada'
+        ELSE 'Aguardando'
+    END;
 END;
 GO

@@ -1105,6 +1105,7 @@ BEGIN
     -- Selecionar detalhes da partida
     SELECT * FROM vw_PartidaDetalhes v
     WHERE v.ID_Partida = @ID_Partida;
+    -- A view vw_PartidaDetalhes já inclui dados do campo, imagem e jogadores
 END;
 GO
 
@@ -1281,9 +1282,17 @@ CREATE OR ALTER PROCEDURE GetHistoricPartidas
   @UserID INT
 AS
 BEGIN
-  Select * from Jogador_joga as jj
-  LEFT JOIN Partida as p on p.ID=jj.ID_Jogador
-  WHERE jj.ID_Jogador = @UserID AND p.Estado = 'Finalizada';
+  SELECT 
+        p.ID,
+        p.ID_Campo,
+        p.Data_Hora,
+        p.Duracao,
+        p.Resultado,
+        p.Estado
+    FROM Jogador_joga AS jj
+    INNER JOIN Partida AS p ON p.ID = jj.ID_Partida
+    WHERE jj.ID_Jogador = @UserID AND p.Estado = 'Finalizada'
+    ORDER BY p.Data_Hora DESC;
 END;
 GO
 

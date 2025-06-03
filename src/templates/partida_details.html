@@ -27,6 +27,19 @@
 
         <!-- Partida Details Card -->
         <div class="card mb-4">
+            <!-- Actions -->
+            <div class="text-end">
+                {% set jogador_ids = partida.Jogadores | map(attribute='ID') | list %}
+                {% if session['user_id'] in jogador_ids %}
+                <form method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="sair_partida">
+                    <button type="submit" class="btn btn-danger mt-2 me-2">Sair da Partida</button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary mt-2">Voltar ao Dashboard</a>
+            </div>
+
+
             <div class="card-header bg-primary text-white">
                 <h2 class="mb-0">Detalhes da Partida - ID: {{ partida.ID }}</h2>
             </div>
@@ -69,26 +82,24 @@
             </div>
             <div class="card-body">
                 {% if partida.Jogadores %}
-                <ul class="list-group">
+                <div class="row">
                     {% for jogador in partida.Jogadores %}
-                    <li class="list-group-item">
-                        <a href="{{ url_for('dashboard.list_friends', ID=session['user_id'], action='detail', friend_id={{
-                            jogador.ID }}) }}"
-                            class="btn btn-warning">[#{{jogador.ID }}] {{ jogador.Nome }}</a>
-                        <br>
-                        <small>Nacionalidade: {{ jogador.Nacionalidade or 'Não fornecida' }}</small>
-                    </li>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">[#{{ jogador.ID }}] {{ jogador.Nome }}</h5>
+                                <p class="card-text text-muted">Nacionalidade: {{ jogador.Nacionalidade or 'Não fornecida' }}</p>
+                                <a href="{{ url_for('dashboard.list_friends', ID=session['user_id'], action='detail', friend_id=jogador.ID) }}"
+                                    class="btn btn-sm btn-warning">Ver Perfil</a>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </ul>
+                </div>                
                 {% else %}
                 <p class="text-muted">Nenhum jogador inscrito nesta partida.</p>
                 {% endif %}
             </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="text-end">
-            <a href="{{ url_for('dashboard.jog_dashboard') }}" class="btn btn-secondary mt-2">Voltar ao Dashboard</a>
         </div>
     </div>
 

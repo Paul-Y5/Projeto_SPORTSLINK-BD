@@ -47,19 +47,16 @@ def create_partida(campo_id):
     return redirect(url_for("dashboard.campo_detail", ID=campo_id))
     
 def get_Partida(id_partida):
-    user_id = session.get("user_id")
-    if not user_id:
-        return None  # Let the caller handle the redirect or error
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC ObterPartida ?", (id_partida,))
-            partida = cursor.fetchone()
-        
-        if not partida:
+            raw_partida = cursor.fetchone()
+
+        if not raw_partida:
             return None
 
-        jogadores_ids = partida[15].split(", ") if partida[15] else []
+        jogadores_ids = raw_partida[15].split(", ") if raw_partida[15] else []
         jogadores = []
         for id_jogador in [int(id) for id in jogadores_ids if id.isdigit()]:
             cursor.execute("EXEC GetUserInfo ?", (id_jogador,))
@@ -71,29 +68,33 @@ def get_Partida(id_partida):
                     "Nacionalidade": jogador[4]
                 })
 
-        return {
-            "ID": partida[0],
-            "CampoID": partida[1],
-            "Campo": partida[2],
-            "Comprimento": float(partida[3]),  # Convert Decimal to float
-            "Largura": float(partida[4]),  # Convert Decimal to float
-            "Latitude": float(partida[5]),  # Convert Decimal to float
-            "Longitude": float(partida[6]),  # Convert Decimal to float
-            "CampoLocalizacao": partida[7],
-            "CampoDescricao": partida[8],
-            "DataHora": partida[9].isoformat(),  # Convert datetime to string
-            "Duracao": partida[10],
-            "Resultado": partida[11],
-            "Estado": partida[12],
-            "NoJogadores": partida[13],
-            "CampoImagemURL": partida[14],
+        partida_detalhes = {
+            "ID": raw_partida[0],
+            "CampoID": raw_partida[1],
+            "Campo": raw_partida[2],
+            "Comprimento": float(raw_partida[3]),
+            "Largura": float(raw_partida[4]),
+            "Latitude": float(raw_partida[5]),
+            "Longitude": float(raw_partida[6]),
+            "CampoLocalizacao": raw_partida[7],
+            "CampoDescricao": raw_partida[8],
+            "DataHora": raw_partida[9].isoformat(),
+            "Duracao": raw_partida[10],
+            "Resultado": raw_partida[11],
+            "Estado": raw_partida[12],
+            "NoJogadores": raw_partida[13],
+            "CampoImagemURL": raw_partida[14],
             "Jogadores": jogadores,
-            "MaxJogadores": partida[16],
+            "MaxJogadores": raw_partida[16]
         }
+
+        print(f"Partida obtida com sucesso: {partida_detalhes}")
+        return partida_detalhes
+
+    
     except Exception as e:
         print(f"Erro ao obter partida: {str(e)}")
         return None
-
 
 # Com Filtros de Nome e ordenação por DataHora, Distancia, ou Número de Jogadores
 def get_Partidas_Abertas(nome_campo=None, distancia=None, latitude=None, longitude=None, order_by='DataHora', order_direction='ASC'):
@@ -150,8 +151,8 @@ def entrar_Partida(id_partida):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC addJogadorToPartida ?, ?", (id_partida, user_id))
-            conn.commit()  # Garantir que a transação é confirmada
             result = cursor.fetchone()
+            conn.commit()  # Garantir que a transação é confirmada
             if result and result[0] == 1:
                 flash("Entrou na partida com sucesso!", "success")
                 return redirect(url_for("dashboard.get_partida", partida_id=id_partida))
@@ -171,14 +172,11 @@ def sair_Partida(id_partida):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC removeJogadorFromPartida ?, ?", (id_partida, user_id))
-            result = cursor.fetchone()
-            if result and result[0] == 1:
-                flash("Saiu da partida com sucesso!", "success")
-                return redirect(url_for("dashboard.partida_details", ID=id_partida))
-            else:
-                flash("Erro ao sair da partida.", "danger")
-            return redirect(url_for("dashboard.list_partidas"))
+            conn.commit()
+
+            flash("Saiu da partida com sucesso!", "success")
+            return redirect(url_for("dashboard.get_partida", partida_id=id_partida))
+
     except Exception as e:
         flash(f"Erro ao sair da partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
-    

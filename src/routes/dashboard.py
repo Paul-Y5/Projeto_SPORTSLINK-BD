@@ -191,7 +191,6 @@ def start_new_partida(campo_id):
         flash(f"Erro ao iniciar partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.jog_dashboard"))
 
-# Rota para visualizar uma partida existente
 @dashboard_bp.route("/partida/<int:partida_id>", methods=["GET", "POST"])
 @login_required
 def get_partida(partida_id):
@@ -204,12 +203,12 @@ def get_partida(partida_id):
         if request.method == "POST":
             action = request.form.get("action")
             if action == "sair_partida":
-                sair_Partida(partida_id)
-                flash("Saíste da partida com sucesso.", "success")
-                return redirect(url_for("dashboard.list_partidas"))
-        
+                return sair_Partida(partida_id)
+
         return render_template("partida_details.html", partida=partida)
+
     except Exception as e:
+        print(f"Erro ao carregar partida: {str(e)}")  # Log para depuração
         flash(f"Erro ao carregar a partida: {str(e)}", "danger")
         return redirect(url_for("dashboard.list_partidas"))
     

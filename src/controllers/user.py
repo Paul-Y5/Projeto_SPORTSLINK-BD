@@ -433,28 +433,30 @@ def inGame(user_id):
 
             # Verificar se o jogador está em uma partida usando IsPlayerOnMatch
             cursor.execute("SELECT dbo.IsPlayerOnMatch(?) AS IsInMatch", (user_id,))
-            is_in_match = cursor.fetchone()[0]  # Acede o primeiro (e único) valor do tuplo
+            is_in_match = cursor.fetchone()[0]
 
             if not is_in_match:
                 cursor.close()
-                return None  # Jogador não está em nenhuma partida
+                return None
 
-            # Configurar o cursor para retornar dicionários na próxima consulta
             cursor.close()
             cursor = conn.cursor()
 
-            # Obter detalhes da partida em andamento
             query = """
                 SELECT p.ID, p.Data_Hora, c.Nome AS Campo
                 FROM Partida p
                 JOIN Campo c ON p.ID_Campo = c.ID
                 JOIN Jogador_joga jj ON p.ID = jj.ID_Partida
-                WHERE jj.ID_Jogador = ? AND p.Estado = 'Andamento';
+                WHERE jj.ID_Jogador = ? AND (p.Estado = 'Andamento' OR p.Estado = 'Aguardando');
             """
             cursor.execute(query, (user_id,))
-            result = cursor.fetchone()
+            row = cursor.fetchone()
             cursor.close()
-            return result
+            return {
+                "ID": row.ID,
+                "DataHora": row.Data_Hora,
+                "Campo": row.Campo
+            } if row else None
     except Exception as e:
         flash(f"Erro ao verificar partida em andamento: {e}", "danger")
         print(f"Erro ao verificar partida em andamento: {e}")

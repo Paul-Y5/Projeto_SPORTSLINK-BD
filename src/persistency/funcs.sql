@@ -164,7 +164,7 @@ BEGIN
         SELECT 1
         FROM Jogador_joga jj
         JOIN Partida p ON jj.ID_Partida = p.ID
-        WHERE jj.ID_Jogador = @ID_Jogador AND p.Estado = 'Andamento'
+        WHERE jj.ID_Jogador = @ID_Jogador AND (p.Estado = 'Andamento' OR p.Estado = 'Aguardando')
     )
         RETURN 1;
     RETURN 0;
