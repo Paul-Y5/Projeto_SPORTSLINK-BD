@@ -136,36 +136,34 @@
                     <div class="mb-3">
                         <label>Desportos Favoritos</label>
                         <div class="d-flex flex-wrap gap-2">
-                            {% set desportos_selecionados = (user['Desportos_Favoritos'] or '').split(',') %}
-    
+                            {% set desportos_selecionados = (user['Desportos_Favoritos'] or '') %}
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="desportos" value="Basquetebol"
-                                    id="basquetebol" {% if 'Basquetebol' in desportos_selecionados %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="desportos[]" value="Basquetebol" id="basquetebol" {%
+                                    if 'Basquetebol' in desportos_selecionados %}checked{% endif %}>
                                 <label class="form-check-label" for="basquetebol">Basquetebol</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="desportos" value="Futebol"
-                                    id="futebol" {% if 'Futebol' in desportos_selecionados %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="desportos[]" value="Futebol" id="futebol" {%
+                                    if 'Futebol' in desportos_selecionados %}checked{% endif %}>
                                 <label class="form-check-label" for="futebol">Futebol</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="desportos" value="Futsal" id="futsal"
-                                    {% if 'Futsal' in desportos_selecionados %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="desportos[]" value="Futsal" id="futsal" {% if 'Futsal'
+                                    in desportos_selecionados %}checked{% endif %}>
                                 <label class="form-check-label" for="futsal">Futsal</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="desportos" value="Ténis" id="tenis" {%
-                                    if 'Ténis' in desportos_selecionados %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="desportos[]" value="Ténis" id="tenis" {% if 'Ténis' in
+                                    desportos_selecionados %}checked{% endif %}>
                                 <label class="form-check-label" for="tenis">Ténis</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="desportos" value="Voleibol"
-                                    id="voleibol" {% if 'Voleibol' in desportos_selecionados %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="desportos[]" value="Voleibol" id="voleibol" {%
+                                    if 'Voleibol' in desportos_selecionados %}checked{% endif %}>
                                 <label class="form-check-label" for="voleibol">Voleibol</label>
                             </div>
-    
                             <small class="text-muted">Seleciona todos os desportos que praticas ou gostas.</small>
-                        </div>
+                        </div>              
                     </div>
                     <div class="mb-3">
                         <label>IBAN</label>

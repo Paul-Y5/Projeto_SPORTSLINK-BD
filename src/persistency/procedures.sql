@@ -58,9 +58,41 @@ CREATE OR ALTER PROCEDURE DeleteUtilizador
 AS
 BEGIN
   SET NOCOUNT ON;
-  DELETE FROM Utilizador WHERE ID = @ID;
+
+  BEGIN TRY
+    BEGIN TRANSACTION;
+
+    -- Apagar Rating_Jogador relacionados com as avaliações feitas pelo utilizador
+    DELETE RJ
+    FROM Rating_Jogador RJ
+    JOIN Rating R ON R.ID = RJ.ID_Avaliacao
+    JOIN Jogador J ON J.ID = R.ID_Avaliador
+    WHERE J.ID = @ID;
+
+    -- Apagar Ratings feitas pelo utilizador
+    DELETE R
+    FROM Rating R
+    JOIN Jogador J ON J.ID = R.ID_Avaliador
+    WHERE J.ID = @ID;
+
+    -- Apagar o utilizador (ON DELETE CASCADE cuidará do resto: Jogador, Arrendador, etc.)
+    DELETE FROM Utilizador WHERE ID = @ID;
+
+    COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+    -- Em caso de erro, cancela tudo
+    ROLLBACK TRANSACTION;
+
+    DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+    SELECT
+      @ErrorMessage = ERROR_MESSAGE(),
+      @ErrorSeverity = ERROR_SEVERITY(),
+      @ErrorState = ERROR_STATE();
+    RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+  END CATCH
 END;
-GO
+
 
 -- Lista de desportos
 CREATE OR ALTER PROCEDURE GetDesportos

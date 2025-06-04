@@ -34,8 +34,6 @@ def get_user_info(user_id):
 
 def update_user_info():
     """Atualiza informações do utilizador, jogador e arrendador via UpdateUserInfo."""
-    import json  # garantir que json está importado
-
     username = request.form["username"]
     email = request.form["email"]
     nationality = request.form["nacionalidade"]
@@ -48,20 +46,21 @@ def update_user_info():
     peso = request.form.get("peso")
     altura = request.form.get("altura")
     url_imagem = request.files.get("url_imagem")
+    desportos_selecionados = request.form.getlist("desportos[]")  # Recebe a lista de desportos
+
     if url_imagem and url_imagem.filename:
         img_url = f"img/{url_imagem.filename}"
         save_path = os.path.join("static", "img", url_imagem.filename)
         url_imagem.save(save_path)
     else:
         img_url = None
-    met_pagamento_list = request.form.getlist("metodos_pagamento")
 
-    # Detalhes enviados pelo formulário
+    met_pagamento_list = request.form.getlist("metodos_pagamento")
     detalhe_map = {
         "CC": request.form.get("detalhe_CC"),
         "MBWay": request.form.get("detalhe_MBWay"),
         "PayPal": request.form.get("detalhe_PayPal"),
-        "Transferência Bancária": iban  # o detalhe de Transferência Bancária é o próprio IBAN
+        "Transferência Bancária": iban
     }
 
     map_metodos = {
@@ -74,8 +73,6 @@ def update_user_info():
     }
 
     metodos_pagamento_json = []
-
-    # Adiciona todos os métodos do form
     for m in met_pagamento_list:
         mapped = map_metodos.get(m)
         if mapped:
@@ -85,16 +82,11 @@ def update_user_info():
                     "Metodo": mapped,
                     "Detalhes": detalhes
                 })
-        else:
-            print(f"Método de pagamento inesperado: {m}")
-
-    # Garante que "Transferência Bancária" entra sempre que houver IBAN
-    if iban:
-        if not any(m["Metodo"] == "Transferência Bancária" for m in metodos_pagamento_json):
-            metodos_pagamento_json.append({
-                "Metodo": "Transferência Bancária",
-                "Detalhes": iban
-            })
+    if iban and not any(m["Metodo"] == "Transferência Bancária" for m in metodos_pagamento_json):
+        metodos_pagamento_json.append({
+            "Metodo": "Transferência Bancária",
+            "Detalhes": iban
+        })
 
     metodos_pagamento_str = json.dumps(metodos_pagamento_json)
     user_id = session.get("user_id")
@@ -102,6 +94,8 @@ def update_user_info():
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
+
+            # Atualiza as informações do utilizador e jogador
             cursor.execute("""
                 EXEC UpdateUserInfo 
                     @UserID = ?, 
@@ -134,6 +128,23 @@ def update_user_info():
                 img_url,
                 metodos_pagamento_str
             ))
+
+            # Remove os desportos antigos do utilizador
+            cursor.execute("DELETE FROM Desporto_Jogador WHERE ID_Jogador = ?", (user_id,))
+
+            # Associa os novos desportos usando a stored procedure
+            for desporto in desportos_selecionados:
+                if desporto.strip():
+                    # Primeiro, obtém o ID_Desporto
+                    cursor.execute("SELECT ID FROM Desporto WHERE Nome = ?", (desporto,))
+                    result = cursor.fetchone()
+                    if result:
+                        id_desporto = result[0]
+                        # Chama a stored procedure com os valores escalares
+                        cursor.execute("EXEC AssociarDesportoUtilizador @ID_Utilizador = ?, @ID_Desporto = ?", (user_id, id_desporto))
+                    else:
+                        print(f"Desporto '{desporto}' não encontrado.")
+
             conn.commit()
             flash("Dados atualizados com sucesso!", "success")
             return redirect(url_for("dashboard.jog_dashboard", name=username))

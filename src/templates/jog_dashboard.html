@@ -122,7 +122,7 @@
                     <div class="mb-3">
                         <label>Desportos Favoritos</label>
                         <div class="d-flex flex-wrap gap-2">
-                            {% set desportos_selecionados = (user['Desportos_Favoritos'] or '').split(',') %}
+                            {% set desportos_selecionados = (user['Desportos_Favoritos'] or '') %}
                             
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="desportos[]" value="Basquetebol" id="basquetebol" {%
