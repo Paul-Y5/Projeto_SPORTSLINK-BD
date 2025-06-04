@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from flask import flash, redirect, render_template, request, session, url_for
 from db import create_connection
 from utils.general import get_dias_semana, get_siglas_dias
@@ -46,7 +47,13 @@ def update_user_info():
     data_nascimento = request.form.get("data_nascimento")
     peso = request.form.get("peso")
     altura = request.form.get("altura")
-    url_imagem = request.form.get("url_imagem")
+    url_imagem = request.files.get("url_imagem")
+    if url_imagem and url_imagem.filename:
+        img_url = f"img/{url_imagem.filename}"
+        save_path = os.path.join("static", "img", url_imagem.filename)
+        url_imagem.save(save_path)
+    else:
+        img_url = None
     met_pagamento_list = request.form.getlist("metodos_pagamento")
 
     # Detalhes enviados pelo formulário
@@ -124,7 +131,7 @@ def update_user_info():
                 data_nascimento,
                 peso,
                 altura,
-                url_imagem,
+                img_url,
                 metodos_pagamento_str
             ))
             conn.commit()

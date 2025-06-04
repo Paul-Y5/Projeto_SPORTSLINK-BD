@@ -11,7 +11,7 @@ def registration():
 
     if img_file and img_file.filename:
         img_url = f"img/{img_file.filename}"
-        save_path = os.path.join("src", "static", "img", img_file.filename)
+        save_path = os.path.join("static", "img", img_file.filename)
         img_file.save(save_path)
     else:
         img_url = 'img/icon_def.png'

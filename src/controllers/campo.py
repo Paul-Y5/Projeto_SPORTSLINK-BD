@@ -26,7 +26,7 @@ def adicionar_campo_publico():
         if img_file and img_file.filename:
             print(f"Salvando imagem: {img_file.filename}")
             img_url = f"img/{img_file.filename}"
-            save_path = os.path.join("src", "static", "img", img_file.filename)
+            save_path = os.path.join("static", "img", img_file.filename)
             img_file.save(save_path)
         else:
             img_url = 'img/campo.png'  # Imagem padrão se não for fornecida
@@ -105,7 +105,7 @@ def editar_campo(ID):
 
     if img_file and img_file.filename:
         img_url = f"img/{img_file.filename}"
-        save_path = os.path.join("src", "static", "img", img_file.filename)
+        save_path = os.path.join("static", "img", img_file.filename)
         img_file.save(save_path)
     else:
         img_url = None
