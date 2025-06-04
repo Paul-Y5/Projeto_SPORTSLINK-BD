@@ -590,6 +590,25 @@ BEGIN
 END;
 GO
 
+-- Associar desporto a Utilizador
+CREATE OR ALTER PROCEDURE AssociarDesportoUtilizador
+  @ID_Utilizador INT,
+  @ID_Desporto INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+    IF NOT EXISTS (
+      SELECT 1 
+      FROM Desporto_Jogador 
+      WHERE ID_Jogador = @ID_Utilizador AND ID_Desporto = @ID_Desporto 
+    )
+    BEGIN
+      INSERT INTO Desporto_Jogador (ID_Jogador, ID_Desporto)
+      VALUES (@ID_Utilizador, @ID_Desporto);
+    END
+END;
+GO
+
 -- Obter campos disponíveis
 CREATE OR ALTER PROCEDURE GetCampos
     @ID_Campo INT = NULL,
