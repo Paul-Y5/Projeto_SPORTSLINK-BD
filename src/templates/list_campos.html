@@ -65,8 +65,13 @@
             {% for campo in campos %}
             <div class="col">
                 <div class="card h-100">
-                    <img src="{{  url_for('static', filename=campo.URL) }}"
-                        class="card-img-top" alt="{{ campo.Nome }}" style="height: 180px; object-fit: cover;">
+                    {% if campo.URL %}
+                    <img src="{{ url_for('static', filename=campo.URL) }}" class="card-img-top" alt="{{ campo.Nome }}"
+                        style="height: 180px; object-fit: cover;">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='img/icon_campo.jpg') }}" class="card-img-top" alt="Imagem padrão"
+                        style="height: 180px; object-fit: cover;">
+                    {% endif %} <!-- Apenas para os campos ficticios gerados para testes, pois não têm imagens associadas -->
 
                     <div class="card-header d-flex justify-content-between">
                         <span>{{ campo.Nome }}</span>
