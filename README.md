@@ -15,13 +15,14 @@
 ### Ou correr na BD que se encotra no IETTA ()
 
 # Organização da pasta
-## conf.ini está fora da src, esse é o ficheiro a alterar apra colocar as credenciais de acesso
+## conf.ini na src, esse é o ficheiro a alterar para colocar as credenciais de acesso (Default são server IEETA)
 ## Ainda fora da pasta src os ficheiros .sql para criar a base dados, tabelas (DDL), DML para inserção de dados e indices para criar os indices.
-## Para além disso tem todos os testes de querys que fizemos e scripts para apagar tanto dados como
+## Para além disso tem todos os testes de querys que fizemos e scripts para apagar tanto dados como indices
 
 ## Dentro da src:
 - app.py (o que executa o website com blueprints)
-- config.oy e db.py (para a conexão)
+- config.py e db.py (para a conexão)
+- conf.ini
 - utils (funções auxiliar de python)
 - templates (todas as páginas HTML usadas)
 - static (pasta que possuem css, js e imagens utilizadas (ao carregar imagens para a bd o url fica como caminho para a pasta img/"imagem.png"))
