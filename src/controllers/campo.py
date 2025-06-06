@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from math import ceil
 import os
 from flask import session, redirect, url_for, flash, request
 from db import create_connection
@@ -437,15 +438,17 @@ def get_campos(tipo):
     if not user_id:
         return redirect(url_for("auth.login"))
 
-    # Obter os parâmetros
+    # Get query parameters
     pesquisa = request.args.get("pesquisa")
     order_by = request.args.get("order_by", "Nome")
     order_dir = request.args.get("order_dir", "ASC").upper()
     user_lat = request.args.get("user_lat", type=float)
     user_lon = request.args.get("user_lon", type=float)
     dia_semana = request.args.get("dia_semana", type=int)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
 
-    print(f"A obter campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}, dia_semana: {dia_semana}")
+    print(f"A obter campos com tipo: {tipo}, pesquisa: {pesquisa}, order_by: {order_by}, order_dir: {order_dir}, user_lat: {user_lat}, user_lon: {user_lon}, dia_semana: {dia_semana}, page: {page}, per_page: {per_page}")
 
     if order_dir not in ("ASC", "DESC"):
         order_dir = "ASC"
@@ -454,12 +457,23 @@ def get_campos(tipo):
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "EXEC GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?, @DiaSemana=?",
-                (None, user_id, tipo, pesquisa, order_by, order_dir, user_lat, user_lon, dia_semana)
+                "EXEC GetCampos @ID_Campo=?, @ID_Arrendador=?, @Tipo=?, @Pesquisa=?, @OrderBy=?, @OrderDir=?, @UserLat=?, @UserLon=?, @DiaSemana=?, @PageNumber=?, @PageSize=?",
+                (None, user_id, tipo, pesquisa, order_by, order_dir, user_lat, user_lon, dia_semana, page, per_page)
             )
             campos = cursor.fetchall()
 
-        return campos
+            # Extract total records, handling case sensitivity
+            total_records = campos[0].TotalRecords if campos else 0
+            # Calculate total pages
+            total_pages = ceil(total_records / per_page) if total_records > 0 else 0
+
+        return {
+            'campos': campos,
+            'total_records': total_records,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': total_pages
+        }
     except Exception as e:
         print(f"Erro ao obter campos: {e}")
         return None

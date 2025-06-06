@@ -37,7 +37,6 @@ BEGIN
 END;
 GO
 
-
 -- Criar Jogador
 CREATE OR ALTER PROCEDURE CreateJogador
   @ID INT,
@@ -641,7 +640,7 @@ BEGIN
 END;
 GO
 
--- Obter campos disponíveis
+-- Calcular distância entre dois pontos
 CREATE OR ALTER PROCEDURE GetCampos
     @ID_Campo INT = NULL,
     @ID_Arrendador INT = NULL,
@@ -651,30 +650,30 @@ CREATE OR ALTER PROCEDURE GetCampos
     @OrderDir VARCHAR(4) = 'ASC',
     @UserLat FLOAT = NULL,
     @UserLon FLOAT = NULL,
-    @DiaSemana INT = NULL  -- Novo parâmetro para ordenar por preço no dia da semana
+    @DiaSemana INT = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- SubConsulta com cálculo de distância e menor preço do dia
+    IF @PageNumber < 1 SET @PageNumber = 1;
+    IF @PageSize < 1 SET @PageSize = 10;
+
     WITH CamposComDistancia AS (
         SELECT 
             vw.*,
-            -- Distância calculada se coordenadas forem fornecidas
             CASE 
                 WHEN @UserLat IS NOT NULL AND @UserLon IS NOT NULL 
                 THEN dbo.CalculateDistance(@UserLat, @UserLon, vw.Latitude, vw.Longitude)
                 ELSE NULL
             END AS DistanciaCalculada,
-
-            -- Preço mais barato no dia fornecido
             (
                 SELECT MIN(d.Preco)
                 FROM Disponibilidade d
                 WHERE d.ID_Campo = vw.ID
                   AND (@DiaSemana IS NOT NULL AND d.ID_dia = @DiaSemana)
             ) AS PrecoMaisBarato
-
         FROM vw_CamposDisponiveis vw
         WHERE
             (@ID_Campo IS NULL OR vw.ID = @ID_Campo)
@@ -693,19 +692,26 @@ BEGIN
                 (vw.Tipo = 'Privado' AND vw.ID_Arrendador <> @ID_Arrendador)
             )
     )
-
-    -- Seleção final com ordenação dinâmica
-    SELECT *
+    SELECT 
+        *,
+        COUNT(*) OVER() AS TotalRecords
     FROM CamposComDistancia
     ORDER BY 
-        CASE WHEN @OrderBy = 'Nome'      AND @OrderDir = 'ASC'  THEN Nome END ASC,
-        CASE WHEN @OrderBy = 'Nome'      AND @OrderDir = 'DESC' THEN Nome END DESC,
-        CASE WHEN @OrderBy = 'Distancia' AND @OrderDir = 'ASC'  THEN DistanciaCalculada END ASC,
-        CASE WHEN @OrderBy = 'Distancia' AND @OrderDir = 'DESC' THEN DistanciaCalculada END DESC,
-        CASE WHEN @OrderBy = 'Tipo'      AND @OrderDir = 'ASC'  THEN Tipo END ASC,
-        CASE WHEN @OrderBy = 'Tipo'      AND @OrderDir = 'DESC' THEN Tipo END DESC,
-        CASE WHEN @OrderBy = 'Preco'     AND @OrderDir = 'ASC'  THEN PrecoMaisBarato END ASC,
-        CASE WHEN @OrderBy = 'Preco'     AND @OrderDir = 'DESC' THEN PrecoMaisBarato END DESC;
+        CASE WHEN @OrderBy IN ('Nome', 'nome') AND @OrderDir = 'ASC' THEN Nome END ASC,
+        CASE WHEN @OrderBy IN ('Nome', 'nome') AND @OrderDir = 'DESC' THEN Nome END DESC,
+        CASE WHEN @OrderBy IN ('Distancia', 'Distance') AND @OrderDir = 'ASC' THEN DistanciaCalculada END ASC,
+        CASE WHEN @OrderBy IN ('Distancia', 'Distance') AND @OrderDir = 'DESC' THEN DistanciaCalculada END DESC,
+        CASE WHEN @OrderBy IN ('Tipo', 'tipo') AND @OrderDir = 'ASC' THEN Tipo END ASC,
+        CASE WHEN @OrderBy IN ('Tipo', 'tipo') AND @OrderDir = 'DESC' THEN Tipo END DESC,
+        CASE WHEN @OrderBy IN ('Preco', 'preco') AND @OrderDir = 'ASC' THEN COALESCE(PrecoMaisBarato, 999999) END ASC,
+        CASE WHEN @OrderBy IN ('Preco', 'preco') AND @OrderDir = 'DESC' THEN COALESCE(PrecoMaisBarato, 0) END DESC,
+        CASE WHEN @OrderBy IN ('Largura', 'largura') AND @OrderDir = 'ASC' THEN Largura END ASC,
+        CASE WHEN @OrderBy IN ('Largura', 'largura') AND @OrderDir = 'DESC' THEN Largura END DESC,
+        CASE WHEN @OrderBy IN ('Comprimento', 'comprimento') AND @OrderDir = 'ASC' THEN Comprimento END ASC,
+        CASE WHEN @OrderBy IN ('Comprimento', 'comprimento') AND @OrderDir = 'DESC' THEN Comprimento END DESC,
+        ID ASC
+    OFFSET (@PageNumber - 1) * @PageSize ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
 END;
 GO
 

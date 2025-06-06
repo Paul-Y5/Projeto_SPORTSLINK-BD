@@ -17,14 +17,17 @@
         <input type="hidden" id="dia_semana" name="dia_semana">
         <div class="col-md-3">
             <input type="text" class="form-control" name="pesquisa" placeholder="Pesquisar por nome ou endereço"
-            value="{{ request.args.get('pesquisa', '') }}">
+                value="{{ request.args.get('pesquisa', '') }}">
         </div>
         <div class="col-md-2">
             <select name="order_by" class="form-select">
-                <option value="Distance" {% if request.args.get('order_by')=='Distance' %}selected{% endif %}>Distância</option>   
+                <option value="Distancia" {% if request.args.get('order_by')=='Distancia' %}selected{% endif %}>
+                    Distância</option>
                 <option value="Nome" {% if request.args.get('order_by')=='Nome' %}selected{% endif %}>Nome</option>
-                <option value="Largura" {% if request.args.get('order_by')=='Largura' %}selected{% endif %}>Largura</option>
-                <option value="Comprimento" {% if request.args.get('order_by')=='Comprimento' %}selected{% endif %}>Comprimento</option>
+                <option value="Largura" {% if request.args.get('order_by')=='Largura' %}selected{% endif %}>Largura
+                </option>
+                <option value="Comprimento" {% if request.args.get('order_by')=='Comprimento' %}selected{% endif %}>
+                    Comprimento</option>
                 <option value="Preco" {% if request.args.get('order_by')=='Preco' %}selected{% endif %}>Preço</option>
             </select>
         </div>
@@ -98,6 +101,17 @@
         {% else %}
         <div class="alert alert-info">Nenhum campo encontrado.</div>
         {% endif %}
+        <div class="pagination mt-3">
+            {% if page > 1 %}
+            <a href="{{ url_for('dashboard.ver_campos', page=page-1, per_page=per_page, **other_params) }}"
+                class="btn btn-secondary">Previous</a>
+            {% endif %}
+            <span class="mx-2">Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %} <a
+                href="{{ url_for('dashboard.ver_campos', page=page+1, per_page=per_page, **other_params) }}"
+                class="btn btn-secondary">Next</a>
+            {% endif %}  
+        </div>
     </div>
 
     <!-- Mapa -->

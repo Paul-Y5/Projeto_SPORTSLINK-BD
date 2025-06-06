@@ -77,13 +77,18 @@ def ver_campos():
         return redirect(url_for("dashboard.jog_dashboard"))
 
     campos = get_campos(tipo)
-    """     print(f"Campos obtidos: {campos}")
-        print(tipo) """
     if campos is None:
         flash("Erro ao carregar os campos.", "danger")
-        return redirect(url_for("dashboard.jog_dashboard"))
+        # Render template with empty data to preserve filters
+        return render_template('list_campos.html', campos=[], page=1, per_page=10, total_pages=0, total_records=0, other_params=request.args.to_dict())
 
-    return render_template("list_campos.html", campos=campos, tipo=tipo)
+    other_params = request.args.to_dict()
+    if 'page' in other_params:
+        del other_params['page']
+    if 'per_page' in other_params:
+        del other_params['per_page']
+    
+    return render_template('list_campos.html', **campos, other_params=other_params)
 
 
 @dashboard_bp.route("/info_field/<int:ID>", methods=["GET", "POST"])
